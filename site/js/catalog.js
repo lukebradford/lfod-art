@@ -88,8 +88,9 @@ export const CATALOG = [
     name: 'Moon',
     source: src('moon'),
     apgcode: 'xq1_69',
-    rle: 'x = 4, y = 2, rule = B2/S0\no2bo$b2o!',
-    kind: 'ship', period: 1, dx: 0, dy: 1, pop: [4, 4],
+    // shown travelling right (+x), like the puffers; this is also the glossary's RLE
+    rle: 'x = 2, y = 4, rule = B2/S0\no$bo$bo$o!',
+    kind: 'ship', period: 1, dx: 1, dy: 0, pop: [4, 4],
     note: 'The smallest spaceship and the only one with period 1: four cells moving one cell per generation, the speed of light, the fastest anything can travel here.',
   },
   {
@@ -97,9 +98,10 @@ export const CATALOG = [
     name: 'Free ship',
     source: src('free-ship'),
     apgcode: 'xq6_1owo1z128821',
-    // the upper of the two ships a domino splits into (see tests)
-    rle: 'x = 8, y = 13, rule = B2/S0\n3b2o2$2bo2bo$bo4bo$3b2o$bo4bo5$obo2bobo2$obo2bobo!',
-    kind: 'ship', period: 6, dx: 0, dy: -6, pop: [12, 40],
+    // shown travelling right (+x), like the puffers: the upper of the two ships a
+    // horizontal domino splits into, turned a quarter turn clockwise (see tests)
+    rle: 'x = 13, y = 8, rule = B2/S0\nobo$7bobo$obo7bo$8bo3bo$8bo3bo$obo7bo$7bobo$obo!',
+    kind: 'ship', period: 6, dx: 6, dy: 0, pop: [12, 40],
     note: 'The emblem of the Live Free or Die universe: a light-speed ship that changes shape over six generations, trailing a large spark. A single domino splits into two of them flying apart.',
   },
 ];

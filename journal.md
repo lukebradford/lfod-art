@@ -159,3 +159,9 @@ LFoD field over the site's lifetime.
   `tests/site.test.mjs` checks that every module in `site/js` is in the import map,
   so a new module can't silently skip cache busting. `wakes()` also returns early if
   its container is missing.
+- **Ships face right (owner's suggestion)**: the moon and free ship cards now travel
+  in +x, matching the puffers, so everything that moves on the page heads the same way.
+  The moon's RLE is now exactly the glossary's; the domino test turns the free ship
+  back a quarter turn to compare it with the upper ship a horizontal domino produces.
+  Convention from here on: show moving objects travelling right unless a piece needs
+  otherwise.

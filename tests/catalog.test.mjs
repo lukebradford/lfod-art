@@ -34,7 +34,9 @@ test('every ship in the catalog travels at the speed of light (one cell per gene
 });
 
 test('a domino splits into exactly two free ships flying apart', () => {
-  const ship = Pattern.fromRLE(byId.freeship.rle);
+  // the catalog shows the ship flying right; turn it a quarter turn back so it flies up
+  const ship = Pattern.fromCells(Pattern.fromRLE(byId.freeship.rle).cells().map(([x, y]) => [y, -x]));
+  assert.deepEqual(classify(ship), { kind: 'ship', period: 6, dx: 0, dy: -6 });
   // find the first generation where the upper half is a free ship (in some phase)
   const phases = [ship];
   for (let i = 1; i < 6; i++) phases.push(phases[i - 1].next());
