@@ -25,7 +25,8 @@
   "./js/stage.js": "./js/stage.js?v=dev",
   "./js/catalog.js": "./js/catalog.js?v=dev",
   "./js/collisions.js": "./js/collisions.js?v=dev",
-  "./js/diamonds.js": "./js/diamonds.js?v=dev"
+  "./js/diamonds.js": "./js/diamonds.js?v=dev",
+  "./js/four.js": "./js/four.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -118,6 +119,18 @@
     <p>Of the <span class="n-triples">31</span> ways to place three cells close enough to meet, <span class="n-triples-boom">21</span> explode. Here are all of them, growing together from generation 0 at one scale. One rule, one speed limit, and no two alike. Tap one to watch it large.</p>
     <div class="wall" id="wall"></div>
     <p class="aside">“Close enough to meet” means every cell is within two of another, so they share a neighbour; rotations and reflections count once. The other ten three-cell placements die out or settle into a few small objects. The view above zooms out by halves as the diamond grows, so every cell stays a whole number of pixels, and it stops once the diamond fills the frame; the explosion itself never stops. Each frame is computed exactly on an unbounded plane by a bit-packed engine (32 cells per machine word), which is tested cell for cell against the one that draws everything else. The counts, the fates, the speeds and the density are all checked by tests.</p>
+  </section>
+
+  <section class="four" aria-labelledby="four-h">
+    <div class="wall-head">
+      <h2 id="four-h">Four cells</h2>
+      <span class="strip-gen" id="four-gen-wrap">gen <b id="four-gen">0</b></span>
+    </div>
+    <p class="lede">Add one more cell and there are <span class="n-quads">430</span> ways to place four close enough to meet. <span class="n-quads-boom">360</span> of them explode. Of the rest, <span class="n-vanish">26</span> simply vanish and <span class="n-settle">44</span> settle into something that lasts. Here are all <span class="n-settle">44</span>, from generation 0.</p>
+    <div class="fwall" id="fwall"></div>
+    <p>Four are already what they will be: the moon, the only four cells that already fly, and three oscillators of period four, the anchor, the lever and the radar. One other placement makes a moon of its own, throwing off two dots as it goes. Seven part into two free ships flying apart, as the two-cell domino does (one of them leaves four checkers as well). The other <span class="n-debris">29</span> leave nothing but dots and checkers: a dot is a cell alone, and a checker is two cells taking turns.</p>
+    <div class="vanish" id="vanish" role="list" aria-label="The four-cell placements that vanish, by the generation they are gone"></div>
+    <p class="aside">The more cells, the less often there is peace: one pair in <span class="n-pairs">5</span> explodes, <span class="n-triples-boom">21</span> of <span class="n-triples">31</span> triples, and <span class="n-quads">430</span> placements of four leave <span class="n-quads-calm">70</span> that don’t. Each tile above runs exactly, on an unbounded plane, for forty generations; whatever flies out of its frame keeps flying. A caption turns dark at the generation it becomes true. Which objects each placement leaves, the generation it settles by, that the pieces never meet again, and the count of every case are all checked by tests that enumerate the placements independently of this page.</p>
   </section>
 </main>
 

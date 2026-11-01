@@ -1,8 +1,9 @@
 import { Pattern, Field, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
 import { Stage, Clock, reducedMotion, wake, paintField } from './stage.js';
-import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence } from './collisions.js';
+import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence, phrase } from './collisions.js';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
+import { QUADS, SETTLE, VANISH } from './four.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -579,15 +580,8 @@ function wall(big) {
     b.className = 'tile';
     const desc = `three cells at ${cells.map(([x, y]) => `(${x}, ${y})`).join(', ')}`;
     b.setAttribute('aria-label', `Seed ${i + 1}: ${desc}. Show it large.`);
-    b.innerHTML = '<canvas aria-hidden="true"></canvas><span class="glyph" aria-hidden="true"></span>';
-    const glyph = b.querySelector('.glyph');
-    const gw = Math.max(...cells.map((c) => c[0])) + 1, gh = Math.max(...cells.map((c) => c[1])) + 1;
-    glyph.style.setProperty('--gw', gw); glyph.style.setProperty('--gh', gh);
-    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
-      const c = document.createElement('i');
-      if (cells.some(([a, d]) => a === x && d === y)) c.className = 'on';
-      glyph.append(c);
-    }
+    b.innerHTML = '<canvas aria-hidden="true"></canvas>';
+    b.append(glyph(cells));
     host.append(b);
     const p = seedPattern(cells);
     const t = { cells, stage: new Stage(b.querySelector('canvas')), p, centre: seedCentre(p), f: null, b };
@@ -639,6 +633,122 @@ function wall(big) {
   reset();
 }
 
+// ---------------------------------------------------------------------------
+// Four cells: every non-exploding placement of four cells (four.js, all tested). The
+// 44 that settle play together from generation 0 for FOUR_RUN generations, each on an
+// unbounded plane; a caption darkens at the generation it becomes true. The 26 that
+// vanish are listed as glyphs, grouped by the generation they are gone.
+const FOUR_RUN = 40;
+
+function glyph(cells, cls = 'glyph') {
+  const g = document.createElement('span');
+  g.className = cls;
+  g.setAttribute('aria-hidden', 'true');
+  const gw = Math.max(...cells.map((c) => c[0])) + 1, gh = Math.max(...cells.map((c) => c[1])) + 1;
+  g.style.setProperty('--gw', gw); g.style.setProperty('--gh', gh);
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+    const c = document.createElement('i');
+    if (cells.some(([a, d]) => a === x && d === y)) c.className = 'on';
+    g.append(c);
+  }
+  return g;
+}
+
+function four() {
+  const host = $('#fwall');
+  if (!host) return;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v; };
+  const outcomes = SETTLE.map(([, s]) => parseOutcome(s));
+  fill('.n-quads', QUADS.placements);
+  fill('.n-quads-boom', QUADS.explode);
+  fill('.n-quads-calm', QUADS.placements - QUADS.explode);
+  fill('.n-settle', SETTLE.length);
+  fill('.n-vanish', VANISH.length);
+  fill('.n-debris', outcomes.filter((o) => Object.keys(o.objects).every((k) => k === 'dot' || k === 'checker')).length);
+  const genEl = $('#four-gen');
+
+  const tiles = SETTLE.map(([cells], i) => {
+    const o = outcomes[i];
+    const fig = document.createElement('figure');
+    fig.className = 'ftile';
+    const words = phrase(o.objects);
+    const at = o.at === 0 ? 'from the start' : `by gen ${o.at}`;
+    fig.innerHTML = '<div class="ftile-stage"><canvas role="img"></canvas></div><figcaption><span></span><small></small></figcaption>';
+    fig.querySelector('.ftile-stage').append(glyph(cells));
+    fig.querySelector('figcaption span').textContent = words;
+    fig.querySelector('figcaption small').textContent = at;
+    const desc = cells.map(([x, y]) => `(${x}, ${y})`).join(', ');
+    fig.querySelector('canvas').setAttribute('aria-label', `Four cells at ${desc}: ${words}, ${at}.`);
+    host.append(fig);
+    const p = Pattern.fromCells(cells);
+    return { fig, o, p0: p, cur: p, prev: null, centre: seedCentre(p), stage: new Stage(fig.querySelector('canvas')) };
+  });
+
+  // the ones that vanish, grouped by the generation they are gone
+  const van = $('#vanish');
+  const byGen = new Map();
+  for (const [cells, at] of VANISH) { if (!byGen.has(at)) byGen.set(at, []); byGen.get(at).push(cells); }
+  for (const [at, list] of byGen) {
+    const grp = document.createElement('div');
+    grp.className = 'vgroup';
+    grp.setAttribute('role', 'listitem');
+    grp.setAttribute('aria-label', `${list.length} gone by generation ${at}`);
+    const lab = document.createElement('span');
+    lab.className = 'vlabel';
+    lab.textContent = `gone by gen ${at}`;
+    lab.setAttribute('aria-hidden', 'true');
+    grp.append(lab);
+    for (const cells of list) grp.append(glyph(cells, 'glyph vglyph'));
+    van.append(grp);
+  }
+  const vhead = document.createElement('p');
+  vhead.className = 'vhead';
+  vhead.textContent = `And the ${VANISH.length} that vanish:`;
+  van.before(vhead);
+
+  let cs = 4, gen = 0;
+  const still = () => reducedMotion.matches && !clock.playing;
+  function draw(t) {
+    const { W, H } = t.stage;
+    t.stage.draw(t.cur, t.prev, cs, Math.round(W / 2 - t.centre[0] * cs), Math.round(H / 2 - t.centre[1] * cs));
+    t.fig.classList.toggle('done', t.cur.gen >= t.o.at);
+  }
+  function reset() {
+    cs = Math.max(2, Math.floor(tiles[0].stage.W / 15));
+    gen = 0;
+    for (const t of tiles) {
+      t.cur = t.p0; t.prev = null;
+      // reduced motion: a still picture of each tile at the moment its caption is true
+      if (still()) for (let g = 0; g < t.o.at; g++) { t.prev = t.cur; t.cur = t.cur.next(); }
+      draw(t);
+    }
+    genEl.parentElement.hidden = still();
+    genEl.textContent = gen;
+  }
+  const clock = new Clock(host, 8, () => {
+    if (gen >= FOUR_RUN) { reset(); clock.hold = 500; return; }
+    gen++;
+    for (const t of tiles) { t.prev = t.cur; t.cur = t.cur.next(); draw(t); }
+    genEl.textContent = gen;
+    if (gen >= FOUR_RUN) clock.hold = 2600;
+  });
+  host.addEventListener('click', () => {
+    const wasStill = still();
+    clock.setPlaying(!clock.playing);
+    if (wasStill) reset(); // from the still picture, play from generation 0
+  });
+  let pending = 0;
+  for (const t of tiles) t.stage.onresize = () => {
+    // all tiles resize together; redraw once they have
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(() => {
+      cs = Math.max(2, Math.floor(tiles[0].stage.W / 15));
+      for (const o of tiles) draw(o);
+    });
+  };
+  reset();
+}
+
 hero();
 laws();
 parting();
@@ -646,4 +756,5 @@ for (const e of CATALOG) card(e);
 wakes();
 collisions();
 wall(diamonds());
+four();
 reducedMotion.addEventListener?.('change', wake);

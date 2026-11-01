@@ -2,41 +2,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Pattern, Field, classify } from '../site/js/lfod.js';
+import { placements, canon, norm } from './objects.mjs';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE, DENSITY } from '../site/js/diamonds.js';
 
-// --- enumeration, independent of the site's list --------------------------------
-const SYM = [
-  ([x, y]) => [x, y], ([x, y]) => [-x, y], ([x, y]) => [x, -y], ([x, y]) => [-x, -y],
-  ([x, y]) => [y, x], ([x, y]) => [-y, x], ([x, y]) => [y, -x], ([x, y]) => [-y, -x],
-];
-const norm = (cells) => {
-  const mx = Math.min(...cells.map((c) => c[0])), my = Math.min(...cells.map((c) => c[1]));
-  return cells.map(([x, y]) => [x - mx, y - my]).sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-};
-const canon = (cells) => SYM.map((t) => JSON.stringify(norm(cells.map(t)))).sort()[0];
-const near = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1])) <= 2;
-function interacting(cells) {
-  const seen = new Set([0]), stack = [0];
-  while (stack.length) {
-    const i = stack.pop();
-    cells.forEach((c, j) => { if (!seen.has(j) && near(cells[i], c)) { seen.add(j); stack.push(j); } });
-  }
-  return seen.size === cells.length;
-}
-// every set of n cells, each within two cells of another, up to rotation and reflection
-function placements(n) {
-  // brute force over a box big enough for any such set (span at most 2(n - 1))
-  const S = 2 * (n - 1) + 1, out = new Map();
-  const pick = (start, cells) => {
-    if (cells.length === n) {
-      if (cells.some((c) => c[0] === 0) && cells.some((c) => c[1] === 0) && interacting(cells)) out.set(canon(cells), JSON.parse(canon(cells)));
-      return;
-    }
-    for (let i = start; i < S * S; i++) pick(i + 1, [...cells, [i % S, Math.floor(i / S)]]);
-  };
-  pick(0, []);
-  return [...out.values()];
-}
+// enumeration, independent of the site's list (tests/objects.mjs)
 
 // The same standard as the collisions: more than 4000 cells at generation 150, and the
 // bounding box still growing by at least 80 cells each way over the next 50.

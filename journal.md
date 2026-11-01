@@ -43,6 +43,13 @@ universe at 16 px per cell and at half a pixel per cell, and a wall of all 21
 three-cell explosions, no two alike. A bit-packed engine (`Field`) now makes
 million-cell fields cheap.
 
+Session 5 found the fifth: **the census**. With four cells there are few enough
+beginnings to show every one that doesn't explode, so the page can say not just "most
+things explode" but exactly which don't, and what they become. Peace is rare and
+getting rarer: 4 of 5 pairs, 10 of 31 triples, 70 of 430 quadruples. What survives is
+almost all solitude (dots) and the smallest company (checkers), plus the moon, the
+three four-cell p4 oscillators and seven pairs of free ships.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -71,8 +78,17 @@ LFoD field over the site's lifetime.
   tips?) and test it before naming them on the site.
 - **Glossary pass**: before naming anything new, search `glossary.json` (and its
   images, for entries without RLE) — evil eyes was there all along.
-- **Four cells**: enumerate the four-cell placements (a few hundred) and find the
-  rare ones that do *not* explode. Which still lives, oscillators and ships appear?
+- **Five cells**: the same census one size up (thousands of placements; the
+  explosion test is the slow part, so cull with a cheap early-growth check first and
+  confirm with the real one). Does anything new appear: the ant, a monster, a puffer?
+  If the survivors are too many for a wall, show only the ones that make something
+  other than dots and checkers, and count the rest.
+- **Names from the glossary pictures**: the T-tetromino (a four-cell placement that
+  vanishes here, "a common predecessor of the plus") and snake eyes ("the smallest
+  pattern that dies", two cells) have pictures but no RLE. Decode them, as was done
+  for evil eyes, before naming them on the page.
+- **Four-cell tiles, larger**: tapping a four-cell tile could play it large, as the
+  three-cell wall does with the Diamonds stage.
 - **Anchor track periods**: the glossary lists the first iterations' periods as
   12, 28, 124, 124, 252, 60. Extending the two-slot track by adding dot pairs 4
   cells apart gives 12, 28, 28, 124, 252, 60, 60 in our engine, so the glossary's
@@ -269,3 +285,27 @@ LFoD field over the site's lifetime.
 - **OG image** is now evil eyes' diamond at gen 140 (`tools/og.mjs`), which reads well
   small and shows the red/ink colouring.
 - Measured in Chrome at 1400 px wide: wall and stage both hold 120 fps (8.3 ms frames).
+
+### 2026-11-01: Session 5, four cells
+- **New section, "Four cells"**: every way to place four cells close enough to meet
+  (430, up to symmetry). 360 explode. The other 70 are all on the page: the 44 that
+  settle play together from generation 0 in a wall of small tiles (11 across on
+  desktop, 4 on phones), each captioned with what it becomes and when, the caption
+  darkening at the generation it becomes true; the 26 that vanish are listed as seed
+  glyphs, grouped by the generation they are gone (all within nine).
+- **Findings** (all in `tests/four.test.mjs`, which enumerates independently):
+  - Four placements are already what they will be: the moon (the only four cells that
+    already fly), anchor, lever and radar. Each oscillator also has one other placement
+    that settles into it.
+  - One placement gives birth to a moon by generation 2, shedding two dots.
+  - Seven part into two free ships flying in opposite directions at c (one also
+    leaves four checkers, the same debris as two moons meeting one row off-centre).
+  - The other 29 become only dots and checkers. The latest to settle does so at gen 19.
+- **Shared test helper** `tests/objects.mjs`: the collision test's decomposition into
+  named objects (now also knowing anchor, lever, radar and ant) and the placement
+  enumeration, used by the collisions, diamonds and four-cell tests.
+- `phrase()` in `collisions.js` puts a tally into words ("a moon and two dots",
+  "an anchor"); first draft said "a anchor", caught in the browser and now tested.
+- Glossary check before naming anything: no four-cell placement here has its own
+  glossary name except the T-tetromino, which vanishes (consistent with its entry);
+  left unnamed until its picture is decoded.

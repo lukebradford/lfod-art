@@ -192,6 +192,37 @@ section > p { max-width: 40em; }
 .glyph i { background: transparent; }
 .glyph i.on { background: var(--ink); }
 
+/* four cells */
+.four .wall-head { margin-top: 0; }
+.four h2 { margin: 0; }
+.four .wall-head + .lede { margin-top: 14px; }
+.fwall {
+  display: grid; grid-template-columns: repeat(11, 1fr); gap: 1px; margin: 28px 0 24px;
+  background: var(--line); border: 1px solid var(--line); cursor: pointer;
+}
+.ftile { margin: 0; background: var(--paper); display: flex; flex-direction: column; }
+.ftile-stage { position: relative; aspect-ratio: 1 / 1; }
+.ftile-stage canvas { width: 100%; height: 100%; }
+.ftile .glyph { left: 4px; top: 4px; grid-template-columns: repeat(var(--gw), 3px); grid-auto-rows: 3px; }
+.ftile figcaption {
+  padding: 2px 6px 7px; font-size: 13px; line-height: 1.25; color: var(--muted);
+  min-height: 3.6em; transition: color 0.3s;
+}
+.ftile figcaption small { display: block; font: 10px/1.5 var(--mono); }
+.ftile.done figcaption { color: var(--ink); }
+.vhead { margin: 0 0 6px; }
+.vanish { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 0 0 28px; }
+.vgroup { display: flex; align-items: center; gap: 9px; }
+.vlabel { font: 11px/1.6 var(--mono); color: var(--muted); white-space: nowrap; }
+.vglyph { position: static; grid-template-columns: repeat(var(--gw), 4px); }
+.vglyph i.on { background: var(--muted); }
+@media (max-width: 980px) {
+  .fwall { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ftile figcaption { transition: none; }
+}
+
 footer {
   max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px;
   border-top: 1px solid var(--line); color: var(--muted); font-size: 15px;
@@ -225,6 +256,8 @@ footer p { max-width: 40em; margin: 0 0 10px; }
   .wall { grid-template-columns: repeat(3, 1fr); }
   .wall-head { margin-top: 36px; }
   .diamonds h3 { font-size: 17px; }
+  .fwall { grid-template-columns: repeat(4, 1fr); }
+  .ftile figcaption { font-size: 12px; padding: 2px 5px 6px; }
 }
 @media (min-width: 601px) and (max-width: 860px) {
   .collider { grid-template-columns: 1fr; }

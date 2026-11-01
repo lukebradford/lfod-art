@@ -77,7 +77,10 @@ export function allCollisions() {
   return out;
 }
 
-const NAMES = { dot: ['dot', 'dots'], checker: ['checker', 'checkers'], moon: ['moon', 'moons'], freeship: ['free ship', 'free ships'], monster: ['monster', 'monsters'] };
+const NAMES = {
+  dot: ['dot', 'dots'], checker: ['checker', 'checkers'], moon: ['moon', 'moons'], freeship: ['free ship', 'free ships'],
+  monster: ['monster', 'monsters'], anchor: ['anchor', 'anchors'], lever: ['lever', 'levers'], radar: ['radar', 'radars'],
+};
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
 
 // Short label for the atlas, e.g. "2 free ships, 4 checkers"
@@ -88,7 +91,14 @@ export function shortLabel(o) {
     .map(([k, n]) => `${n} ${NAMES[k][n > 1 ? 1 : 0]}`).join(', ');
 }
 
-const order = (k) => ['monster', 'freeship', 'moon', 'checker', 'dot'].indexOf(k);
+const order = (k) => ['monster', 'freeship', 'moon', 'anchor', 'lever', 'radar', 'checker', 'dot'].indexOf(k);
+
+// The objects in words, biggest first: "a moon and two dots"
+export function phrase(objects) {
+  const parts = Object.entries(objects).sort((a, b) => order(a[0]) - order(b[0]))
+    .map(([k, n]) => `${n === 1 ? (/^[aeiou]/.test(NAMES[k][0]) ? 'an' : 'a') : WORDS[n]} ${NAMES[k][n > 1 ? 1 : 0]}`);
+  return parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts.at(-1) : parts[0];
+}
 
 // A sentence describing the result. The special cases are tested facts: the monster
 // is the period-19 oscillator; the free ships fly up and down, at right angles to the
@@ -100,8 +110,5 @@ export function sentence(o, target) {
   if (keys.length === 1 && ob.monster === 1) return `The two moons fuse into a monster, the period-19 oscillator, by generation ${o.at}.`;
   if (ob.freeship === 2) return `Two free ships are born and fly off at right angles to the moons, up and down, leaving ${WORDS[ob.checker]} checkers behind. Separate by generation ${o.at}.`;
   if (target === 'checker' && keys.length === 1 && ob.checker === 1) return `The checker swallows the moon whole and is knocked four rows across. Done by generation ${o.at}.`;
-  const parts = Object.entries(ob).sort((a, b) => order(a[0]) - order(b[0]))
-    .map(([k, n]) => `${n === 1 ? 'a' : WORDS[n]} ${NAMES[k][n > 1 ? 1 : 0]}`);
-  const list = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts.at(-1) : parts[0];
-  return `It settles into ${list} by generation ${o.at}.`;
+  return `It settles into ${phrase(ob)} by generation ${o.at}.`;
 }
