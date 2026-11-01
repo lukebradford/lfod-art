@@ -4,17 +4,7 @@ import assert from 'node:assert/strict';
 import { Pattern, Field, classify } from '../site/js/lfod.js';
 import { QUADS, SETTLE, VANISH } from '../site/js/four.js';
 import { parseOutcome, phrase } from '../site/js/collisions.js';
-import { placements, canon, norm, decompose, tally } from './objects.mjs';
-
-// the same standard as the Diamonds and Collisions sections
-function explodes(cells) {
-  const f = Field.around(Pattern.fromCells(cells), 210);
-  for (let g = 0; g < 150; g++) f.step();
-  const a = f.bounds(), pop = f.population;
-  for (let g = 0; g < 50; g++) f.step();
-  const b = f.bounds();
-  return pop > 4000 && (b.x1 - b.x0) - (a.x1 - a.x0) >= 80 && (b.y1 - b.y0) - (a.y1 - a.y0) >= 80;
-}
+import { placements, canon, norm, decompose, tally, explodes } from './objects.mjs';
 
 const all = placements(4);
 const calm = all.filter((c) => !explodes(c));
@@ -53,10 +43,10 @@ test('the ones that vanish die exactly at the stated generation, all within nine
   assert.equal(Math.max(...VANISH.map((v) => v[1])), 9);
 });
 
-test('prose: four are already what they will be; the last to settle does so at gen 19', () => {
+test('prose: four are already what they will be; the last to settle does so at gen 17', () => {
   const now = SETTLE.filter((s) => parseOutcome(s[1]).at === 0).map((s) => Object.keys(parseOutcome(s[1]).objects)[0]).sort();
   assert.deepEqual(now, ['anchor', 'lever', 'moon', 'radar']);
-  assert.equal(Math.max(...SETTLE.map((s) => parseOutcome(s[1]).at)), 19);
+  assert.equal(Math.max(...SETTLE.map((s) => parseOutcome(s[1]).at)), 17);
   // tallies quoted in the prose
   const count = (pred) => SETTLE.filter((s) => pred(parseOutcome(s[1]).objects)).length;
   assert.equal(count((ob) => ob.moon), 2);

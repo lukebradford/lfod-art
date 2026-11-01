@@ -27,7 +27,8 @@
   "./js/collisions.js": "./js/collisions.js?v=dev",
   "./js/diamonds.js": "./js/diamonds.js?v=dev",
   "./js/four.js": "./js/four.js?v=dev",
-  "./js/share.js": "./js/share.js?v=dev"
+  "./js/share.js": "./js/share.js?v=dev",
+  "./js/five.js": "./js/five.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -106,7 +107,7 @@
   </section>
   <section class="diamonds" aria-labelledby="diamonds-h">
     <h2 id="diamonds-h">Diamonds</h2>
-    <p class="lede">Two cells side by side part into two ships. Touching at a corner, they blink forever. One cell apart, they vanish. But put them a knight’s move apart and they never stop. This pair is called <a href="https://lukebradford.github.io/lfod/glossary.html#evil-eyes">evil eyes</a>: of the <span class="n-pairs">5</span> ways to place two cells close enough to meet, it is the only one that explodes.</p>
+    <p class="lede">Two cells side by side part into two ships. Touching at a corner, they blink forever. One cell apart, they vanish; in a line they are <a href="https://lukebradford.github.io/lfod/glossary.html#snake-eyes">snake eyes</a>, which flash into a plus first. But put them a knight’s move apart and they never stop. This pair is called <a href="https://lukebradford.github.io/lfod/glossary.html#evil-eyes">evil eyes</a>: of the <span class="n-pairs">5</span> ways to place two cells close enough to meet, it is the only one that explodes.</p>
     <figure class="stage stage-diamond">
       <canvas id="diamond" role="img" aria-label="Evil eyes, two cells a knight’s move apart, exploding, simulated exactly."></canvas>
       <div class="stage-name"><span id="diamond-name">evil eyes</span><button type="button" id="diamond-back" hidden>back to evil eyes</button></div>
@@ -134,6 +135,31 @@
     <p>Four are already what they will be: the moon, the only four cells that already fly, and three oscillators of period four, the anchor, the lever and the radar. One other placement makes a moon of its own, throwing off two dots as it goes. Seven part into two free ships flying apart, as the two-cell domino does (one of them leaves four checkers as well). The other <span class="n-debris">29</span> leave nothing but dots and checkers: a dot is a cell alone, and a checker is two cells taking turns.</p>
     <div class="vanish" id="vanish" role="list" aria-label="The four-cell placements that vanish, by the generation they are gone"></div>
     <p class="aside">The more cells, the less often there is peace: one pair in <span class="n-pairs">5</span> explodes, <span class="n-triples-boom">21</span> of <span class="n-triples">31</span> triples, and <span class="n-quads">430</span> placements of four leave <span class="n-quads-calm">70</span> that don’t. Each tile above runs exactly, on an unbounded plane, for forty generations; whatever flies out of its frame keeps flying. A caption turns dark at the generation it becomes true. Which objects each placement leaves, the generation it settles by, that the pieces never meet again, and the count of every case are all checked by tests that enumerate the placements independently of this page.</p>
+  </section>
+
+  <section class="five" aria-labelledby="five-h">
+    <div class="wall-head">
+      <h2 id="five-h">Five cells</h2>
+      <span class="strip-gen" id="five-gen-wrap">gen <b id="five-gen">0</b></span>
+    </div>
+    <p class="lede">One more cell, and there are <span class="n-five">6,634</span> ways to place five close enough to meet. <span class="n-five-boom">6,151</span> explode, <span class="n-five-vanish">59</span> vanish and <span class="n-five-settle">415</span> settle. The last nine do something no smaller placement does: they grow forever and never explode. Each becomes a <a href="https://lukebradford.github.io/lfod/glossary.html#double-dot-puffer">double dot puffer</a>, which flies off at the speed of light and leaves a dot behind every two generations. One of them makes two, flying apart.</p>
+    <div class="pstrips" id="pstrips" role="list" aria-label="The nine five-cell placements that become double dot puffers, all from generation 0"></div>
+    <p>The double dot puffer is the smallest known puffer: six cells, in the form the glossary gives. These start with five and grow into it within <span class="n-five-puff-by">9</span> generations. In this universe a trail is a line of dots, each a cell alone, so each one lives forever.</p>
+
+    <div class="wall-head">
+      <h3>All <span class="n-five-calm">483</span></h3>
+    </div>
+    <p>Here is every five-cell placement that doesn’t explode, grouped by what it becomes. Tap one to watch it. Five cells bring the first <a href="https://lukebradford.github.io/lfod/glossary.html#ant">ant</a>, the period-6 oscillator found by Josh Ball, from a single placement. They also bring the first lone free ship: before now, free ships were only ever born in pairs flying apart. Among the ones that vanish is the <a href="https://lukebradford.github.io/lfod/glossary.html#plus">plus</a>, which the glossary calls the smallest object that dies in one generation.</p>
+    <div class="census">
+      <figure class="stage stage-player" id="player">
+        <canvas role="img" aria-label="A five-cell placement, simulated exactly."></canvas>
+        <div class="stage-name"><span id="player-name"></span></div>
+        <figcaption class="stage-gen">gen <b>0</b></figcaption>
+        <span class="player-result" id="player-result" aria-live="polite"></span>
+      </figure>
+      <div class="mosaic" id="mosaic"></div>
+    </div>
+    <p class="aside">Peace keeps getting rarer as cells are added. Four pairs in <span class="n-pairs">5</span> don’t explode, then <span class="n-triples-calm">10</span> triples in <span class="n-triples">31</span>, <span class="n-quads-calm">70</span> placements of four in <span class="n-quads">430</span>, and now <span class="n-five-calm">483</span> in <span class="n-five">6,634</span>, about one in fourteen. One explosion takes its time: at generation 40 it is still only 25 cells, and then it goes like all the rest. The puffers’ strips are drawn on a fixed plane, and each run lasts until the last puffer reaches the right edge. The pair’s puffers leave their strip halfway through, and like everything else here they keep going. Every count, fate and generation on this page is checked by tests that enumerate all <span class="n-five">6,634</span> placements independently of it and run each one. The puffers are checked over fifty periods: every cell they leave behind is a dot, and nothing else ever changes.</p>
   </section>
 </main>
 

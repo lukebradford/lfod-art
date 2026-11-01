@@ -5,6 +5,7 @@ import { encodeHash, decodeHash } from './share.js';
 import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence, phrase } from './collisions.js';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 import { QUADS, SETTLE, VANISH } from './four.js';
+import * as F5 from './five.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -839,7 +840,7 @@ function four() {
   }
   const vhead = document.createElement('p');
   vhead.className = 'vhead';
-  vhead.textContent = `And the ${VANISH.length} that vanish:`;
+  vhead.innerHTML = `And the ${VANISH.length} that vanish. Among them is the <a href="https://lukebradford.github.io/lfod/glossary.html#t-tetromino">T-tetromino</a>, gone by gen 3: it becomes snake eyes, which become a plus, which becomes nothing.`;
   van.before(vhead);
 
   let cs = 4, gen = 0;
@@ -885,6 +886,210 @@ function four() {
   reset();
 }
 
+// ---------------------------------------------------------------------------
+// Five cells (five.js, every line tested). Nine placements become double dot puffers:
+// each gets a strip on a fixed plane, one cell per generation, all stepping together
+// from generation 0 until the last single puffer reaches the right edge. Below, every
+// placement that doesn't explode, as a glyph grouped by fate; tapping one plays it.
+const cellsKey = (cells) => cells.map(([x, y]) => `(${x}, ${y})`).join(', ');
+
+// a glyph as one element: a cell-sized box whose shadows are the other cells
+function sglyph(cells) {
+  const g = document.createElement('span');
+  g.className = 'sg';
+  g.setAttribute('aria-hidden', 'true');
+  const w = Math.max(...cells.map((c) => c[0])) + 1, h = Math.max(...cells.map((c) => c[1])) + 1;
+  g.style.cssText = `--gw:${w};--gh:${h}`;
+  const i = document.createElement('i');
+  i.style.boxShadow = cells.map(([x, y]) => `calc(${x} * var(--u)) calc(${y} * var(--u)) 0 0 currentColor`).join(',');
+  g.append(i);
+  return g;
+}
+
+function fivePuffers() {
+  const host = $('#pstrips');
+  if (!host) return;
+  const genEl = $('#five-gen');
+  const strips = F5.PUFF.map(([enc, s]) => {
+    const cells = F5.cellsOf(enc), o = parseOutcome(s), pair = o.objects.puffer === 2;
+    const el = document.createElement('div');
+    el.className = 'pstrip';
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<figure class="stage"><canvas aria-hidden="true"></canvas></figure><span class="pcap"></span>';
+    el.prepend(sglyph(cells));
+    const words = pair ? `two puffers, by gen ${o.at}` : `a puffer, by gen ${o.at}`;
+    el.querySelector('.pcap').textContent = pair ? `two, by gen ${o.at}` : `by gen ${o.at}`;
+    el.setAttribute('aria-label', `Five cells at ${cellsKey(cells)}: ${words}.`);
+    host.append(el);
+    const p0 = Pattern.fromCells(cells);
+    // every row it occupies: from gen at on the puffer repeats every 4 generations and
+    // everything behind it is frozen (tested), so a dozen generations past `at` covers it
+    let lo = Infinity, hi = -Infinity, minx = Infinity;
+    for (let p = p0, g = 0; g <= o.at + 12; g++, p = p.next()) {
+      lo = Math.min(lo, p.y0); hi = Math.max(hi, p.y0 + p.h - 1); minx = Math.min(minx, p.x0);
+    }
+    return { el, o, pair, p0, cur: p0, prev: null, lo, hi, minx, stage: new Stage(el.querySelector('canvas')) };
+  });
+  const rows = Math.max(...strips.map((s) => s.hi - s.lo + 1)) + 2;
+  host.style.setProperty('--rows', rows);
+
+  let cs = 4, done = false;
+  const still = () => reducedMotion.matches && !clock.playing;
+  const front = (s) => s.cur.x0 + s.cur.w - 1;
+  function origin(s) {
+    const { W, H } = s.stage;
+    const ox = s.pair ? Math.round(W / 2 - (s.p0.x0 + s.p0.w / 2) * cs) : (1 - s.minx) * cs;
+    return [ox, Math.round(H / 2 - ((s.lo + s.hi + 1) / 2) * cs)];
+  }
+  const finished = () => strips.every((s) => s.pair || origin(s)[0] + (front(s) + 1) * cs >= s.stage.W);
+  function draw(s) {
+    const [ox, oy] = origin(s);
+    s.stage.draw(s.cur, s.prev, cs, ox, oy);
+    s.el.classList.toggle('done', s.cur.gen >= s.o.at);
+  }
+  function reset() {
+    const css = parseFloat(getComputedStyle(host).getPropertyValue('--cs')) || 4;
+    cs = Math.max(2, Math.floor(css * strips[0].stage.dpr));
+    for (const s of strips) { s.cur = s.p0; s.prev = null; }
+    done = false;
+    if (still()) { // reduced motion: a still picture of the end of the run
+      while (!finished()) for (const s of strips) { s.prev = s.cur; s.cur = s.cur.next(); }
+      done = true;
+    }
+    for (const s of strips) draw(s);
+    genEl.textContent = strips[0].cur.gen;
+  }
+  const clock = new Clock(host, 12, () => {
+    if (done) { reset(); clock.hold = 500; return; }
+    for (const s of strips) { s.prev = s.cur; s.cur = s.cur.next(); draw(s); }
+    genEl.textContent = strips[0].cur.gen;
+    if (finished()) { done = true; clock.hold = 2800; }
+  });
+  host.addEventListener('click', () => {
+    const wasStill = still();
+    clock.setPlaying(!clock.playing);
+    if (wasStill) reset();
+  });
+  let pending = 0;
+  for (const s of strips) s.stage.onresize = () => {
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(reset); // a new width is a new run, from generation 0
+  };
+  reset();
+}
+
+// The census: every five-cell placement that doesn't explode, grouped by fate.
+const FATES = [
+  ['double dot puffers', (ob) => ob.puffer],
+  ['an ant', (ob) => ob.ant],
+  ['one free ship', (ob) => ob.freeship === 1],
+  ['two free ships', (ob) => ob.freeship === 2],
+  ['a moon', (ob) => ob.moon],
+  ['an anchor', (ob) => ob.anchor],
+  ['a lever', (ob) => ob.lever],
+  ['a radar', (ob) => ob.radar],
+  ['only dots and checkers', (ob) => Object.keys(ob).length > 0],
+  ['nothing at all', () => true],
+];
+
+function fiveCensus() {
+  const host = $('#mosaic'), fig = $('#player');
+  if (!host || !fig) return;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v.toLocaleString('en'); };
+  const all = [
+    ...F5.PUFF.map(([c, s]) => ({ c, o: parseOutcome(s) })),
+    ...F5.SETTLE.map(([c, s]) => ({ c, o: parseOutcome(s) })),
+    ...F5.VANISH.map(([c, at]) => ({ c, o: { at, kind: 'nothing', objects: {} } })),
+  ];
+  fill('.n-five', F5.FIVE.placements);
+  fill('.n-five-boom', F5.FIVE.explode);
+  fill('.n-five-calm', all.length);
+  fill('.n-five-vanish', F5.VANISH.length);
+  fill('.n-five-settle', F5.SETTLE.length);
+  fill('.n-five-puff', F5.PUFF.length);
+  fill('.n-five-puff-by', Math.max(...F5.PUFF.map(([, s]) => parseOutcome(s).at)));
+  fill('.n-triples-calm', TRIPLES.placements - TRIPLES.explode);
+
+  const words = (o) => o.kind === 'nothing' ? `nothing, gone by gen ${o.at}`
+    : `${o.objects.puffer === 2 ? 'two double dot puffers flying apart' : phrase(o.objects)}, ${o.at === 0 ? 'from the start' : `by gen ${o.at}`}`;
+  const groups = FATES.map(([label]) => ({ label, items: [] }));
+  for (const it of all) groups[FATES.findIndex(([, f]) => f(it.o.objects))].items.push(it);
+  let chosen = null;
+  for (const g of groups) {
+    const row = document.createElement('div');
+    row.className = 'mgroup';
+    row.innerHTML = '<p class="mlabel"><span></span> <b></b></p><div class="mglyphs" role="group"></div>';
+    row.querySelector('.mlabel span').textContent = g.label;
+    row.querySelector('.mlabel b').textContent = g.items.length;
+    const box = row.querySelector('.mglyphs');
+    box.setAttribute('aria-label', `${g.items.length} that become ${g.label}`);
+    for (const it of g.items) {
+      const cells = F5.cellsOf(it.c);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mg';
+      b.setAttribute('aria-label', `Five cells at ${cellsKey(cells)}: ${words(it.o)}. Play it.`);
+      b.setAttribute('aria-pressed', 'false');
+      b.append(sglyph(cells));
+      b.onclick = () => choose(it, b, true);
+      it.b = b;
+      box.append(b);
+    }
+    host.append(row);
+  }
+
+  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
+  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#player-name'), resEl = $('#player-result');
+  let cur = null, prev = null, centre = [0, 0], end = 40, cs = 8, it = null;
+  const still = () => reducedMotion.matches && !clock.playing;
+  function choose(next, b, user) {
+    it = next;
+    if (chosen) chosen.setAttribute('aria-pressed', 'false');
+    chosen = b; b.setAttribute('aria-pressed', 'true');
+    const cells = F5.cellsOf(it.c);
+    nameEl.replaceChildren(sglyph(cells));
+    resEl.textContent = words(it.o);
+    canvas.setAttribute('aria-label', `Five cells at ${cellsKey(cells)}, simulated exactly: ${words(it.o)}.`);
+    const p = Pattern.fromCells(cells);
+    centre = seedCentre(p);
+    // long enough to see it settle, and for anything that flies to start on its way
+    const ob = it.o.objects;
+    end = it.o.kind === 'nothing' ? it.o.at + 8 : it.o.at + (ob.puffer || ob.freeship || ob.moon ? 36 : 20);
+    restart();
+    if (user) {
+      clock.hold = 0;
+      clock.setPlaying(true);
+      const r = fig.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+  }
+  function restart() {
+    cur = Pattern.fromCells(F5.cellsOf(it.c)); prev = null;
+    if (still()) while (cur.gen < it.o.at) { prev = cur; cur = cur.next(); }
+    draw();
+  }
+  function draw() {
+    const { W, H } = stage;
+    cs = Math.max(2, Math.floor(Math.min(W, H) / 27));
+    stage.draw(cur, prev, cs, Math.round(W / 2 - centre[0] * cs), Math.round(H / 2 - centre[1] * cs));
+    genEl.textContent = cur.gen;
+    fig.classList.toggle('done', cur.gen >= it.o.at);
+  }
+  const clock = new Clock(fig, 8, () => {
+    if (cur.gen >= end) { restart(); clock.hold = 500; return; }
+    prev = cur; cur = cur.next(); draw();
+    if (cur.gen >= end) clock.hold = 2400;
+  });
+  canvas.addEventListener('click', () => {
+    const wasStill = still();
+    clock.setPlaying(!clock.playing);
+    if (wasStill) restart();
+  });
+  stage.onresize = () => { if (it) draw(); };
+  const ant = groups[1].items[0];
+  choose(ant, ant.b, false);
+}
+
 hero();
 laws();
 parting();
@@ -893,4 +1098,6 @@ wakes();
 collisions();
 wall(diamonds());
 four();
+fivePuffers();
+fiveCensus();
 reducedMotion.addEventListener?.('change', wake);

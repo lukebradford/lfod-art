@@ -2,26 +2,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Pattern, Field, classify } from '../site/js/lfod.js';
-import { placements, canon, norm } from './objects.mjs';
+import { placements, canon, norm, explodes } from './objects.mjs';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE, DENSITY } from '../site/js/diamonds.js';
 
 // enumeration, independent of the site's list (tests/objects.mjs)
 
-// The same standard as the collisions: more than 4000 cells at generation 150, and the
-// bounding box still growing by at least 80 cells each way over the next 50.
-function explodes(cells) {
-  const f = Field.around(Pattern.fromCells(cells), 210);
-  for (let g = 0; g < 150; g++) f.step();
-  const a = f.bounds(), pop = f.population;
-  for (let g = 0; g < 50; g++) f.step();
-  const b = f.bounds();
-  return pop > 4000 && (b.x1 - b.x0) - (a.x1 - a.x0) >= 80 && (b.y1 - b.y0) - (a.y1 - a.y0) >= 80;
-}
 
 test('two cells: five placements, and only evil eyes (a knight\'s move apart) explodes', () => {
   const all = placements(2);
   assert.equal(all.length, PAIRS.placements);
-  const boom = all.filter(explodes);
+  const boom = all.filter((c) => explodes(c));
   assert.equal(boom.length, PAIRS.explode);
   assert.equal(canon(boom[0]), canon(EVIL_EYES));
   // a knight's move: one apart one way, two the other
@@ -54,7 +44,7 @@ test('two cells: the fates of the other four', () => {
 test('three cells: 31 placements, 21 explode, and they are exactly the site\'s list', () => {
   const all = placements(3);
   assert.equal(all.length, TRIPLES.placements);
-  const boom = all.filter(explodes).map(canon).sort();
+  const boom = all.filter((c) => explodes(c)).map(canon).sort();
   assert.equal(boom.length, TRIPLES.explode);
   assert.equal(THREE.length, TRIPLES.explode);
   assert.deepEqual(THREE.map(canon).sort(), boom);

@@ -24,7 +24,7 @@ export const TARGETS = [
     dy: [-5, 5],
     rows: {
       24: ['explodes', 'explodes', '12:checker×2', '12:dot×2', 'explodes', '12:nothing', 'explodes', '12:dot×2', '12:checker×2', 'explodes', 'explodes'],
-      25: ['explodes', 'explodes', '13:checker×2', '19:dot×4', '28:checker×4 freeship×2', '11:monster', '28:checker×4 freeship×2', '19:dot×4', '13:checker×2', 'explodes', 'explodes'],
+      25: ['explodes', 'explodes', '13:checker×2', '19:dot×4', '26:checker×4 freeship×2', '11:monster', '26:checker×4 freeship×2', '19:dot×4', '13:checker×2', 'explodes', 'explodes'],
     },
   },
   {
@@ -80,6 +80,7 @@ export function allCollisions() {
 const NAMES = {
   dot: ['dot', 'dots'], checker: ['checker', 'checkers'], moon: ['moon', 'moons'], freeship: ['free ship', 'free ships'],
   monster: ['monster', 'monsters'], anchor: ['anchor', 'anchors'], lever: ['lever', 'levers'], radar: ['radar', 'radars'],
+  ant: ['ant', 'ants'], puffer: ['double dot puffer', 'double dot puffers'],
 };
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
 
@@ -91,7 +92,7 @@ export function shortLabel(o) {
     .map(([k, n]) => `${n} ${NAMES[k][n > 1 ? 1 : 0]}`).join(', ');
 }
 
-const order = (k) => ['monster', 'freeship', 'moon', 'anchor', 'lever', 'radar', 'checker', 'dot'].indexOf(k);
+const order = (k) => ['puffer', 'monster', 'freeship', 'moon', 'anchor', 'lever', 'radar', 'ant', 'checker', 'dot'].indexOf(k);
 
 // The objects in words, biggest first: "a moon and two dots"
 export function phrase(objects) {

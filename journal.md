@@ -56,6 +56,13 @@ halves as an explosion grows and shows the whole diamond at one pixel per cell, 
 than a million live cells, exact. Every beginning you make is a link. The motif is
 the gift: the site's first piece made to be passed on.
 
+Session 7 found the seventh: **growth without explosion**. Five cells close together
+are the first size at which a placement can grow forever without exploding: nine of
+6,634 become the double dot puffer, and one of those makes two flying apart. The census
+became a mosaic, every non-exploding placement drawn as a glyph you can play, and it
+started using the glossary's smallest named things (plus, snake eyes, T-tetromino) as
+landmarks.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -85,15 +92,17 @@ LFoD field over the site's lifetime.
   tips?) and test it before naming them on the site.
 - **Glossary pass**: before naming anything new, search `glossary.json` (and its
   images, for entries without RLE) — evil eyes was there all along.
-- **Five cells**: the same census one size up (thousands of placements; the
-  explosion test is the slow part, so cull with a cheap early-growth check first and
-  confirm with the real one). Does anything new appear: the ant, a monster, a puffer?
-  If the survivors are too many for a wall, show only the ones that make something
-  other than dots and checkers, and count the rest.
-- **Names from the glossary pictures**: the T-tetromino (a four-cell placement that
-  vanishes here, "a common predecessor of the plus") and snake eyes ("the smallest
-  pattern that dies", two cells) have pictures but no RLE. Decode them, as was done
-  for evil eyes, before naming them on the page.
+- **Six cells**: about 100,000 placements by extension (`extend()` in
+  `tests/objects.mjs`). The explosion check costs ~6 ms each, so a full census is ~10
+  minutes: too slow for CI as is. Options: a much cheaper exact explosion criterion
+  (e.g. a box that has grown to 60x60 by generation 40 with >400 cells, if it can be
+  shown never to misfire on the five-cell list), or test a fixed random sample plus
+  every survivor. What's new at six: the monster? other puffers? a c/2 ship?
+- **Glyph to hero**: the census glyphs (and four-cell tiles) could offer "open in the
+  field above" using the hero's `#rle=` links.
+- **Dueling dominoes**: the glossary's four-cell reaction (two dominoes far apart)
+  whose ships meet and make p6 puffers, "the smallest pattern that exhibits infinite
+  linear growth". It sits naturally next to the five-cell puffers; verify and show it.
 - **Four-cell tiles, larger**: tapping a four-cell tile could play it large, as the
   three-cell wall does with the Diamonds stage.
 - **Anchor track periods**: the glossary lists the first iterations' periods as
@@ -351,3 +360,43 @@ LFoD field over the site's lifetime.
 - Local preview note: `python3 -m http.server` lets Chrome heuristically cache modules
   across edits (the `?v=dev` stamp doesn't change locally). Serve with
   `Cache-Control: no-store` when testing, or the page mixes old and new modules.
+
+### 2026-11-01: Session 7, five cells
+- **New section, "Five cells"**: all 6,634 placements of five cells close enough to meet.
+  6,151 explode, 59 vanish, 415 settle, and **9 become double dot puffers** (the
+  glossary's smallest known puffer, six cells). One makes two flying apart. Nine strips
+  play them together from generation 0 on a fixed plane until the last single puffer
+  reaches the right edge. Below, all 483 that don't explode are drawn as glyphs (one DOM
+  element each, cells as box-shadows), grouped by fate. Tapping one plays it in a sticky
+  player whose caption darkens when its outcome becomes true. It opens on the ant.
+- **Findings** (`tests/five.test.mjs`, which enumerates independently and runs all 6,634):
+  - Firsts at five cells: the ant (1 placement, gen 9), a lone free ship with a checker
+    and a dot (gen 15; with fewer cells free ships only come in pairs, which is tested on
+    every non-exploding placement of 2–4 cells), and puffers (by gen 4–9). 35 make two
+    free ships, 5 a moon, 22 an anchor, 4 a lever, 1 a radar, and 346 only dots and checkers.
+  - Every cell a puffer lays down is a dot, one per two generations, checked over 400
+    generations past settling. Nothing else changes (front repeats, wake frozen, body a
+    phase of the glossary's double dot puffer, for 50 periods).
+  - The plus (decoded from the glossary picture) is the only five-cell placement gone
+    after one generation. Snake eyes → plus → nothing, and T-tetromino → snake eyes, all
+    tested and now named in the Diamonds and Four cells text.
+  - One slow explosion: still 25 cells at gen 40; it fails the standard explosion check
+    measured from gen 150 (3,748 cells there, under the 4,000 bar), and passes it measured from gen 200. It is
+    listed in `LATE`.
+  - Peace keeps getting rarer: 4/5, 10/31, 70/430, 483/6,634.
+- **Decomposer bug fixed** (`tests/objects.mjs`): in two of its six phases a free ship's
+  spark sits alone. Stage one took it for a dot, so the split failed. A lone cell within 6
+  of an unidentified piece now goes with the pieces. Effect on the site: every free-ship
+  "by gen N" was 2 generations late. Four-cell values move 13→11, 16→14, 18→16, 19→17,
+  and moon vs moon at offset ±1 moves 28→26. The domino now splits at gen 12, which
+  matches "Two cells, parting". A regression test checks a free ship in all 6 phases and 8
+  orientations.
+- `tools/five.mjs` generates `site/js/five.js` (about 40 s). The test is the authority. The
+  shared `explodes(cells, from)` now lives in `tests/objects.mjs`; passing it directly
+  to `filter` would make the index the `from` argument, so the diamonds test wraps it.
+- `phrase()` knows ants and puffers.
+- Glossary check: the double dot puffer is the smallest *known* puffer (six cells).
+  These five-cell placements are predecessors, not smaller puffers. The page says so,
+  and only claims "no smaller *placement* (cells close enough to meet)" because the
+  glossary's dueling dominoes (four cells, far apart) also grow linearly.
+
