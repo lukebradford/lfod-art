@@ -78,8 +78,8 @@ section > p { max-width: 40em; }
 
 /* the rule diagrams */
 .laws { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px 32px; margin: 32px 0; }
-.law { display: flex; align-items: center; gap: 14px; }
-.law figcaption { font-size: 15px; line-height: 1.4; }
+.law { display: flex; align-items: center; gap: 14px; margin: 0; }
+.law figcaption { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; }
 .law figcaption b { display: block; font: 12px/1.6 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: normal; }
 .law .arrow { color: var(--muted); font-family: var(--mono); }
 .nb { display: grid; grid-template-columns: repeat(3, 14px); grid-template-rows: repeat(3, 14px); gap: 2px; }
@@ -119,6 +119,21 @@ section > p { max-width: 40em; }
 .card summary { cursor: pointer; color: var(--muted); font-family: var(--mono); font-size: 12px; }
 .card pre { font: 12px/1.4 var(--mono); background: #f2f0ea; padding: 8px 10px; overflow-x: auto; margin: 8px 0 0; user-select: all; }
 
+/* wakes */
+.strips { margin: 36px 0 28px; display: grid; gap: 30px; cursor: pointer; }
+.strip-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 8px; }
+.strip h3 { margin: 0; font-size: 20px; font-weight: normal; }
+.strip .facts { font: 12px/1.6 var(--mono); color: var(--muted); }
+.strip-gen { margin-left: auto; font: 11px/1.6 var(--mono); color: var(--muted); }
+.strip-gen b { font-weight: normal; color: var(--ink); font-variant-numeric: tabular-nums; display: inline-block; min-width: 4ch; text-align: right; }
+.strip .stage {
+  --cs: 6px;
+  height: calc(var(--rows) * var(--cs));
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.strip-note { margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: var(--muted); max-width: 44em; }
+.aside { font-size: 15px; color: var(--muted); }
+
 footer {
   max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px;
   border-top: 1px solid var(--line); color: var(--muted); font-size: 15px;
@@ -141,6 +156,10 @@ footer p { max-width: 40em; margin: 0 0 10px; }
   .card-body { padding: 10px 12px 16px; }
   .card h3 { font-size: 17px; }
   .card p { font-size: 14px; }
+  .strips { gap: 24px; }
+  .strip .stage { --cs: 4px; }
+  .strip h3 { font-size: 17px; }
+  .strip-note { font-size: 14px; }
 }
 @media (max-width: 380px) {
   .cards { grid-template-columns: 1fr; }

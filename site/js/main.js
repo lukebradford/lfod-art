@@ -1,5 +1,5 @@
 import { Pattern, nextState } from './lfod.js';
-import { CATALOG, byId } from './catalog.js';
+import { CATALOG, PUFFERS, byId } from './catalog.js';
 import { Stage, Clock, reducedMotion, wake } from './stage.js';
 
 const $ = (s) => document.querySelector(s);
@@ -251,8 +251,84 @@ function card(e) {
   canvas.parentElement.addEventListener('click', () => clock.setPlaying(!clock.playing));
 }
 
+// ---------------------------------------------------------------------------
+// Wakes: puffers, each in a strip whose camera moves with it at exactly one cell per
+// generation (the speed of light), so its frozen trail streams out to the left. One
+// clock steps every strip together. Each strip opens already full: it starts at the
+// generation whose trail just spans the strip, shown on its counter, and returns
+// there (counter visibly jumping back) after RUN generations.
+const RUN = 1800;
+const AHEAD = 3; // empty cells shown in front of the puffer (nothing can outrun c)
+
+function wakes() {
+  const host = $('#strips');
+  const strips = PUFFERS.map((e) => {
+    const rows = e.band[1] - e.band[0] + 1;
+    const el = document.createElement('article');
+    el.className = 'strip';
+    el.innerHTML = `
+      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-gen">gen <b>0</b></span></div>
+      <figure class="stage"><canvas role="img"></canvas></figure>
+      <p class="strip-note"></p>`;
+    const wake = Object.entries(e.wake).map(([k, v]) => `${v} ${k}${v > 1 ? 's' : ''}`).join(' and ');
+    const facts = `period ${e.period} · speed c · ${e.pop0} cells · leaves ${wake} every ${e.period} generations`;
+    el.querySelector('h3').textContent = e.name;
+    el.querySelector('.facts').textContent = facts;
+    const note = el.querySelector('.strip-note');
+    const a = document.createElement('a');
+    a.href = e.source.url; a.textContent = 'glossary'; a.rel = 'noopener';
+    note.append(e.note + ' ', a);
+    const canvas = el.querySelector('canvas');
+    canvas.setAttribute('aria-label', `${e.name}: ${facts}.`);
+    // one blank row above and below the band it can ever occupy
+    el.querySelector('.stage').style.setProperty('--rows', rows + 2);
+    host.append(el);
+
+    const s = { e, stage: new Stage(canvas), genEl: el.querySelector('.strip-gen b'), P0: Pattern.fromRLE(e.rle) };
+    s.front0 = s.P0.x0 + s.P0.w - 1;
+    s.cur = s.P0; s.prev = null; s.start = null; s.cs = 2;
+    s.layout = () => {
+      const { W, H, dpr } = s.stage;
+      const css = parseFloat(getComputedStyle(canvas.parentElement).getPropertyValue('--cs')) || 5;
+      s.cs = Math.max(2, Math.floor(css * dpr));
+      if (!s.start) {
+        // open with the trail spanning the strip
+        const g0 = Math.ceil(W / s.cs);
+        let p = s.P0, q = null;
+        for (let g = 0; g < g0; g++) { q = p; p = p.next(); }
+        s.start = { cur: p, prev: q };
+        s.cur = p; s.prev = q;
+      }
+      s.oy = Math.round((H - rows * s.cs) / 2 - e.band[0] * s.cs);
+      draw(s);
+    };
+    s.stage.onresize = s.layout;
+    return s;
+  });
+
+  function draw(s) {
+    const { W } = s.stage;
+    // the camera moves exactly one cell per generation with the puffer
+    const ox = W - (AHEAD + 1) * s.cs - (s.front0 + s.cur.gen) * s.cs;
+    s.stage.draw(s.cur, s.prev, s.cs, ox, s.oy);
+    s.genEl.textContent = s.cur.gen;
+  }
+
+  for (const s of strips) s.layout();
+  const clock = new Clock(host, 10, () => {
+    for (const s of strips) {
+      if (!s.start) continue;
+      if (s.cur.gen >= s.start.cur.gen + RUN) { s.cur = s.start.cur; s.prev = s.start.prev; }
+      else { s.prev = s.cur; s.cur = s.cur.next(); }
+      draw(s);
+    }
+  });
+  host.addEventListener('click', () => clock.setPlaying(!clock.playing));
+}
+
 hero();
 laws();
 parting();
 for (const e of CATALOG) card(e);
+wakes();
 reducedMotion.addEventListener?.('change', wake);

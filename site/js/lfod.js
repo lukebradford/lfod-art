@@ -7,6 +7,18 @@
 
 export const RULESTRING = 'B2/S0';
 
+// True for any spelling of this rule in an RLE header: B2/S0, S0/B2, b2/s0 (the LFoD
+// Universe collection writes s0/b2), or B/S-less "0/2" (survival/birth order).
+export function isLFoDRule(s) {
+  const t = s.trim().toUpperCase();
+  let birth, survival, m;
+  if ((m = t.match(/^B(\d*)\/S(\d*)$/))) [, birth, survival] = m;
+  else if ((m = t.match(/^S(\d*)\/B(\d*)$/))) [, survival, birth] = m;
+  else if ((m = t.match(/^(\d*)\/(\d*)$/))) [, survival, birth] = m;
+  else return false;
+  return birth === '2' && survival === '0';
+}
+
 // next state given current state (0/1) and live-neighbour count (0..8)
 export function nextState(alive, n) {
   return alive ? (n === 0 ? 1 : 0) : (n === 2 ? 1 : 0);
@@ -71,9 +83,8 @@ export class Pattern {
   static fromRLE(rle) {
     const lines = rle.split('\n').filter((l) => l.trim() && !l.startsWith('#'));
     const header = lines[0].startsWith('x') ? lines.shift() : '';
-    if (header && !/rule\s*=\s*B2\/S0\b/i.test(header) && /rule/i.test(header)) {
-      throw new Error('RLE is not for rule B2/S0: ' + header);
-    }
+    const rule = header.match(/rule\s*=\s*([^,\s]+)/i);
+    if (rule && !isLFoDRule(rule[1])) throw new Error('RLE is not for rule B2/S0: ' + header);
     const body = lines.join('');
     const cells = [];
     let x = 0, y = 0, run = '';

@@ -22,6 +22,12 @@ Design language (established in session 1):
 - Everything is simulated on an unbounded plane (`Pattern`), never a torus, unless a
   piece says otherwise. If something grows too big to follow, we stop and say so.
 
+Session 2 found a second motif: **the wake**. Puffers fly at c and leave behind
+almost nothing but dots, the universe's one still life, so their trails are rows of
+red (free) cells: lattices of solitude, a different weave for every period. Wide
+strips moving in lockstep at the speed of light became a new visual form for the site
+alongside square cards.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -44,6 +50,13 @@ LFoD field over the site's lifetime.
   cells apart gives 12, 28, 28, 124, 252, 60, 60 in our engine, so the glossary's
   iterations are probably built differently. Find the right construction (the
   collection's "Anchor track periods" file) before claiming the sequence.
+- **More wakes**: nickel puffer (p5) and radar puffer did not verify with the simple
+  front-zone test within 40 columns / 96 generations of settling; find out why (longer
+  transient? a rake, whose debris moves?) before showing them. Rakes (free rake,
+  nickel rake, tricycle rake, flip-flop rake) need a test that tracks the emitted ships.
+  Trailers (dot eater, anchor eater) that consume a wake would make a lovely strip.
+- **Wakes on the hero?** A puffer crossing the hero diagonally would be dramatic, but
+  the hero is the monster's place. Perhaps a second, wide hero mode.
 - Use more of the LFoD Universe collection (~/Dropbox/Code/lfod, data/glossary.json
   has 190 named entries, 143 with RLE): puffers, rakes, the moon laser, the anchor
   and ant stacks, the mantis, the six shooter. Every claim still gets a test.
@@ -51,6 +64,7 @@ LFoD field over the site's lifetime.
 - Shareable hero state: encode placed cells in the URL hash (no personal data).
 - Larger search: 5x5 all populations, 6x6 low population; look for slower ships
   (anything not at speed c?), longer periods, guns or puffers.
+- OG image: render a wake strip (it reads well small) instead of, or beside, the monster.
 - Hero: let a long press drag-place several cells; keyboard access for placing cells.
 - Accessibility: describe current hero state in text for screen readers.
 - Consider an RSS/“what grew this session” changelog page drawn from the journal.
@@ -104,3 +118,35 @@ LFoD field over the site's lifetime.
   Every card now links to its glossary entry, and tests check that each glossary
   RLE is a phase of the pattern shown. No provisional names remain. The glossary
   also confirms the free ship's minimum of 12 cells (LifeWiki's infobox says 4).
+
+### 2026-11-01: Session 2, wakes
+- **Bug fixed**: `Pattern.fromRLE` threw on `rule = s0/b2`, which is how the LFoD Universe
+  collection (the rule's canonical source) writes the rule. It now accepts any
+  spelling of B2/S0 (`B2/S0`, `S0/B2`, `b2/s0`, `0/2`) and still rejects other rules
+  (`B2/S`, `S2/B0`, `B23/S0`, ...), tested in both directions. Glossary RLEs are now
+  stored verbatim.
+- **New section, "Wakes"**: seven puffers from the glossary, one per period: tricycle
+  (p3, Josh Ball), double dot (p4, the smallest known puffer), revolver (p6), rake and
+  bake (p7, the only known p7 object), scale (p8), arrow (p9) and zodiac (p12, Josh
+  Ball). Each is a full-width strip whose camera moves with its puffer at exactly one
+  cell per generation; one clock steps every strip, so all the wakes stream past
+  together at the speed of light. Strips open with a trail already spanning the strip
+  (the counter shows the real generation), and restart at that state after 1800
+  generations (the counter jumps back). The whole trail is simulated, including the
+  part out of view. Gen counters sit in each strip's header so they never cover the puffer.
+- **What the tests prove** (`tests/puffers.test.mjs`, 31 tests): starting population
+  as the glossary states; for 50 consecutive periods the front advances exactly one
+  period's worth of cells, the rightmost `length` columns repeat exactly (shifted), and
+  everything behind is frozen; the wake contains exactly N new dots (and, for the
+  zodiac, 2 checkers) per period and nothing else; the rows ever occupied (used to
+  size each strip so nothing is cropped); and the rake and bake's backward moon (an
+  isolated moon at one generation, the same isolated moon one cell back at the next,
+  every period). Note for future sessions: a front-zone test with a tiny zone passes
+  trivially, because the two-cell nose alone moves at c. The frozen-wake condition is
+  what pins down the whole puffer.
+- Discovery while probing (scratch script, not a test): of the 43 glossary puffers
+  with RLEs, 41 passed a quick check (front shift plus a frozen wake for 30 periods, all
+  moving +x); nickel and radar did not. Of the seven shown, every wake is pure dots
+  except the zodiac's (dots and checkers).
+- Small fix: the rule diagrams' captions were squeezed to about 100 px by the default
+  `figure` margins; they now take the remaining width.

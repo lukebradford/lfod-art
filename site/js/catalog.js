@@ -126,3 +126,75 @@ export function decodeApgcode(code) {
   }
   return cells;
 }
+
+// ---------------------------------------------------------------------------
+// Puffers: travellers that leave a trail. Every one here moves at the speed of light
+// in +x, and everything it leaves behind is a dot (or, for the zodiac, dots and
+// checkers). RLEs are verbatim from the LFoD Universe glossary (which writes the rule
+// as s0/b2). tests/puffers.test.mjs checks every field by simulation:
+//   period, speed (+period cells in x per period), initial population,
+//   `settle` and `length` (from gen `settle` on, the rightmost `length` columns repeat
+//   exactly one period later, shifted by +period, and everything behind them is frozen),
+//   `wake` (what is left per period), and `band` (the rows ever occupied, in RLE
+//   coordinates, which the site uses to size each strip so nothing is cut off).
+export const PUFFERS = [
+  {
+    id: 'tricycle',
+    name: 'Tricycle puffer',
+    source: src('tricycle-puffer'),
+    credit: 'Josh Ball',
+    rle: 'x = 7, y = 18, rule = s0/b2\n2bo$bobo$bo2bo$bo3bo$3bo2bo$2b2o2bo2$2o$2b2o2bo$2b2o2bo$2o2$2b2o2bo$3bo2bo$bo3bo$bo2bo$bobo$2bo!',
+    period: 3, pop0: 34, settle: 0, length: 9, wake: { dot: 4 }, band: [-1, 18],
+    note: 'One of very few known objects of period 3. Discovered by Josh Ball.',
+  },
+  {
+    id: 'doubledot',
+    name: 'Double dot puffer',
+    source: src('double-dot-puffer'),
+    rle: 'x = 4, y = 5, rule = s0/b2\n2bo$3bo$o2bo$bo$o!',
+    period: 4, pop0: 6, settle: 0, length: 6, wake: { dot: 2 }, band: [-1, 5],
+    note: 'Six cells: the smallest known puffer, and a common one.',
+  },
+  {
+    id: 'revolver',
+    name: 'Revolver puffer',
+    source: src('revolver-puffer'),
+    rle: 'x = 20, y = 14, rule = s0/b2\n14bo$10b4obo$16bo$17bo$13b2obo2bo$obo3bo3bo5bo2bo$17bo$17bo$obo3bo3bo5bo2bo$13b2obo2bo$17bo$16bo$10b4obo$14bo!',
+    period: 6, pop0: 38, settle: 8, length: 20, wake: { dot: 2 }, band: [-1, 14],
+    note: 'The only known period-6 puffer that cannot be split into smaller ones.',
+  },
+  {
+    id: 'rakebake',
+    name: 'Rake and bake puffer',
+    source: src('rake-and-bake-puffer'),
+    rle: 'x = 4, y = 10, rule = s0/b2\n2bo$3bo$o2bo$bo$o$o$bo$o2bo$3bo$2bo!',
+    period: 7, pop0: 12, settle: 4, length: 13, wake: { dot: 4 }, band: [-1, 10],
+    backwardMoon: true,
+    note: 'The only known object of period 7. Every period it fires a moon backwards at the speed of light, which crashes into its own trail and rearranges it.',
+  },
+  {
+    id: 'scale',
+    name: 'Scale puffer',
+    source: src('scale-puffer'),
+    rle: 'x = 9, y = 15, rule = s0/b2\n3bo$4bo$5bo$6bo$8bo$2bo5bo$4bobo$o$4bobo$2bo5bo$8bo$6bo$5bo$4bo$3bo!',
+    period: 8, pop0: 19, settle: 0, length: 9, wake: { dot: 5 }, band: [-1, 15],
+    note: 'Named for its output, which lies in staggered rows like scales.',
+  },
+  {
+    id: 'arrow',
+    name: 'Arrow puffer',
+    source: src('arrow-puffer'),
+    rle: 'x = 8, y = 8, rule = s0/b2\n4bo$3bobo$4o2bo$7bo$7bo$4o2bo$3bobo$4bo!',
+    period: 9, pop0: 18, settle: 0, length: 10, wake: { dot: 4 }, band: [-1, 8],
+    note: 'One of only two known objects of period 9; the other, the long arrow puffer, works the same way.',
+  },
+  {
+    id: 'zodiac',
+    name: 'Zodiac puffer',
+    source: src('zodiac-puffer'),
+    credit: 'Josh Ball',
+    rle: 'x = 6, y = 22, rule = s0/b2\nbobo$4bo$4bo$3bo2$2bo$b2o$o2bo$5bo$2b2obo$o2$3bobo$5bo$2b2o$b2o$2bo2$o2bo$bo2bo$4bo$3bo!',
+    period: 12, pop0: 29, settle: 3, length: 12, wake: { dot: 4, checker: 2 }, band: [-1, 22],
+    note: 'The highest period of any known puffer or spaceship that cannot be split into smaller ones. Its wake is the only one here with checkers among the dots, blinking forever. Discovered by Josh Ball.',
+  },
+];
