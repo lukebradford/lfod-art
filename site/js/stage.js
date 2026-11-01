@@ -96,7 +96,10 @@ let running = false;
 
 function loop(t) {
   let any = false;
-  for (const c of clocks) if (c.tick(t)) any = true;
+  for (const c of clocks) {
+    // one failing animation must not freeze all the others: stop it, report, carry on
+    try { if (c.tick(t)) any = true; } catch (err) { c.playing = false; console.error(err); }
+  }
   if (any) requestAnimationFrame(loop);
   else running = false;
 }

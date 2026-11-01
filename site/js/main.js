@@ -1,6 +1,7 @@
 import { Pattern, Field, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
-import { Stage, Clock, reducedMotion, wake, paintField } from './stage.js';
+import { Stage, Clock, reducedMotion, wake, paintField, COLORS } from './stage.js';
+import { encodeHash, decodeHash } from './share.js';
 import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence, phrase } from './collisions.js';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 import { QUADS, SETTLE, VANISH } from './four.js';
@@ -8,55 +9,129 @@ import { QUADS, SETTLE, VANISH } from './four.js';
 const $ = (s) => document.querySelector(s);
 
 // ---------------------------------------------------------------------------
-// Hero: the monster (p19), live, on an unbounded plane. Tapping toggles a cell.
-// The whole pattern is always simulated exactly, including any part off screen.
-// If an explosion grows past MAX_AREA cells of bounding box, the simulation stops
-// and says so, rather than approximating.
-const MAX_AREA = 1_500_000;
+// Hero: the monster (p19), live, on an unbounded plane, on the bit-packed Field engine.
+// Tapping (or arrow keys and Enter) toggles a cell; every edit is a new beginning, so
+// the counter restarts at 0 and the address bar becomes a link to that beginning.
+// The field grows as the pattern does, so it stays exact on the plane, and the view
+// pulls back by halves (cells stay whole device pixels) to keep every live cell in
+// frame. Once a pattern overflows the frame both ways at one pixel per cell, or the
+// field would pass HERO_CAP cells, it stops and says so rather than approximate.
+const HERO_CAP = 48_000_000;
+const PAD = 4; // grow the field before live cells come this close to its edge
 
 function hero() {
   const canvas = $('#field');
   const stage = new Stage(canvas);
   const genEl = $('#gen'), popEl = $('#pop'), statusEl = $('#status');
-  const playBtn = $('#play'), hint = $('#hint');
+  const scaleWrap = $('#hero-scale-wrap'), scaleEl = $('#hero-scale');
+  const playBtn = $('#play'), shareBtn = $('#share'), hint = $('#hint');
 
-  const seed = () => {
+  const monster = () => {
     const p = Pattern.fromRLE(byId.monster.rle);
     // centre the monster's 16x13 hull on the origin
     return new Pattern(p.x0 - 2, p.y0 - 1, p.w, p.h, p.data, 0);
   };
-  let cur = seed(), prev = null, halted = false;
-  let cs = 1, ox = 0, oy = 0;
+  let shared = decodeHash(location.hash);
+  // what the first frame shows, and the box the opening zoom is sized for
+  const opening = () => shared
+    ? { p: shared, box: [Math.max(16, shared.w + 4), Math.max(13, shared.h + 4)], c: [shared.w / 2, shared.h / 2] }
+    : { p: monster(), box: [16, 13], c: [0, 0.5] };
 
-  function layout() {
+  let f = null, cs = 1, csTop = 1, cx = 0, cy = 0, halted = false, box = [16, 13];
+  let cursor = null; // keyboard cursor cell, while the canvas has keyboard focus
+
+  const topSize = () => {
     const { W, H } = stage;
-    const narrow = W / stage.dpr < 600;
-    const frac = narrow ? 0.66 : 0.5;
-    cs = Math.max(2, Math.floor(Math.min((W * frac) / 16, (H * frac) / 13)));
-    // hull spans x in [-8, 8), y in [-6, 7): centre it, slightly above middle
-    ox = Math.round(W / 2 - 0 * cs);
-    oy = Math.round(H * 0.47 - 0.5 * cs);
+    const frac = W / stage.dpr < 600 ? 0.66 : 0.5;
+    return Math.max(2, Math.floor(Math.min((W * frac) / box[0], (H * frac) / box[1])));
+  };
+  const ox = () => Math.round(stage.W / 2 - cx * cs);
+  const oy = () => Math.round(stage.H * 0.47 - cy * cs);
+  // how the live cells sit in the frame: [overflows horizontally, overflows vertically]
+  const overflow = (b) => {
+    const X = ox(), Y = oy();
+    return [b.x0 * cs + X < 0 || (b.x1 + 1) * cs + X > stage.W, b.y0 * cs + Y < 0 || (b.y1 + 1) * cs + Y > stage.H];
+  };
+
+  function begin() {
+    const o = opening();
+    box = o.box; [cx, cy] = o.c;
+    f = Field.around(o.p, 64);
+    csTop = cs = topSize();
+    halted = false;
+    setStatus('');
+    canvas.setAttribute('aria-label', shared
+      ? `An exact Live Free or Die simulation of a shared beginning of ${shared.population} cells. Tap, or use the arrow keys and Enter, to place cells.`
+      : 'An exact Live Free or Die simulation. A period-19 oscillator called the monster. Tap, or use the arrow keys and Enter, to place cells.');
+    shareBtn.hidden = !shared;
     draw();
   }
+
+  // grow the field so that every live cell, and (x, y) if given, is at least PAD from its edge
+  function room(x, y) {
+    const b = f.bounds();
+    let x0 = b ? b.x0 : x, x1 = b ? b.x1 : x, y0 = b ? b.y0 : y, y1 = b ? b.y1 : y;
+    if (x !== undefined) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    if (x0 === undefined) return true;
+    const l = PAD - (x0 - f.x0), r = PAD - (f.x0 + f.w - 1 - x1);
+    const t = PAD - (y0 - f.y0), btm = PAD - (f.y0 + f.h - 1 - y1);
+    if (l <= 0 && r <= 0 && t <= 0 && btm <= 0) return true;
+    // grow generously (half again) so this happens rarely
+    const gx = Math.max(64, f.w >> 1), gy = Math.max(64, f.h >> 1);
+    const L = l > 0 ? Math.max(l, gx) : 0, R = r > 0 ? Math.max(r, gx) : 0;
+    const T = t > 0 ? Math.max(t, gy) : 0, B = btm > 0 ? Math.max(btm, gy) : 0;
+    if ((f.w + L + R + 64) * (f.h + T + B) > HERO_CAP) return false;
+    f = f.expanded(L, T, R, B);
+    return true;
+  }
+
+  // zoom out by halves (recentring on the live cells) until they fit, if they can
+  function fit() {
+    const b = f.bounds();
+    if (!b) return true;
+    let [ovx, ovy] = overflow(b);
+    while ((ovx || ovy) && cs > 1) {
+      cs = Math.max(1, cs >> 1);
+      cx = (b.x0 + b.x1 + 1) / 2; cy = (b.y0 + b.y1 + 1) / 2;
+      [ovx, ovy] = overflow(b);
+    }
+    if (ovx || ovy) { cx = (b.x0 + b.x1 + 1) / 2; cy = (b.y0 + b.y1 + 1) / 2; [ovx, ovy] = overflow(b); }
+    if (cs < csTop) hint.classList.add('gone'); // the pattern needs the whole frame now
+    return !(ovx && ovy);
+  }
+
   function draw() {
-    stage.draw(cur, prev, cs, ox, oy);
-    genEl.textContent = cur.gen;
-    popEl.textContent = cur.population;
+    const X = ox(), Y = oy();
+    paintField(stage, f, cs, X, Y);
+    if (cursor) {
+      const { ctx, dpr } = stage, s = Math.max(cs, Math.round(10 * dpr)), off = (s - cs) / 2;
+      ctx.strokeStyle = COLORS.free;
+      ctx.lineWidth = Math.max(1, Math.round(1.5 * dpr));
+      ctx.strokeRect(X + cursor[0] * cs - off - 0.5, Y + cursor[1] * cs - off - 0.5, s + 1, s + 1);
+    }
+    genEl.textContent = f.gen;
+    popEl.textContent = f.population.toLocaleString('en');
+    const css = cs / stage.dpr;
+    scaleWrap.hidden = cs === csTop;
+    scaleEl.textContent = css >= 1 ? String(Math.round(css * 10) / 10) : '1/' + Math.round(1 / css);
+    // fewer generations per second while cells are big enough to follow one by one
+    clock.rate = css >= 8 ? 7 : css >= 4 ? 12 : css >= 2 ? 20 : 30;
   }
   function setStatus(s) { statusEl.textContent = s; }
+  function halt(msg) {
+    halted = true;
+    clock.setPlaying(false);
+    syncButton();
+    setStatus(msg);
+  }
 
   function step() {
     if (halted) return;
-    if ((cur.w + 2) * (cur.h + 2) > MAX_AREA) {
-      halted = true;
-      clock.setPlaying(false);
-      syncButton();
-      setStatus('too large to follow exactly; stopped');
-      return;
-    }
-    prev = cur;
-    cur = cur.next();
-    if (cur.population === 0 && prev.population > 0) setStatus('blank again');
+    if (!room()) { halt('too large to follow exactly; stopped'); return; }
+    const was = f.population;
+    f.step();
+    if (!fit()) { draw(); halt('still growing; it has filled the frame'); return; }
+    if (f.population === 0 && was > 0) setStatus('blank again');
     draw();
   }
 
@@ -70,26 +145,87 @@ function hero() {
   playBtn.onclick = () => { if (!halted) { clock.setPlaying(!clock.playing); syncButton(); } };
   $('#step').onclick = () => { clock.setPlaying(false); syncButton(); step(); };
   $('#restore').onclick = () => {
-    cur = seed(); prev = null; halted = false; setStatus('');
-    clock.setPlaying(!reducedMotion.matches); syncButton(); draw();
+    shared = null;
+    history.replaceState(null, '', location.pathname + location.search);
+    clock.setPlaying(!reducedMotion.matches); syncButton();
+    begin();
   };
+
+  // A new beginning: the cell toggled, the counter back to 0, the link updated.
+  function toggle(x, y) {
+    if (!room(x, y)) { setStatus('too large to follow exactly; stopped'); return; }
+    f.set(x, y, f.get(x, y) ? 0 : 1);
+    f.gen = 0;
+    halted = false;
+    setStatus('');
+    hint.classList.add('gone');
+    const h = encodeHash(f.toPattern());
+    history.replaceState(null, '', location.pathname + location.search + (h || ''));
+    shareBtn.hidden = !f.population;
+    shareBtn.dataset.big = h === null ? '1' : '';
+    draw();
+  }
 
   // 'click' rather than 'pointerdown' so that swiping to scroll on a phone never places cells
   canvas.addEventListener('click', (e) => {
     const r = canvas.getBoundingClientRect();
     const px = (e.clientX - r.left) * (stage.W / r.width);
     const py = (e.clientY - r.top) * (stage.H / r.height);
-    const x = Math.floor((px - ox) / cs), y = Math.floor((py - oy) / cs);
-    cur = cur.withCell(x, y, cur.get(x, y) ? 0 : 1);
-    prev = null;
-    halted = false;
-    setStatus('');
-    hint.classList.add('gone');
-    draw();
+    toggle(Math.floor((px - ox()) / cs), Math.floor((py - oy()) / cs));
   });
 
-  stage.onresize = layout;
-  layout();
+  // keyboard: arrows move a cursor, Enter or Space toggles the cell under it
+  canvas.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!d && e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    if (!cursor) cursor = [Math.floor(cx), Math.floor(cy)];
+    if (d) {
+      const n = e.shiftKey ? 8 : 1;
+      cursor = [cursor[0] + d[0] * n, cursor[1] + d[1] * n];
+      draw();
+    } else toggle(cursor[0], cursor[1]);
+  });
+  canvas.addEventListener('focus', () => {
+    if (canvas.matches(':focus-visible') && !cursor) { cursor = [Math.floor(cx), Math.floor(cy)]; draw(); }
+  });
+  canvas.addEventListener('blur', () => { if (cursor) { cursor = null; draw(); } });
+
+  shareBtn.onclick = async () => {
+    if (shareBtn.dataset.big) { setStatus('too large to share as a link'); return; }
+    const url = location.href;
+    try {
+      if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+        await navigator.share({ title: 'Live Free or Die · B2/S0', url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setStatus('link copied');
+    } catch (err) {
+      if (err?.name !== 'AbortError') setStatus('copy the address bar to share');
+    }
+  };
+
+  addEventListener('hashchange', () => {
+    const p = decodeHash(location.hash);
+    if (!p) return;
+    shared = p;
+    hint.classList.add('gone');
+    begin();
+  });
+
+  stage.onresize = () => {
+    if (!f) return;
+    const top = topSize();
+    if (cs === csTop) cs = top; else cs = Math.min(cs, top);
+    csTop = top;
+    fit();
+    draw();
+  };
+  if (shared) {
+    hint.textContent = 'A shared beginning. Restore brings back the monster.';
+  }
+  begin();
 }
 
 // ---------------------------------------------------------------------------

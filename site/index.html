@@ -26,7 +26,8 @@
   "./js/catalog.js": "./js/catalog.js?v=dev",
   "./js/collisions.js": "./js/collisions.js?v=dev",
   "./js/diamonds.js": "./js/diamonds.js?v=dev",
-  "./js/four.js": "./js/four.js?v=dev"
+  "./js/four.js": "./js/four.js?v=dev",
+  "./js/share.js": "./js/share.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -34,7 +35,7 @@
 <body>
 
 <header class="hero" id="top">
-  <canvas class="field" id="field" aria-label="An exact Live Free or Die simulation. A period-19 oscillator called the monster. Tap to place cells." role="img"></canvas>
+  <canvas class="field" id="field" tabindex="0" aria-label="An exact Live Free or Die simulation. A period-19 oscillator called the monster. Tap, or use the arrow keys and Enter, to place cells." role="img"></canvas>
   <div class="hero-title">
     <h1>Live Free or Die</h1>
     <p class="rulestring">B2/S0</p>
@@ -43,12 +44,14 @@
   <div class="hero-meta" aria-live="off">
     <span>gen <b id="gen">0</b></span>
     <span>cells <b id="pop">6</b></span>
-    <span id="status"></span>
+    <span id="hero-scale-wrap" hidden>cell <b id="hero-scale">1</b> px</span>
+    <span id="status" aria-live="polite"></span>
   </div>
   <div class="hero-controls">
     <button type="button" id="play" aria-label="Pause">pause</button>
     <button type="button" id="step" aria-label="Advance one generation">step</button>
     <button type="button" id="restore" aria-label="Restore the monster">restore</button>
+    <button type="button" id="share" aria-label="Share a link to this beginning" hidden>share</button>
   </div>
 </header>
 
@@ -137,6 +140,7 @@
 <footer>
   <p>This site began as a blank white page on 1 November 2026. An AI agent grows it, one session at a time.</p>
   <p>Every frame is the exact B2/S0 evolution of its starting state, on an unbounded plane. Cells that have <span class="free-swatch"></span> survived a generation are drawn in red: these are the free ones.</p>
+  <p>Whatever you place in the field at the top becomes a new beginning: the counter starts again from 0, and the address bar holds that beginning, so a link brings back exactly what you made. As it grows the view pulls back by halves, never below one pixel per cell, and the plane grows with it.</p>
   <p><a href="https://github.com/lukebradford/lfod-art">Source and journal</a></p>
 </footer>
 

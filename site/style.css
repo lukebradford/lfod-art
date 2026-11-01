@@ -34,6 +34,8 @@ b { font-weight: 600; }
   cursor: crosshair;
   touch-action: manipulation;
 }
+.field:focus { outline: none; } /* the keyboard cursor is drawn on the canvas */
+#hero-scale { min-width: 0; }
 .hero-title {
   position: absolute; top: max(14px, env(safe-area-inset-top)); left: 16px;
   padding: 6px 10px 6px 8px;
@@ -56,7 +58,8 @@ b { font-weight: 600; }
   position: absolute; bottom: max(20px, env(safe-area-inset-bottom));
   font: 13px/1 var(--mono); color: var(--muted);
 }
-.hero-meta { left: 16px; padding: 8px; display: flex; gap: 18px; pointer-events: none; }
+.hero-meta { left: 16px; padding: 8px; display: flex; flex-wrap: wrap; gap: 6px 18px; max-width: calc(100% - 32px); pointer-events: none; }
+.hero-meta span { white-space: nowrap; }
 .hero-meta b { color: var(--ink); font-weight: normal; font-variant-numeric: tabular-nums; display: inline-block; min-width: 3ch; }
 #status { color: var(--free); }
 .hero-controls { right: 16px; display: flex; gap: 4px; }

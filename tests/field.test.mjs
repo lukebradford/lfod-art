@@ -103,3 +103,52 @@ test('an empty Field stays empty', () => {
   assert.equal(f.population, 0);
   assert.equal(f.gen, 1);
 });
+
+test('Field.expanded keeps both generations, and stepping on stays exact', () => {
+  // the hero grows its field whenever live cells come near the edge; check that a field
+  // grown again and again, by odd amounts on every side, never drifts from Pattern
+  let p = soup(11, 10, 0.35, 5, -7);
+  let f = Field.around(p, 3);
+  const sizes = [[1, 2, 3, 4], [33, 0, 0, 7], [0, 5, 64, 0], [40, 40, 40, 40], [0, 0, 0, 1]];
+  let grows = 0;
+  for (let g = 1; g <= 220; g++) {
+    const b = f.bounds();
+    if (b && (b.x0 - f.x0 < 3 || b.y0 - f.y0 < 3 || f.x0 + f.w - 1 - b.x1 < 3 || f.y0 + f.h - 1 - b.y1 < 3)) {
+      const before = f.toPattern();
+      f = f.expanded(...sizes[grows++ % sizes.length].map((n) => n + 3));
+      same(f, before, `after growth ${grows}`);
+      assert.equal(f.w % 32, 0);
+    }
+    const q = p.next();
+    assert.equal(f.step(), true, `gen ${g} must be exact`);
+    p = q;
+    same(f, p, `soup gen ${g}`);
+  }
+  assert.ok(grows >= 5, `grew ${grows} times`);
+});
+
+test('Field.expanded carries the previous generation (for red and ghost colouring)', () => {
+  let p = soup(12, 8, 0.4);
+  const f0 = Field.around(p, 30);
+  for (let g = 0; g < 9; g++) { f0.step(); p = p.next(); }
+  const prev = p, cur = p.next();
+  f0.step();
+  const f = f0.expanded(37, 2, 5, 90);
+  assert.equal(f.gen, f0.gen);
+  for (let y = f0.y0; y < f0.y0 + f0.h; y++)
+    for (let x = f0.x0; x < f0.x0 + f0.w; x++) {
+      assert.equal(f.get(x, y), cur.get(x, y));
+      assert.equal(f.getPrev(x, y), prev.get(x, y));
+    }
+  // and the new margin is empty in both
+  assert.equal(f.get(f.x0, f.y0), 0);
+  assert.equal(f.getPrev(f.x0 + 1, f.y0 + f.h - 1), 0);
+  assert.ok(f.x0 <= f0.x0 - 37 && f.y0 === f0.y0 - 2 && f.h === f0.h + 92 && f.x0 + f.w >= f0.x0 + f0.w + 5);
+});
+
+test('Field.around places cells exactly where Pattern has them', () => {
+  const p = soup(13, 40, 0.3, -17, 23);
+  const f = Field.around(p, 9);
+  same(f, p, 'around');
+  assert.deepEqual(f.bounds(), { x0: p.x0, x1: p.x0 + p.w - 1, y0: p.y0, y1: p.y0 + p.h - 1 });
+});

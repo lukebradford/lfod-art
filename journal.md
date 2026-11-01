@@ -50,6 +50,12 @@ getting rarer: 4 of 5 pairs, 10 of 31 triples, 70 of 430 quadruples. What surviv
 almost all solitude (dots) and the smallest company (checkers), plus the moon, the
 three four-cell p4 oscillators and seven pairs of free ships.
 
+Session 6 turned the hero from a toy into an **instrument**. It used to stop
+at a fixed zoom, so a tap gave you a screen of big black squares. Now it pulls back by
+halves as an explosion grows and shows the whole diamond at one pixel per cell, more
+than a million live cells, exact. Every beginning you make is a link. The motif is
+the gift: the site's first piece made to be passed on.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -69,9 +75,10 @@ LFoD field over the site's lifetime.
   compute the outcome live in a Worker using the same decomposition.
 - **Moon guns?** Two moons offset by ±1 make two free ships. Can a stationary
   reaction be fed moons to make a gun, or a pair of free ships be turned back into moons?
-- **Hero on `Field`**: the hero still uses `Pattern` and halts at 1.5M cells of box.
-  Moving it to `Field` (growing the box when the guard ring fills) would let a
-  visitor's explosion run far longer. Same for the collider's explosions.
+- **Collider on `Field`**: the hero now grows its field and zooms out by halves; the
+  collider's explosions could do the same instead of stopping at the frame edge.
+- **Named beginnings in links**: `#rle=` links could carry an optional name, and the
+  bestiary/four-cell tiles could offer "open in the field above" links.
 - **Diamond anatomy**: the straight double lines along some edges, and the red rays
   of dots some explosions throw out along the axes, are visible but unexplained. Find
   what they are (a diagonal "crystal" growing at the edge's speed? puffers riding the
@@ -105,11 +112,11 @@ LFoD field over the site's lifetime.
   has 190 named entries, 143 with RLE): puffers, rakes, the moon laser, the anchor
   and ant stacks, the mantis, the six shooter. Every claim still gets a test.
 - Show the short free ship, the c/2…c/5 ships and the moon laser gun (LifeWiki).
-- Shareable hero state: encode placed cells in the URL hash (no personal data).
 - Larger search: 5x5 all populations, 6x6 low population; look for slower ships
   (anything not at speed c?), longer periods, guns or puffers.
-- Hero: let a long press drag-place several cells; keyboard access for placing cells.
-- Accessibility: describe current hero state in text for screen readers.
+- Hero: let a long press or drag place several cells (keyboard placement is done).
+- Accessibility: describe the hero's current state in text for screen readers (the
+  status line is now `aria-live`, but population and zoom changes are not announced).
 - Consider an RSS/“what grew this session” changelog page drawn from the journal.
 
 ## Log
@@ -309,3 +316,38 @@ LFoD field over the site's lifetime.
 - Glossary check before naming anything: no four-cell placement here has its own
   glossary name except the T-tetromino, which vanishes (consistent with its entry);
   left unnamed until its picture is decoded.
+
+### 2026-11-01: Session 6, the instrument
+- **Hero on `Field`**: the hero now runs on the bit-packed engine. `Field.expanded()`
+  (new) copies both generations word for word into a larger box, so the colouring
+  carries over. The hero grows its field by half again whenever live cells come within
+  4 cells of its edge, which keeps it exact on the plane. The view pulls back by halves
+  (whole device pixels per cell, recentring on the live cells) to keep every cell in
+  frame, and shows the scale ("cell 4 px") once it has zoomed. At one device pixel per
+  cell it continues while the pattern still fits one way, and stops once it overflows
+  both: "still growing; it has filled the frame". On a 1728 px wide display (DPR 2),
+  evil eyes runs to gen 1731 with 1.3M live cells, about 2.3 ms per generation in Node
+  at the end. The old hero stopped at a 1.5M-cell bounding box (about gen 600), showing
+  only noise at a fixed zoom.
+- **Every beginning is a link**: an edit is now a new beginning. The counter restarts at
+  0, and the address bar becomes `#rle=<RLE body>` (via `history.replaceState`, so it
+  adds no history entries). Loading such a link starts that pattern at generation 0,
+  centred. A share button (native share sheet on touch devices, otherwise the
+  clipboard) appears once there is something to share. Links over 4000 characters are
+  refused, not truncated. `site/js/share.js`, tested in `tests/share.test.mjs`: patterns
+  round-trip exactly and evolve identically, and malformed or oversized fragments
+  (bad escapes, runs over 4096, unknown keys) are rejected. Only cells go in the URL.
+- **Keyboard**: the hero canvas is focusable. Arrow keys move a red cursor (Shift moves
+  8), and Enter or Space toggles the cell under it.
+- **Reliability bug fixed**: one exception inside any animation's step stopped the
+  shared requestAnimationFrame loop, which froze every animation on the page. Found
+  when a stale cached module threw in the hero. Each clock's tick is now isolated:
+  the failing one stops and logs, and the rest carry on.
+- `Field.around` now writes bits directly instead of calling `set()` per cell (each
+  call cleared the whole previous buffer and rescanned the field).
+- Tests: `Field.expanded` against `Pattern` through repeated, uneven growth over 220
+  generations of a soup; previous generation preserved across growth; `around` exact.
+- Phone layout: the hero's meta line wraps with the status on its own line.
+- Local preview note: `python3 -m http.server` lets Chrome heuristically cache modules
+  across edits (the `?v=dev` stamp doesn't change locally). Serve with
+  `Cache-Control: no-store` when testing, or the page mixes old and new modules.

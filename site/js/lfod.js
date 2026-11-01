@@ -272,9 +272,28 @@ export class Field {
   // A field holding `pattern`, with `margin` empty cells around it on every side.
   static around(pattern, margin) {
     const f = new Field(pattern.w + 2 * margin, pattern.h + 2 * margin, pattern.x0 - margin, pattern.y0 - margin);
-    for (const [x, y] of pattern.cells()) f.set(x, y, 1);
+    for (const [x, y] of pattern.cells()) f.cur[f._index(x, y)] |= 1 << ((x - f.x0) & 31);
+    f._region();
     f.gen = pattern.gen;
     return f;
+  }
+
+  // A larger field holding exactly this one (both generations, so the colouring carries
+  // over), with at least `left`, `top`, `right`, `bottom` more cells on each side.
+  // Left and right are rounded up to whole words so rows copy word for word.
+  expanded(left, top, right, bottom) {
+    const L = Math.ceil(Math.max(0, left) / 32), R = Math.ceil(Math.max(0, right) / 32);
+    const T = Math.max(0, top), B = Math.max(0, bottom);
+    const g = new Field((this.nw + L + R) * 32, this.h + T + B, this.x0 - 32 * L, this.y0 - T);
+    for (let r = 0; r < this.h; r++) {
+      const from = (r + 1) * this.stride + 1, to = (r + 1 + T) * g.stride + 1 + L;
+      g.cur.set(this.cur.subarray(from, from + this.nw), to);
+      g.prev.set(this.prev.subarray(from, from + this.nw), to);
+    }
+    g.gen = this.gen;
+    if (this.r1 >= this.r0) { g.r0 = this.r0 + T; g.r1 = this.r1 + T; g.k0 = this.k0 + L; g.k1 = this.k1 + L; }
+    if (this.pr1 >= this.pr0) { g.pr0 = this.pr0 + T; g.pr1 = this.pr1 + T; g.pk0 = this.pk0 + L; g.pk1 = this.pk1 + L; }
+    return g;
   }
 
   _index(x, y) {
