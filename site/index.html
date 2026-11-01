@@ -102,9 +102,10 @@
   </section>
   <section class="diamonds" aria-labelledby="diamonds-h">
     <h2 id="diamonds-h">Diamonds</h2>
-    <p class="lede">Two cells side by side part into two ships. Touching at a corner, they blink forever. One cell apart, they vanish. But put them a knight’s move apart and they never stop: of the <span class="n-pairs">5</span> ways to place two cells close enough to meet, this is the only one that explodes.</p>
+    <p class="lede">Two cells side by side part into two ships. Touching at a corner, they blink forever. One cell apart, they vanish. But put them a knight’s move apart and they never stop. This pair is called <a href="https://lukebradford.github.io/lfod/glossary.html#evil-eyes">evil eyes</a>: of the <span class="n-pairs">5</span> ways to place two cells close enough to meet, it is the only one that explodes.</p>
     <figure class="stage stage-diamond">
-      <canvas id="diamond" role="img" aria-label="Two cells a knight’s move apart, exploding, simulated exactly."></canvas>
+      <canvas id="diamond" role="img" aria-label="Evil eyes, two cells a knight’s move apart, exploding, simulated exactly."></canvas>
+      <div class="stage-name"><span id="diamond-name">evil eyes</span><button type="button" id="diamond-back" hidden>back to evil eyes</button></div>
       <figcaption class="stage-gen">gen <b>0</b> · <span id="diamond-pop">2</span> cells · cell <span id="diamond-scale">16</span> px</figcaption>
       <span class="stage-status" id="diamond-status"></span>
     </figure>

@@ -6,6 +6,10 @@
 // Two cells: 5 placements. Side by side they part into two free ships; touching at a
 // corner they are a checker, blinking forever; one cell apart, in a row or on a
 // diagonal, they vanish; a knight's move apart they explode, the only pair that does.
+// That pair is called evil eyes in the LFoD Universe glossary, "the smallest pattern
+// that exhibits infinite growth". The glossary has no RLE for it, only a picture: two
+// cells at (2, 0) and (0, 1), which is how EVIL_EYES is placed (the tests check it is
+// the exploding pair).
 //
 // Three cells: 31 placements, 21 of which explode. THREE lists those 21, each placed
 // with its top-left at (0, 0).
@@ -19,7 +23,7 @@
 export const PAIRS = { placements: 5, explode: 1 };
 export const TRIPLES = { placements: 31, explode: 21 };
 
-export const KNIGHT = [[0, 0], [2, 1]];
+export const EVIL_EYES = [[2, 0], [0, 1]];
 
 export const THREE = [
   [[0, 0], [1, 2], [3, 4]], [[0, 0], [0, 2], [2, 4]], [[0, 0], [2, 2], [1, 4]],

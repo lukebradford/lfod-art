@@ -2,7 +2,7 @@ import { Pattern, Field, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
 import { Stage, Clock, reducedMotion, wake, paintField } from './stage.js';
 import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence } from './collisions.js';
-import { PAIRS, TRIPLES, KNIGHT, THREE } from './diamonds.js';
+import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -487,7 +487,9 @@ function diamonds() {
   const stage = new Stage(canvas);
   const genEl = canvas.parentElement.querySelector('.stage-gen b');
   const popEl = $('#diamond-pop'), scaleEl = $('#diamond-scale'), statusEl = $('#diamond-status');
-  let seed = KNIGHT, label = 'Two cells a knight’s move apart';
+  const nameEl = $('#diamond-name'), backBtn = $('#diamond-back');
+  const EVIL = { cells: EVIL_EYES, name: 'evil eyes', label: 'Evil eyes, two cells a knight’s move apart' };
+  let seed = EVIL.cells, label = EVIL.label;
   let f = null, cs = 1, csTop = 1, cx = 0, cy = 0, done = false;
 
   // largest cell size (device px) for the opening frames: a power of two up to ~16 CSS px
@@ -551,14 +553,20 @@ function diamonds() {
   };
   start();
 
-  return {
-    load(cells, name) {
-      seed = cells; label = name;
-      clock.hold = 0;
-      clock.setPlaying(true);
-      start();
-    },
+  function load(s) {
+    seed = s.cells; label = s.label;
+    nameEl.textContent = s.name;
+    backBtn.hidden = s === EVIL;
+    clock.hold = 0;
+    clock.setPlaying(true);
+    start();
+  }
+  backBtn.onclick = (e) => {
+    e.stopPropagation();
+    for (const t of document.querySelectorAll('.tile')) t.setAttribute('aria-pressed', 'false');
+    load(EVIL);
   };
+  return { load };
 }
 
 function wall(big) {
@@ -585,7 +593,7 @@ function wall(big) {
     const t = { cells, stage: new Stage(b.querySelector('canvas')), p, centre: seedCentre(p), f: null, b };
     b.onclick = () => {
       for (const o of tiles) o.b.setAttribute('aria-pressed', String(o === t));
-      big?.load(cells, `Seed ${i + 1}, ${desc}`);
+      big?.load({ cells, name: `three cells, № ${i + 1}`, label: `Seed ${i + 1}, ${desc}` });
       const fig = $('#diamond').parentElement, r = fig.getBoundingClientRect();
       if (r.top < 0 || r.bottom > innerHeight)
         fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'center' });

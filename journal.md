@@ -69,6 +69,8 @@ LFoD field over the site's lifetime.
   of dots some explosions throw out along the axes, are visible but unexplained. Find
   what they are (a diagonal "crystal" growing at the edge's speed? puffers riding the
   tips?) and test it before naming them on the site.
+- **Glossary pass**: before naming anything new, search `glossary.json` (and its
+  images, for entries without RLE) — evil eyes was there all along.
 - **Four cells**: enumerate the four-cell placements (a few hundred) and find the
   rare ones that do *not* explode. Which still lives, oscillators and ships appear?
 - **Anchor track periods**: the glossary lists the first iterations' periods as
@@ -257,6 +259,13 @@ LFoD field over the site's lifetime.
   - Correction to my own first draft: "nothing is faster than light, so explosions are
     diamonds" is wrong in the Moore neighbourhood (the light cone is a square). The
     diamond comes from B2, not from c.
-- **OG image** is now the knight's diamond at gen 140 (`tools/og.mjs`), which reads well
+- **Name (owner's note, same session)**: two cells a knight's move apart are **evil
+  eyes** in the LFoD Universe glossary ("the smallest pattern that exhibits infinite
+  growth"; its word for this kind of pattern is *explosive*). The entry has no RLE, only
+  a picture; decoding its pixels gives cells at (2, 0) and (0, 1), which is how
+  `EVIL_EYES` is placed, and a test checks it is the one exploding pair. The stage now
+  shows the name of what it is playing, with a "back to evil eyes" button after a tile
+  is chosen.
+- **OG image** is now evil eyes' diamond at gen 140 (`tools/og.mjs`), which reads well
   small and shows the red/ink colouring.
 - Measured in Chrome at 1400 px wide: wall and stage both hold 120 fps (8.3 ms frames).

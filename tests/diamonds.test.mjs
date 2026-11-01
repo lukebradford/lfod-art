@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Pattern, Field, classify } from '../site/js/lfod.js';
-import { PAIRS, TRIPLES, KNIGHT, THREE, DENSITY } from '../site/js/diamonds.js';
+import { PAIRS, TRIPLES, EVIL_EYES, THREE, DENSITY } from '../site/js/diamonds.js';
 
 // --- enumeration, independent of the site's list --------------------------------
 const SYM = [
@@ -49,12 +49,15 @@ function explodes(cells) {
   return pop > 4000 && (b.x1 - b.x0) - (a.x1 - a.x0) >= 80 && (b.y1 - b.y0) - (a.y1 - a.y0) >= 80;
 }
 
-test('two cells: five placements, and only the knight\'s move explodes', () => {
+test('two cells: five placements, and only evil eyes (a knight\'s move apart) explodes', () => {
   const all = placements(2);
   assert.equal(all.length, PAIRS.placements);
   const boom = all.filter(explodes);
   assert.equal(boom.length, PAIRS.explode);
-  assert.equal(canon(boom[0]), canon(KNIGHT));
+  assert.equal(canon(boom[0]), canon(EVIL_EYES));
+  // a knight's move: one apart one way, two the other
+  const [[ax, ay], [bx, by]] = EVIL_EYES;
+  assert.deepEqual([Math.abs(ax - bx), Math.abs(ay - by)].sort(), [1, 2]);
 });
 
 test('two cells: the fates of the other four', () => {
@@ -117,8 +120,8 @@ function fronts(f) {
   return out;
 }
 
-for (const [i, seed] of [KNIGHT, ...THREE].entries()) {
-  const name = i === 0 ? 'knight' : `three-cell seed ${i}`;
+for (const [i, seed] of [EVIL_EYES, ...THREE].entries()) {
+  const name = i === 0 ? 'evil eyes' : `three-cell seed ${i}`;
   test(`${name}: grows at c straight out and as fast as birth allows on the diagonals`, () => {
     const f = Field.around(Pattern.fromCells(seed), 610);
     let box = null, fr = null;

@@ -1,17 +1,17 @@
-// Renders site/og.png (1200x630 social preview): two cells a knight's move apart,
+// Renders site/og.png (1200x630 social preview): evil eyes (two cells a knight's move apart),
 // 140 generations into their explosion, simulated by the shipped engine and drawn in
 // the site's colours (red: survived; ink: newborn; pale: just died).
 // Usage: node tools/og.mjs
 import zlib from 'node:zlib';
 import fs from 'node:fs';
 import { Pattern, Field } from '../site/js/lfod.js';
-import { KNIGHT } from '../site/js/diamonds.js';
+import { EVIL_EYES } from '../site/js/diamonds.js';
 
 const W = 1200, H = 630, GEN = 140, cs = 2;
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const PAPER = hex('#fbfaf6'), INK = hex('#141414'), FREE = hex('#c0391f'), GHOST = hex('#e8e5dc');
 
-const f = Field.around(Pattern.fromCells(KNIGHT), GEN + 4);
+const f = Field.around(Pattern.fromCells(EVIL_EYES), GEN + 4);
 for (let g = 0; g < GEN; g++) f.step();
 const img = new Uint8Array(W * H * 3);
 const fill = (x, y, w, h, c) => {
@@ -35,4 +35,4 @@ const raw = Buffer.alloc((W * 3 + 1) * H);
 for (let y = 0; y < H; y++) { raw[y * (W * 3 + 1)] = 0; Buffer.from(img.buffer, y * W * 3, W * 3).copy(raw, y * (W * 3 + 1) + 1); }
 const ih = Buffer.alloc(13); ih.writeUInt32BE(W, 0); ih.writeUInt32BE(H, 4); ih[8] = 8; ih[9] = 2;
 fs.writeFileSync(new URL('../site/og.png', import.meta.url), Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]));
-console.log('wrote site/og.png: knight explosion, gen', f.gen, 'pop', f.population);
+console.log('wrote site/og.png: evil eyes, gen', f.gen, 'pop', f.population);
