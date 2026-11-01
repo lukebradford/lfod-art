@@ -2,9 +2,75 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title></title>
-<style>html,body{margin:0;background:#fff}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Live Free or Die · B2/S0</title>
+<meta name="description" content="A living, exactly simulated study of Live Free or Die, the cellular automaton where a cell survives only if it is alone and is born only between exactly two.">
+<meta name="theme-color" content="#fbfaf6">
+<meta property="og:title" content="Live Free or Die · B2/S0">
+<meta property="og:description" content="A cell survives only if it is alone. A cell is born only between exactly two. An exactly simulated, slowly growing artwork.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://lukebradford.github.io/lfod-art/">
+<meta property="og:image" content="https://lukebradford.github.io/lfod-art/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="js/main.js"></script>
 </head>
-<body></body>
+<body>
+
+<header class="hero" id="top">
+  <canvas class="field" id="field" aria-label="An exact Live Free or Die simulation. A period-19 oscillator called the monster. Tap to place cells." role="img"></canvas>
+  <div class="hero-title">
+    <h1>Live Free or Die</h1>
+    <p class="rulestring">B2/S0</p>
+  </div>
+  <p class="hero-hint" id="hint">A cell survives only if it is alone.<br>Tap the page to place one.</p>
+  <div class="hero-meta" aria-live="off">
+    <span>gen <b id="gen">0</b></span>
+    <span>cells <b id="pop">6</b></span>
+    <span id="status"></span>
+  </div>
+  <div class="hero-controls">
+    <button type="button" id="play" aria-label="Pause">pause</button>
+    <button type="button" id="step" aria-label="Advance one generation">step</button>
+    <button type="button" id="restore" aria-label="Restore the monster">restore</button>
+  </div>
+</header>
+
+<main>
+  <section class="rule" aria-labelledby="rule-h">
+    <h2 id="rule-h">The rule</h2>
+    <p class="lede">Every cell on an endless square grid is alive or dead, and looks at its eight neighbours. Then all of them change at once.</p>
+    <div class="laws" id="laws"></div>
+    <p>That is the whole universe. It is the opposite of company: a living cell keeps living only while nothing lives beside it, and life appears only where exactly two cells meet. Most beginnings explode outward at the speed of light into a widening diamond of chaos. A few, found by searching every small pattern, hold their shape forever.</p>
+  </section>
+
+  <section class="parting" aria-labelledby="parting-h">
+    <div class="parting-text">
+      <h2 id="parting-h">Two cells, parting</h2>
+      <p>Put two cells side by side. Twelve generations later they have become two identical free ships, flying apart at the speed of light, and they never stop.</p>
+    </div>
+    <figure class="stage stage-wide">
+      <canvas id="parting" role="img" aria-label="A domino of two cells splitting into two light-speed ships."></canvas>
+      <figcaption class="stage-gen">gen <b>0</b></figcaption>
+    </figure>
+  </section>
+
+  <section class="bestiary" aria-labelledby="bestiary-h">
+    <h2 id="bestiary-h">Bestiary</h2>
+    <p class="lede">Everything here turned up when every pattern in a four-by-four box, and every pattern of up to seven cells in a five-by-five box, was run until it settled. Every claim on each card is checked by a test against the same engine that draws it. Names are the ones the Life community already uses, from LifeWiki and the ConwayLife forums; the few marked provisional are placeholders until their published names can be matched to the exact pattern.</p>
+    <div class="cards" id="cards"></div>
+  </section>
+</main>
+
+<footer>
+  <p>This site began as a blank white page on 1 November 2026. An AI agent grows it, one session at a time.</p>
+  <p>Every frame is the exact B2/S0 evolution of its starting state, on an unbounded plane. Cells that have <span class="free-swatch"></span> survived a generation are drawn in red: these are the free ones.</p>
+  <p><a href="https://github.com/lukebradford/lfod-art">Source and journal</a></p>
+</footer>
+
+<noscript><p class="noscript">The cells here need JavaScript to move.</p></noscript>
+</body>
 </html>

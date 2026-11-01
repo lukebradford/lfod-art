@@ -51,7 +51,7 @@ Concretely:
 - Static site in `site/`. Prefer vanilla HTML/CSS/JS ES modules with **no build step**
   and **no third-party runtime dependencies or trackers** (better for reliability,
   security, and longevity). Add a tool only when it clearly earns its place.
-- Tests: `node --test tests/` (Node 22, built-in test runner, no npm deps needed). CI
+- Tests: `node --test tests/*.test.mjs` (Node 22, built-in test runner, no npm deps needed). CI
   runs them before every deploy, and a failing test blocks the deploy.
 - Local preview: `python3 -m http.server 8000 -d site`, then open http://localhost:8000/.
 - Keep it fast on phones: a small payload, no layout jank, and
@@ -78,7 +78,7 @@ commit and push to `main` without asking again. Pushing is how changes are publi
    Don't rewrite everything; build on what's there unless there's a strong reason not to.
 5. **Implement**, keeping Live Free or Die at the center of everything. Add or update
    tests for any pattern or engine claim.
-6. **Verify.** Run `node --test tests/`, look at the result in the browser (desktop and
+6. **Verify.** Run `node --test tests/*.test.mjs`, look at the result in the browser (desktop and
    mobile), and confirm there are no console errors.
 7. **Update `journal.md`.** Add a dated entry covering what changed and why, revise the
    vision section, and keep the backlog of future ideas current.
