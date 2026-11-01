@@ -240,3 +240,191 @@ export function classify(pattern, { maxGen = 256, settle = 0 } = {}) {
   }
   return { kind: 'unknown', period: 0, dx: 0, dy: 0 };
 }
+
+// ---------------------------------------------------------------------------
+// Field: a fast, bit-packed stepper for big patterns (explosions), 32 cells per word.
+// It is exact on the infinite plane, not a torus or a clipped box: cells outside the
+// box are dead, and step() refuses to run (returns false, state unchanged) once any
+// live cell lies on the box's outermost ring. While that ring is empty, no cell
+// outside the box has a live neighbour, so none can be born there, and the whole
+// plane's next generation is exactly what is computed inside. Cross-tested against
+// Pattern in tests/field.test.mjs.
+//
+// Layout: `w` (a multiple of 32) by `h` cells. Bit i of word k in a row is the cell at
+// x = 32k + i. Buffers carry one zero word of padding on each side of every row and
+// one zero row above and below, so the inner loop never bounds-checks.
+// `cur` holds generation `gen`, `prev` generation gen - 1 (all dead at the start).
+export class Field {
+  constructor(w, h, x0 = 0, y0 = 0) {
+    this.nw = Math.max(1, Math.ceil(w / 32));
+    this.w = this.nw * 32; this.h = Math.max(1, h);
+    this.x0 = x0; this.y0 = y0; // world coordinates of cell (0, 0)
+    this.stride = this.nw + 2;
+    this.cur = new Uint32Array(this.stride * (this.h + 2));
+    this.prev = new Uint32Array(this.stride * (this.h + 2));
+    this.gen = 0;
+    // live region of cur (rows r0..r1, words k0..k1, inclusive; r1 < r0 when empty)
+    this.r0 = 0; this.r1 = -1; this.k0 = 0; this.k1 = -1;
+    // region of prev that may hold live cells (to clear it before reuse)
+    this.pr0 = 0; this.pr1 = -1; this.pk0 = 0; this.pk1 = -1;
+  }
+
+  // A field holding `pattern`, with `margin` empty cells around it on every side.
+  static around(pattern, margin) {
+    const f = new Field(pattern.w + 2 * margin, pattern.h + 2 * margin, pattern.x0 - margin, pattern.y0 - margin);
+    for (const [x, y] of pattern.cells()) f.set(x, y, 1);
+    f.gen = pattern.gen;
+    return f;
+  }
+
+  _index(x, y) {
+    const lx = x - this.x0, ly = y - this.y0;
+    if (lx < 0 || ly < 0 || lx >= this.w || ly >= this.h) return -1;
+    return (ly + 1) * this.stride + (lx >>> 5) + 1;
+  }
+
+  get(x, y) {
+    const i = this._index(x, y);
+    return i < 0 ? 0 : (this.cur[i] >>> ((x - this.x0) & 31)) & 1;
+  }
+
+  getPrev(x, y) {
+    const i = this._index(x, y);
+    return i < 0 ? 0 : (this.prev[i] >>> ((x - this.x0) & 31)) & 1;
+  }
+
+  // Set a cell of the current generation. Clears the previous generation, since the
+  // state no longer follows from it.
+  set(x, y, v) {
+    const i = this._index(x, y);
+    if (i < 0) throw new RangeError(`cell (${x}, ${y}) is outside the field`);
+    const bit = 1 << ((x - this.x0) & 31);
+    if (v) this.cur[i] |= bit; else this.cur[i] &= ~bit;
+    this.prev.fill(0); this.pr1 = -1;
+    this._region();
+  }
+
+  // recompute the live region of cur from scratch
+  _region() {
+    const { cur, stride, nw, h } = this;
+    let r0 = h, r1 = -1, k0 = nw, k1 = -1;
+    for (let r = 0; r < h; r++) {
+      const base = (r + 1) * stride + 1;
+      for (let k = 0; k < nw; k++) if (cur[base + k]) {
+        if (r < r0) r0 = r; r1 = r;
+        if (k < k0) k0 = k; if (k > k1) k1 = k;
+      }
+    }
+    if (r1 < 0) { this.r0 = 0; this.r1 = -1; this.k0 = 0; this.k1 = -1; }
+    else { this.r0 = r0; this.r1 = r1; this.k0 = k0; this.k1 = k1; }
+  }
+
+  // Bounds of the live cells in world coordinates (inclusive), or null when empty.
+  bounds() {
+    const { cur, stride, r0, r1, k0, k1 } = this;
+    if (r1 < r0) return null;
+    let left = 0, right = 0;
+    for (let r = r0; r <= r1; r++) {
+      left |= cur[(r + 1) * stride + k0 + 1];
+      right |= cur[(r + 1) * stride + k1 + 1];
+    }
+    const lo = 31 - Math.clz32(left & -left), hi = 31 - Math.clz32(right);
+    return { x0: this.x0 + k0 * 32 + lo, x1: this.x0 + k1 * 32 + hi, y0: this.y0 + r0, y1: this.y0 + r1 };
+  }
+
+  // True while the outermost ring of the box is empty, i.e. step() is still exact.
+  get exact() {
+    const b = this.bounds();
+    if (!b) return true;
+    return b.x0 > this.x0 && b.y0 > this.y0 && b.x1 < this.x0 + this.w - 1 && b.y1 < this.y0 + this.h - 1;
+  }
+
+  get population() {
+    let p = 0;
+    const { cur, stride, r0, r1, k0, k1 } = this;
+    for (let r = r0; r <= r1; r++)
+      for (let i = (r + 1) * stride + k0 + 1, e = i + k1 - k0; i <= e; i++) {
+        let v = cur[i];
+        v -= (v >>> 1) & 0x55555555;
+        v = (v & 0x33333333) + ((v >>> 2) & 0x33333333);
+        p += Math.imul((v + (v >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24;
+      }
+    return p;
+  }
+
+  // Advance one generation. Returns false (and does nothing) if the result could
+  // not be exact because live cells have reached the edge of the box.
+  step() {
+    if (!this.exact) return false;
+    const { stride, h, nw } = this;
+    const src = this.cur, dst = this.prev;
+    // clear what dst last held
+    for (let r = this.pr0; r <= this.pr1; r++) dst.fill(0, (r + 1) * stride + this.pk0 + 1, (r + 1) * stride + this.pk1 + 2);
+    if (this.r1 < this.r0) { // empty stays empty
+      this.prev = src; this.cur = dst; this.gen++;
+      this.pr0 = 0; this.pr1 = -1; this.pk0 = 0; this.pk1 = -1;
+      return true;
+    }
+    // births can only happen within one cell of the live region
+    const R0 = Math.max(0, this.r0 - 1), R1 = Math.min(h - 1, this.r1 + 1);
+    const K0 = Math.max(0, this.k0 - 1), K1 = Math.min(nw - 1, this.k1 + 1);
+    let r0 = h, r1 = -1, k0 = nw, k1 = -1;
+    for (let r = R0; r <= R1; r++) {
+      const row = (r + 1) * stride + 1;
+      const up = row - stride, dn = row + stride;
+      // sliding window of words: left (L), this, right (R) for the rows above, here, below
+      let aL = src[up + K0 - 1], a = src[up + K0];
+      let bL = src[row + K0 - 1], b = src[row + K0];
+      let cL = src[dn + K0 - 1], c = src[dn + K0];
+      let rowAny = false;
+      for (let k = K0; k <= K1; k++) {
+        const aR = src[up + k + 1], bR = src[row + k + 1], cR = src[dn + k + 1];
+        // the eight neighbour planes: west is x - 1, so shift toward higher bits
+        const n1 = (a << 1) | (aL >>> 31), n2 = a, n3 = (a >>> 1) | (aR << 31);
+        const n4 = (b << 1) | (bL >>> 31), n5 = (b >>> 1) | (bR << 31);
+        const n6 = (c << 1) | (cL >>> 31), n7 = c, n8 = (c >>> 1) | (cR << 31);
+        // bit-sliced counter: s0, s1 are the count's low bits; s2 is set once it reaches 4
+        let s0 = n1, s1 = 0, s2 = 0, t;
+        t = s0 & n2; s0 ^= n2; s1 = t;
+        t = s0 & n3; s0 ^= n3; s2 |= s1 & t; s1 ^= t;
+        t = s0 & n4; s0 ^= n4; s2 |= s1 & t; s1 ^= t;
+        t = s0 & n5; s0 ^= n5; s2 |= s1 & t; s1 ^= t;
+        t = s0 & n6; s0 ^= n6; s2 |= s1 & t; s1 ^= t;
+        t = s0 & n7; s0 ^= n7; s2 |= s1 & t; s1 ^= t;
+        t = s0 & n8; s0 ^= n8; s2 |= s1 & t; s1 ^= t;
+        // B2: dead with exactly two; S0: alive with none
+        const v = (b & ~(s0 | s1 | s2)) | (~b & s1 & ~s0 & ~s2);
+        if (v) {
+          dst[row + k] = v;
+          rowAny = true;
+          if (k < k0) k0 = k; if (k > k1) k1 = k;
+        }
+        aL = a; a = aR; bL = b; b = bR; cL = c; c = cR;
+      }
+      if (rowAny) { if (r < r0) r0 = r; r1 = r; }
+    }
+    this.pr0 = this.r0; this.pr1 = this.r1; this.pk0 = this.k0; this.pk1 = this.k1;
+    if (r1 < 0) { this.r0 = 0; this.r1 = -1; this.k0 = 0; this.k1 = -1; }
+    else { this.r0 = r0; this.r1 = r1; this.k0 = k0; this.k1 = k1; }
+    this.prev = src; this.cur = dst; this.gen++;
+    return true;
+  }
+
+  // The current generation as a Pattern (for tests and for handing back to Pattern code).
+  toPattern() {
+    const cells = [];
+    const { cur, stride, r0, r1, k0, k1 } = this;
+    for (let r = r0; r <= r1; r++)
+      for (let k = k0; k <= k1; k++) {
+        let v = cur[(r + 1) * stride + k + 1];
+        while (v) {
+          const i = 31 - Math.clz32(v & -v);
+          cells.push([this.x0 + k * 32 + i, this.y0 + r]);
+          v &= v - 1;
+        }
+      }
+    const p = Pattern.fromCells(cells);
+    p.gen = this.gen;
+    return p;
+  }
+}

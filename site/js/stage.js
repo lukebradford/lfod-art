@@ -138,3 +138,59 @@ export class Clock {
 }
 
 document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+
+// ---------------------------------------------------------------------------
+// Paint a bit-packed Field (lfod.js) straight into the canvas's pixels, for patterns
+// too big to draw cell by cell. Same conventions as Stage.draw: integer cell size cs
+// (device px) and origin (ox, oy); survivors red, newborns ink, the just-dead as ghosts.
+const LITTLE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+const rgba = (hex) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return LITTLE ? ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0 : ((r << 24) | (g << 16) | (b << 8) | 255) >>> 0;
+};
+const PX = Object.fromEntries(Object.entries(COLORS).map(([k, v]) => [k, rgba(v)]));
+
+export function paintField(stage, f, cs, ox, oy) {
+  const { ctx, W, H } = stage;
+  if (!stage.img || stage.img.width !== W || stage.img.height !== H) {
+    stage.img = ctx.createImageData(W, H);
+    stage.px = new Uint32Array(stage.img.data.buffer);
+  }
+  const px = stage.px;
+  px.fill(PX.paper);
+  if (cs >= 10) { // graph-paper dots at cell corners
+    const d = Math.max(1, Math.round(cs / 16)), h = d >> 1;
+    for (let Y = ((oy - h) % cs + cs) % cs; Y < H; Y += cs)
+      for (let X = ((ox - h) % cs + cs) % cs; X < W; X += cs) fillRect(px, W, H, X, Y, d, d, PX.dot);
+  }
+  const inset = cs >= 6 ? Math.max(1, Math.round(cs * 0.07)) : 0, size = cs - 2 * inset;
+  const { cur, prev, stride } = f;
+  // rows and words that can hold a live cell now or one generation ago
+  const R0 = Math.min(f.r0, f.pr1 >= f.pr0 ? f.pr0 : f.r0), R1 = Math.max(f.r1, f.pr1);
+  const K0 = Math.min(f.k0, f.pr1 >= f.pr0 ? f.pk0 : f.k0), K1 = Math.max(f.k1, f.pr1 >= f.pr0 ? f.pk1 : f.k1);
+  // clip to the canvas
+  const r0 = Math.max(R0, Math.floor((-oy / cs) - f.y0) - 1), r1 = Math.min(R1, Math.ceil((H - oy) / cs - f.y0) + 1);
+  for (let r = r0; r <= r1; r++) {
+    const Y = oy + (f.y0 + r) * cs + inset;
+    const base = (r + 1) * stride + 1;
+    for (let k = K0; k <= K1; k++) {
+      const c = cur[base + k], p = prev[base + k];
+      let m = c | p;
+      while (m) {
+        const low = m & -m, i = 31 - Math.clz32(low);
+        m ^= low;
+        const X = ox + (f.x0 + k * 32 + i) * cs + inset;
+        if (X >= W || X + size <= 0) continue;
+        const col = c & low ? (p & low ? PX.free : PX.ink) : PX.ghost;
+        if (size === 1) { if (X >= 0 && Y >= 0 && Y < H) px[Y * W + X] = col; }
+        else fillRect(px, W, H, X, Y, size, size, col);
+      }
+    }
+  }
+  ctx.putImageData(stage.img, 0, 0);
+}
+
+function fillRect(px, W, H, x, y, w, h, col) {
+  const x0 = Math.max(0, x), x1 = Math.min(W, x + w), y1 = Math.min(H, y + h);
+  for (let j = Math.max(0, y); j < y1; j++) px.fill(col, j * W + x0, j * W + x1);
+}

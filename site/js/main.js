@@ -1,7 +1,8 @@
-import { Pattern, nextState } from './lfod.js';
+import { Pattern, Field, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
-import { Stage, Clock, reducedMotion, wake } from './stage.js';
+import { Stage, Clock, reducedMotion, wake, paintField } from './stage.js';
 import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence } from './collisions.js';
+import { PAIRS, TRIPLES, KNIGHT, THREE } from './diamonds.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -468,10 +469,173 @@ function collisions() {
   start();
 }
 
+// ---------------------------------------------------------------------------
+// Diamonds: the smallest explosions, on the bit-packed Field engine. A large stage
+// follows one explosion from generation 0, zooming out by halves (cell sizes stay whole
+// device pixels) until the diamond fills the frame. Below it, a wall of all 21
+// three-cell explosions grows in step; tapping one sends it to the large stage.
+const seedPattern = (cells) => Pattern.fromCells(cells);
+const seedCentre = (p) => [p.x0 + p.w / 2, p.y0 + p.h / 2];
+
+function diamonds() {
+  const canvas = $('#diamond');
+  if (!canvas) return null;
+  for (const el of document.querySelectorAll('.n-pairs')) el.textContent = PAIRS.placements;
+  for (const el of document.querySelectorAll('.n-triples')) el.textContent = TRIPLES.placements;
+  for (const el of document.querySelectorAll('.n-triples-boom')) el.textContent = TRIPLES.explode;
+
+  const stage = new Stage(canvas);
+  const genEl = canvas.parentElement.querySelector('.stage-gen b');
+  const popEl = $('#diamond-pop'), scaleEl = $('#diamond-scale'), statusEl = $('#diamond-status');
+  let seed = KNIGHT, label = 'Two cells a knight’s move apart';
+  let f = null, cs = 1, csTop = 1, cx = 0, cy = 0, done = false;
+
+  // largest cell size (device px) for the opening frames: a power of two up to ~16 CSS px
+  const topSize = () => { let c = 1; while (c * 2 <= 16 * stage.dpr) c *= 2; return c; };
+  const fits = (b, c) => b && (b.x1 - b.x0 + 9) * c <= stage.W && (b.y1 - b.y0 + 9) * c <= stage.H;
+
+  function start() {
+    const p = seedPattern(seed);
+    [cx, cy] = seedCentre(p);
+    // room for the diamond to fill the frame at one device pixel per cell, plus a margin
+    const margin = Math.ceil(Math.min(stage.W, stage.H) / 2) + 16;
+    f = Field.around(p, margin);
+    csTop = cs = topSize();
+    done = false;
+    statusEl.textContent = '';
+    canvas.setAttribute('aria-label', `${label}, exploding into a diamond, simulated exactly.`);
+    if (reducedMotion.matches && !clock.playing) { // show where it ends rather than three dots
+      while (!done) advance();
+    }
+    draw();
+  }
+
+  function advance() {
+    if (!f.step()) { finish(); return; }
+    const b = f.bounds();
+    while (cs > 1 && !fits(b, cs)) cs >>= 1;
+    if (!fits(b, cs)) finish();
+  }
+  function finish() {
+    done = true;
+    statusEl.textContent = 'still growing; it has filled the frame';
+  }
+  function draw() {
+    const ox = Math.round(stage.W / 2 - cx * cs), oy = Math.round(stage.H / 2 - cy * cs);
+    paintField(stage, f, cs, ox, oy);
+    genEl.textContent = f.gen;
+    popEl.textContent = f.population.toLocaleString('en');
+    const css = cs / stage.dpr;
+    scaleEl.textContent = css >= 1 ? String(Math.round(css * 10) / 10) : '1/' + Math.round(1 / css);
+    // fewer generations per second while the cells are big enough to follow one by one
+    clock.rate = css >= 8 ? 8 : css >= 4 ? 12 : css >= 2 ? 20 : 30;
+  }
+
+  const clock = new Clock(canvas, 8, () => {
+    if (done) { start(); return; }
+    advance();
+    draw();
+    if (done) clock.hold = 3200;
+  });
+  canvas.addEventListener('click', () => clock.setPlaying(!clock.playing));
+  stage.onresize = () => {
+    if (!f) return;
+    // a bigger frame needs a bigger field: start again; otherwise just re-fit the zoom
+    const need = Math.ceil(Math.min(stage.W, stage.H) / 2) + 16;
+    if (f.w < 2 * need || f.h < 2 * need) { start(); return; }
+    csTop = topSize();
+    const b = f.bounds();
+    cs = csTop;
+    while (cs > 1 && !fits(b, cs)) cs >>= 1;
+    draw();
+  };
+  start();
+
+  return {
+    load(cells, name) {
+      seed = cells; label = name;
+      clock.hold = 0;
+      clock.setPlaying(true);
+      start();
+    },
+  };
+}
+
+function wall(big) {
+  const host = $('#wall');
+  if (!host) return;
+  const genEl = $('#wall-gen');
+  const tiles = THREE.map((cells, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tile';
+    const desc = `three cells at ${cells.map(([x, y]) => `(${x}, ${y})`).join(', ')}`;
+    b.setAttribute('aria-label', `Seed ${i + 1}: ${desc}. Show it large.`);
+    b.innerHTML = '<canvas aria-hidden="true"></canvas><span class="glyph" aria-hidden="true"></span>';
+    const glyph = b.querySelector('.glyph');
+    const gw = Math.max(...cells.map((c) => c[0])) + 1, gh = Math.max(...cells.map((c) => c[1])) + 1;
+    glyph.style.setProperty('--gw', gw); glyph.style.setProperty('--gh', gh);
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const c = document.createElement('i');
+      if (cells.some(([a, d]) => a === x && d === y)) c.className = 'on';
+      glyph.append(c);
+    }
+    host.append(b);
+    const p = seedPattern(cells);
+    const t = { cells, stage: new Stage(b.querySelector('canvas')), p, centre: seedCentre(p), f: null, b };
+    b.onclick = () => {
+      for (const o of tiles) o.b.setAttribute('aria-pressed', String(o === t));
+      big?.load(cells, `Seed ${i + 1}, ${desc}`);
+      const fig = $('#diamond').parentElement, r = fig.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight)
+        fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'center' });
+    };
+    return t;
+  });
+
+  let cs = 1, G = 100, gen = 0;
+  function layout() {
+    const { W, H } = tiles[0].stage;
+    const side = Math.min(W, H);
+    cs = Math.max(1, Math.floor(side / (2 * 120 + 10)));
+    G = Math.min(200, Math.floor((side / cs - 10) / 2));
+  }
+  function reset() {
+    layout();
+    gen = 0;
+    for (const t of tiles) t.f = Field.around(t.p, G + 4);
+    if (reducedMotion.matches && !clock.playing) { // a still picture of where they end
+      for (const t of tiles) while (t.f.gen < G) t.f.step();
+      gen = G;
+    }
+    for (const t of tiles) draw(t);
+    genEl.textContent = gen;
+  }
+  function draw(t) {
+    const { W, H } = t.stage;
+    paintField(t.stage, t.f, cs, Math.round(W / 2 - t.centre[0] * cs), Math.round(H / 2 - t.centre[1] * cs));
+  }
+  const clock = new Clock(host, 15, () => {
+    if (gen >= G) { reset(); clock.hold = 400; return; }
+    gen++;
+    for (const t of tiles) { t.f.step(); draw(t); }
+    genEl.textContent = gen;
+    if (gen >= G) clock.hold = 2800;
+  });
+  let pending = 0;
+  for (const t of tiles) t.stage.onresize = () => {
+    // all tiles resize together; rebuild once they have
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(() => { if (tiles.every((o) => o.f)) reset(); });
+  };
+  reset();
+}
+
 hero();
 laws();
 parting();
 for (const e of CATALOG) card(e);
 wakes();
 collisions();
+wall(diamonds());
 reducedMotion.addEventListener?.('change', wake);

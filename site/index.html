@@ -24,7 +24,8 @@
   "./js/lfod.js": "./js/lfod.js?v=dev",
   "./js/stage.js": "./js/stage.js?v=dev",
   "./js/catalog.js": "./js/catalog.js?v=dev",
-  "./js/collisions.js": "./js/collisions.js?v=dev"
+  "./js/collisions.js": "./js/collisions.js?v=dev",
+  "./js/diamonds.js": "./js/diamonds.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -98,6 +99,24 @@
       </div>
     </div>
     <p class="aside">The moon always enters from the left with its top row on row 0; the offset is the row where the target's top cell sits. Rows further out than those listed miss entirely, and the two carry on as if nothing were there. Of the <span id="n-touch">48</span> collisions that touch, <span id="n-explode">26</span> explode. Each run plays from generation 0 until the result has settled and anything still moving has left the frame; an explosion stops where it reaches the edge, still growing. Every outcome, the generation it settles by, and that the pieces never meet again, is checked by a test.</p>
+  </section>
+  <section class="diamonds" aria-labelledby="diamonds-h">
+    <h2 id="diamonds-h">Diamonds</h2>
+    <p class="lede">Two cells side by side part into two ships. Touching at a corner, they blink forever. One cell apart, they vanish. But put them a knight’s move apart and they never stop: of the <span class="n-pairs">5</span> ways to place two cells close enough to meet, this is the only one that explodes.</p>
+    <figure class="stage stage-diamond">
+      <canvas id="diamond" role="img" aria-label="Two cells a knight’s move apart, exploding, simulated exactly."></canvas>
+      <figcaption class="stage-gen">gen <b>0</b> · <span id="diamond-pop">2</span> cells · cell <span id="diamond-scale">16</span> px</figcaption>
+      <span class="stage-status" id="diamond-status"></span>
+    </figure>
+    <p>Nothing moves faster than one cell per generation, and straight up, down, left and right the explosion does exactly that. Along the diagonals it cannot: a cell two diagonal steps beyond the edge could have only one living neighbour, and birth takes two. So the fastest growth this universe allows is a diamond, and every explosion here reaches that limit on all eight fronts within its first seventy generations, then holds it. Inside, about a fifth of the cells are alive at any moment, always different, never settling.</p>
+
+    <div class="wall-head">
+      <h3>Three cells</h3>
+      <span class="strip-gen">gen <b id="wall-gen">0</b></span>
+    </div>
+    <p>Of the <span class="n-triples">31</span> ways to place three cells close enough to meet, <span class="n-triples-boom">21</span> explode. Here are all of them, growing together from generation 0 at one scale. One rule, one speed limit, and no two alike. Tap one to watch it large.</p>
+    <div class="wall" id="wall"></div>
+    <p class="aside">“Close enough to meet” means every cell is within two of another, so they share a neighbour; rotations and reflections count once. The other ten three-cell placements die out or settle into a few small objects. The view above zooms out by halves as the diamond grows, so every cell stays a whole number of pixels, and it stops once the diamond fills the frame; the explosion itself never stops. Each frame is computed exactly on an unbounded plane by a bit-packed engine (32 cells per machine word), which is tested cell for cell against the one that draws everything else. The counts, the fates, the speeds and the density are all checked by tests.</p>
   </section>
 </main>
 

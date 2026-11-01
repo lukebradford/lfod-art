@@ -34,6 +34,15 @@ or explodes. Two moons can annihilate, fuse into a monster, or throw off two fre
 ships at right angles. The collider is the site's first piece where the visitor
 chooses what happens, with every choice backed by a test.
 
+Session 4 found the fourth: **the diamond**. Most beginnings explode, and every
+explosion is the same shape for a reason that can be proved in a sentence: the tips
+can run at the speed of light, but the diagonal edges can't, because a cell two
+diagonal steps out has only one neighbour that could be alive, and birth needs two.
+Every small explosion reaches both limits at once. The motif is scale: one exact
+universe at 16 px per cell and at half a pixel per cell, and a wall of all 21
+three-cell explosions, no two alike. A bit-packed engine (`Field`) now makes
+million-cell fields cheap.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -53,11 +62,15 @@ LFoD field over the site's lifetime.
   compute the outcome live in a Worker using the same decomposition.
 - **Moon guns?** Two moons offset by ±1 make two free ships. Can a stationary
   reaction be fed moons to make a gun, or a pair of free ships be turned back into moons?
-- **Explosions**: the light-speed diamond from three cells has a crystalline straight
-  edge on one side (seen in a 200-generation render). Study and show it at scale
-  with a canvas tiled efficiently (bit-packed engine would be needed).
-- **Faster engine** for big fields: bit-packed rows (32 cells/word), still one
-  engine module, cross-tested against `Pattern`.
+- **Hero on `Field`**: the hero still uses `Pattern` and halts at 1.5M cells of box.
+  Moving it to `Field` (growing the box when the guard ring fills) would let a
+  visitor's explosion run far longer. Same for the collider's explosions.
+- **Diamond anatomy**: the straight double lines along some edges, and the red rays
+  of dots some explosions throw out along the axes, are visible but unexplained. Find
+  what they are (a diagonal "crystal" growing at the edge's speed? puffers riding the
+  tips?) and test it before naming them on the site.
+- **Four cells**: enumerate the four-cell placements (a few hundred) and find the
+  rare ones that do *not* explode. Which still lives, oscillators and ships appear?
 - **Anchor track periods**: the glossary lists the first iterations' periods as
   12, 28, 124, 124, 252, 60. Extending the two-slot track by adding dot pairs 4
   cells apart gives 12, 28, 28, 124, 252, 60, 60 in our engine, so the glossary's
@@ -77,7 +90,6 @@ LFoD field over the site's lifetime.
 - Shareable hero state: encode placed cells in the URL hash (no personal data).
 - Larger search: 5x5 all populations, 6x6 low population; look for slower ships
   (anything not at speed c?), longer periods, guns or puffers.
-- OG image: render a wake strip (it reads well small) instead of, or beside, the monster.
 - Hero: let a long press drag-place several cells; keyboard access for placing cells.
 - Accessibility: describe current hero state in text for screen readers.
 - Consider an RSS/“what grew this session” changelog page drawn from the journal.
@@ -207,3 +219,44 @@ LFoD field over the site's lifetime.
 - Identification needs two-stage clustering: cells within 2 of each other first, then the
   unidentified remainder within 6, because a free ship's spark sits apart from its body.
 - Counts in the prose (48 / 26) are filled in from the data, so they can't drift.
+
+### 2026-11-01: Session 4, diamonds
+- **Engine**: `Field` in `lfod.js`, a bit-packed stepper (32 cells per `Uint32` word, a
+  bit-sliced neighbour counter, work limited to the live region). It is exact on the
+  plane, not a torus: it refuses to step once a live cell touches its outermost ring,
+  because until then nothing outside can be born. It's about 27x faster than `Pattern`
+  on a 1400x1400 explosion (0.3 ms per generation). `tests/field.test.mjs` checks it
+  cell for cell against `Pattern` on soups straddling word boundaries and negative
+  coordinates, on ships and oscillators, its previous-generation buffer (used for the
+  red/ghost colouring), and that it refuses to step at the edge.
+- **Renderer**: `paintField` in `stage.js` writes straight into `ImageData`, with the same
+  colours, insets and graph-paper dots as `Stage.draw`.
+- **New section, "Diamonds"**:
+  - A large stage plays the knight's-move explosion from gen 0, zooming out by halves
+    (16 → 8 → … → 1 device px per cell, always whole pixels, with the scale shown) until
+    the diamond fills the frame, then says it is still growing and starts over.
+  - A wall of all 21 exploding three-cell placements grows in lockstep at one scale
+    (7x3 on desktop, 3x7 on phones), each with a glyph of its seed. Tapping a tile plays
+    it on the large stage.
+  - Reduced motion shows the final frames (counters show the real generation) instead
+    of three lonely dots (logic reviewed, not yet checked in a browser with reduced
+    motion on).
+- **Findings** (all in `tests/diamonds.test.mjs`, which enumerates placements
+  independently of the site's list):
+  - Two cells within reach of each other: 5 placements up to symmetry. Side by side:
+    two free ships. Corner to corner: a checker. One apart (straight or diagonal):
+    nothing. A knight's move: an explosion, the only pair that explodes.
+  - Three cells: 31 placements, 21 explode, exactly the site's list. The other ten die
+    or settle into still lifes/oscillators of at most 8 cells.
+  - **Why diamonds**: max(x + y) over live cells can grow by at most 1 per generation
+    for *any* pattern (proved in the prose, checked on soups), while the Moore light
+    cone allows 2. All 22 seeds hit that limit on all four diagonals from gen ≤ 30, and
+    grow their bounding box by exactly one cell per side per generation from gen ≤ 70
+    (checked to gen 300 and 600 respectively). About a fifth of each diamond is alive
+    (0.19–0.24 at gens 300 and 600).
+  - Correction to my own first draft: "nothing is faster than light, so explosions are
+    diamonds" is wrong in the Moore neighbourhood (the light cone is a square). The
+    diamond comes from B2, not from c.
+- **OG image** is now the knight's diamond at gen 140 (`tools/og.mjs`), which reads well
+  small and shows the red/ink colouring.
+- Measured in Chrome at 1400 px wide: wall and stage both hold 120 fps (8.3 ms frames).
