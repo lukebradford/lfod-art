@@ -23,7 +23,8 @@
 { "imports": {
   "./js/lfod.js": "./js/lfod.js?v=dev",
   "./js/stage.js": "./js/stage.js?v=dev",
-  "./js/catalog.js": "./js/catalog.js?v=dev"
+  "./js/catalog.js": "./js/catalog.js?v=dev",
+  "./js/collisions.js": "./js/collisions.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -79,6 +80,24 @@
     <p class="lede">Some travellers leave something behind. A puffer flies at the speed of light and lays down a trail as it goes. In this universe the trail is made of solitude: nearly everything these seven leave behind is a dot, one cell with no neighbours, which will therefore live forever. That is why their wakes are red.</p>
     <div class="strips" id="strips"></div>
     <p class="aside">Each strip follows its puffer exactly, one generation per step, and all of them step together, so every wake streams past at the same speed: the speed of light. The whole trail is simulated, including the part that has scrolled out of view. Every few minutes they start over, and the counters jump back. Tap to pause. Patterns are from the <a href="https://lukebradford.github.io/lfod/glossary.html">LFoD Universe glossary</a>. Their periods, speeds, populations and wakes are all checked by tests.</p>
+  </section>
+
+  <section class="collide" aria-labelledby="collide-h">
+    <h2 id="collide-h">Collisions</h2>
+    <p class="lede">Nothing can catch a moon: it already moves at the speed of light. But things can stand in its way, or come the other way. Send one at a dot, a checker or another moon, and what happens depends only on how many rows off-centre it hits and, against anything that moves or blinks, whether the gap between them is even or odd. Here is every way it can go.</p>
+    <div class="collider">
+      <figure class="stage stage-collide">
+        <canvas id="collide" role="img" aria-label="A moon colliding with another object, simulated exactly."></canvas>
+        <figcaption class="stage-gen">gen <b>0</b></figcaption>
+        <span class="stage-status" id="collide-status"></span>
+      </figure>
+      <div class="collide-panel">
+        <div class="targets" role="group" aria-label="What the moon hits" id="targets"></div>
+        <table class="atlas" id="atlas"></table>
+        <p class="collide-result" id="collide-result" aria-live="polite"></p>
+      </div>
+    </div>
+    <p class="aside">The moon always enters from the left with its top row on row 0; the offset is the row where the target's top cell sits. Rows further out than those listed miss entirely, and the two carry on as if nothing were there. Of the <span id="n-touch">48</span> collisions that touch, <span id="n-explode">26</span> explode. Each run plays from generation 0 until the result has settled and anything still moving has left the frame; an explosion stops where it reaches the edge, still growing. Every outcome, the generation it settles by, and that the pieces never meet again, is checked by a test.</p>
   </section>
 </main>
 

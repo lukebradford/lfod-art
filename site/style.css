@@ -134,6 +134,32 @@ section > p { max-width: 40em; }
 .strip-note { margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: var(--muted); max-width: 44em; }
 .aside { font-size: 15px; color: var(--muted); }
 
+/* collisions */
+.collider { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 28px; margin: 36px 0 24px; align-items: start; }
+.stage-collide { height: 460px; border: 1px solid var(--line); cursor: pointer; }
+.stage-status {
+  position: absolute; left: 10px; bottom: 8px;
+  font: 11px/1 var(--mono); color: var(--free); pointer-events: none;
+}
+.stage-status:not(:empty), .stage-collide .stage-gen { background: color-mix(in srgb, var(--paper) 88%, transparent); padding: 3px 4px; }
+.targets { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; }
+.targets button[aria-pressed="true"], .atlas button[aria-pressed="true"] {
+  background: var(--ink); color: var(--paper); border-color: var(--ink);
+}
+.atlas { width: 100%; border-collapse: collapse; table-layout: fixed; font: 12px/1.2 var(--mono); }
+.atlas thead th:first-child { width: 4.2em; }
+.atlas th { font-weight: normal; color: var(--muted); text-align: left; padding: 0 6px 6px 0; white-space: nowrap; }
+.atlas tbody th { text-align: right; padding: 0 10px 0 0; font-variant-numeric: tabular-nums; }
+.atlas td { padding: 1px 2px 1px 0; }
+.atlas button {
+  width: 100%; text-align: left; padding: 6px 7px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: transparent; border-color: transparent;
+}
+.atlas button.boom { color: var(--muted); font-style: italic; }
+.atlas button:hover { border-color: var(--ink); }
+.atlas button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.collide-result { font-size: 15px; line-height: 1.5; margin: 14px 0 0; min-height: 4.5em; }
+
 footer {
   max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px;
   border-top: 1px solid var(--line); color: var(--muted); font-size: 15px;
@@ -160,6 +186,13 @@ footer p { max-width: 40em; margin: 0 0 10px; }
   .strip .stage { --cs: 4px; }
   .strip h3 { font-size: 17px; }
   .strip-note { font-size: 14px; }
+  .collider { grid-template-columns: 1fr; gap: 18px; margin-top: 24px; }
+  .stage-collide { height: 320px; }
+  .atlas button { white-space: normal; }
+}
+@media (min-width: 601px) and (max-width: 860px) {
+  .collider { grid-template-columns: 1fr; }
+  .stage-collide { height: 400px; }
 }
 @media (max-width: 380px) {
   .cards { grid-template-columns: 1fr; }

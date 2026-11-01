@@ -1,6 +1,7 @@
 import { Pattern, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
 import { Stage, Clock, reducedMotion, wake } from './stage.js';
+import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence } from './collisions.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -327,9 +328,150 @@ function wakes() {
   host.addEventListener('click', () => clock.setPlaying(!clock.playing));
 }
 
+// ---------------------------------------------------------------------------
+// Collisions: a moon sent at another moon, a dot or a checker. The atlas lists every
+// offset where they touch (outcomes from collisions.js, each checked by a test);
+// choosing one plays it on the stage from generation 0, exactly. A clean run goes on
+// until the result has settled and anything moving has left the frame; an explosion
+// stops when it reaches the edge of the frame, and says so.
+function collisions() {
+  const canvas = $('#collide');
+  if (!canvas) return;
+  const stage = new Stage(canvas);
+  const genEl = canvas.parentElement.querySelector('.stage-gen b');
+  const statusEl = $('#collide-status'), resultEl = $('#collide-result');
+  const targetsEl = $('#targets'), atlas = $('#atlas');
+  const all = allCollisions();
+  $('#n-touch').textContent = all.length;
+  $('#n-explode').textContent = all.filter((c) => c.outcome.kind === 'explodes').length;
+
+  let sel = { target: targetById.moon, gap: 25, dy: 0 };
+  let o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, cols = 40, rows = 36, done = false;
+
+  const signed = (n) => (n > 0 ? '+' + n : n < 0 ? '−' + -n : '0');
+  const describe = () => `Moon versus ${sel.target.label}, offset ${signed(sel.dy)}${Object.keys(sel.target.rows).length > 1 ? `, ${sel.gap % 2 ? 'odd' : 'even'} gap` : ''}.`;
+
+  function start() {
+    o = parseOutcome(sel.target.rows[sel.gap][sel.dy - sel.target.dy[0]]);
+    cur = Pattern.fromCells(setup(sel.target, sel.dy, sel.gap));
+    prev = null; done = false;
+    statusEl.textContent = '';
+    resultEl.textContent = describe();
+    canvas.setAttribute('aria-label', `${describe()} ${sentence(o, sel.target.id)}`);
+    layout();
+  }
+
+  function layout() {
+    const { W, H } = stage;
+    cs = Math.max(2, Math.floor(Math.min(W / 36, H / 34)));
+    cols = Math.floor(W / cs); rows = Math.floor(H / cs);
+    // centre on the point of impact: halfway between two moons, or just left of a
+    // standing target so the incoming moon is in view from the start
+    const cx = sel.target.id === 'moon' ? (1 - sel.gap) / 2 : -3;
+    const cy = (sel.dy + 3) / 2 + 0.5;
+    ox = Math.round(W / 2 - cx * cs);
+    oy = Math.round(H / 2 - cy * cs);
+    draw();
+  }
+  function draw() {
+    stage.draw(cur, prev, cs, ox, oy);
+    genEl.textContent = cur.gen;
+  }
+  // world rectangle in view
+  const inView = (p) => p.x0 * cs + ox >= 0 && (p.x0 + p.w) * cs + ox <= stage.W
+    && p.y0 * cs + oy >= 0 && (p.y0 + p.h) * cs + oy <= stage.H;
+  const anyInView = (p) => p.w > 0 && (p.x0 + p.w) * cs + ox > 0 && p.x0 * cs + ox < stage.W
+    && (p.y0 + p.h) * cs + oy > 0 && p.y0 * cs + oy < stage.H;
+  // a clean run ends once its result is reached and anything moving is out of view
+  const moving = () => o.objects.moon || o.objects.freeship;
+  function finished() {
+    if (o.kind === 'explodes') {
+      if (cur.population > 400 && !inView(cur)) {
+        statusEl.textContent = 'still growing; stopped at the edge of the frame';
+        resultEl.textContent = `${describe()} ${sentence(o)}`;
+        return true;
+      }
+      return false;
+    }
+    if (cur.gen < o.at) return false;
+    if (cur.gen === o.at) resultEl.textContent = `${describe()} ${sentence(o, sel.target.id)}`;
+    if (o.kind === 'nothing') return cur.gen >= o.at + 12;
+    if (moving()) return cur.gen >= o.at + Math.ceil(Math.max(cols, rows) / 2) + 6;
+    return cur.gen >= o.at + 38; // two full turns of a monster; plenty for blinkers
+  }
+
+  const clock = new Clock(canvas, 9, () => {
+    if (done) { start(); return; }
+    prev = cur; cur = cur.next();
+    draw();
+    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
+  });
+  canvas.addEventListener('click', () => clock.setPlaying(!clock.playing));
+
+  // target choice and the atlas of outcomes
+  const tbtns = TARGETS.map((t) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = t.label;
+    b.onclick = () => {
+      const gaps = Object.keys(t.rows).map(Number);
+      // open on the most remarkable clean outcome for this target
+      const best = all.filter((c) => c.target === t && c.outcome.kind !== 'explodes')
+        .sort((a, b) => score(b) - score(a))[0];
+      sel = best ? { target: t, gap: best.gap, dy: best.dy } : { target: t, gap: gaps[0], dy: 0 };
+      choose();
+    };
+    targetsEl.append(b);
+    return [t, b];
+  });
+  const score = (c) => (c.outcome.objects.monster ? 9 : c.outcome.objects.freeship ? 8 : c.outcome.kind === 'nothing' ? 7 : Object.keys(c.outcome.objects).length === 1 ? 5 : 1);
+
+  function renderAtlas() {
+    const t = sel.target, gaps = Object.keys(t.rows).map(Number);
+    atlas.textContent = '';
+    const head = atlas.createTHead().insertRow();
+    const th0 = document.createElement('th'); th0.textContent = 'offset'; th0.scope = 'col'; head.append(th0);
+    for (const g of gaps) {
+      const th = document.createElement('th'); th.scope = 'col';
+      th.textContent = gaps.length > 1 ? (g % 2 ? 'odd gap' : 'even gap') : 'any gap';
+      head.append(th);
+    }
+    const body = atlas.createTBody();
+    for (let dy = t.dy[0]; dy <= t.dy[1]; dy++) {
+      const tr = body.insertRow();
+      const th = document.createElement('th'); th.scope = 'row'; th.textContent = signed(dy); tr.append(th);
+      for (const g of gaps) {
+        const oc = parseOutcome(t.rows[g][dy - t.dy[0]]);
+        const td = tr.insertCell();
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = shortLabel(oc);
+        b.className = oc.kind === 'explodes' ? 'boom' : 'clean';
+        b.setAttribute('aria-pressed', String(g === sel.gap && dy === sel.dy));
+        b.setAttribute('aria-label', `offset ${signed(dy)}${gaps.length > 1 ? `, ${g % 2 ? 'odd' : 'even'} gap` : ''}: ${shortLabel(oc)}`);
+        b.onclick = () => { sel = { target: t, gap: g, dy }; choose(); };
+        td.append(b);
+      }
+    }
+  }
+
+  function choose() {
+    for (const [t, b] of tbtns) b.setAttribute('aria-pressed', String(t === sel.target));
+    renderAtlas();
+    start();
+    clock.hold = 0;
+    clock.setPlaying(true); // choosing a collision is a request to watch it
+  }
+
+  stage.onresize = () => { if (cur) layout(); };
+  for (const [t, b] of tbtns) b.setAttribute('aria-pressed', String(t === sel.target));
+  renderAtlas();
+  start();
+}
+
 hero();
 laws();
 parting();
 for (const e of CATALOG) card(e);
 wakes();
+collisions();
 reducedMotion.addEventListener?.('change', wake);

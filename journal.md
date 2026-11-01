@@ -28,6 +28,12 @@ red (free) cells: lattices of solitude, a different weave for every period. Wide
 strips moving in lockstep at the speed of light became a new visual form for the site
 alongside square cards.
 
+Session 3 found a third: **the collision**. Light-speed things can't chase each
+other, only meet, and every meeting either resolves into a handful of named objects
+or explodes. Two moons can annihilate, fuse into a monster, or throw off two free
+ships at right angles. The collider is the site's first piece where the visitor
+chooses what happens, with every choice backed by a test.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -38,8 +44,15 @@ LFoD field over the site's lifetime.
 
 - **Search in the browser**: a Web Worker that enumerates patterns in a box and
   reports new oscillators/ships live, with the results as new bestiary entries.
-- **Collisions**: moon vs dot, moon vs checker, free ship vs free ship. Which
-  reactions are clean (annihilation, deflection, a new object)? Test each claim.
+- **More collisions**: moon vs moon at right angles (two offsets, so a 2-D atlas);
+  free ship vs dot / checker / moon; moon vs anchor, ant, monster; moon vs a wake
+  (does a moon fired into a dot trail eat it, or explode?). The test harness in
+  `tests/collisions.test.mjs` (decompose into named objects + independence check) is
+  reusable; move `decompose` into a shared module if the site ever needs it live.
+- **Collider sandbox**: let visitors pick any offset/gap, not just the atlas, and
+  compute the outcome live in a Worker using the same decomposition.
+- **Moon guns?** Two moons offset by ±1 make two free ships. Can a stationary
+  reaction be fed moons to make a gun, or a pair of free ships be turned back into moons?
 - **Explosions**: the light-speed diamond from three cells has a crystalline straight
   edge on one side (seen in a 200-generation render). Study and show it at scale
   with a canvas tiled efficiently (bit-packed engine would be needed).
@@ -165,3 +178,32 @@ LFoD field over the site's lifetime.
   back a quarter turn to compare it with the upper ship a horizontal domino produces.
   Convention from here on: show moving objects travelling right unless a piece needs
   otherwise.
+
+### 2026-11-01: Session 3, collisions
+- **New section, "Collisions"**: a collider. Pick what a moon hits (another moon head-on,
+  a dot, or a checker), then any offset and gap parity from an atlas listing every case
+  where they touch; the stage plays it from generation 0, exactly. 48 collisions, 26
+  of which explode. Clean ones run until the result has settled and anything moving has
+  left the frame. Explosions stop at the edge of the frame and say so ("still growing").
+  The result sentence is revealed at the generation it becomes true.
+- **Findings** (all by simulation, all tested):
+  - Two moons exactly head-on: with an even gap they **annihilate** (nothing left, gen 12);
+    with an odd gap they **fuse into a monster**, the p19 oscillator, by gen 11.
+  - Offset by one row with an odd gap, they make **two free ships flying up and down**,
+    at right angles to the moons, plus four checkers.
+  - Offsets ±2 leave 2 or 4 dots; ±3 leave two checkers; |offset| ≥ 6 is a clean miss.
+  - Moon vs dot: only offsets −1 and +4 (mirror images) are clean (a checker and a dot);
+    the other six explode. Timing can't matter, since a dot never changes.
+  - Moon vs checker: in two cases the checker **swallows the moon** and is knocked
+    exactly four rows across, same phase, same column.
+- **What the tests prove** (`tests/collisions.test.mjs`, 54 tests): for each atlas entry,
+  run exactly the site's setup; clean outcomes decompose at generation `at` (and not at
+  `at − 1`) into dots, checkers, moons, free ships and monsters (matched in every phase
+  and orientation) that evolve identically apart for 150 more generations; explosions have
+  >4000 cells at gen 150 and grow ≥80 cells in each dimension in the next 50. Also:
+  shifting the gap by 2 gives the same outcome (so parity is all that matters); offsets
+  1–3 beyond each range are clean misses; the free ships fly (0, ±6) per period; the
+  swallowing checker is displaced (0, ±4).
+- Identification needs two-stage clustering: cells within 2 of each other first, then the
+  unidentified remainder within 6, because a free ship's spark sits apart from its body.
+- Counts in the prose (48 / 26) are filled in from the data, so they can't drift.
