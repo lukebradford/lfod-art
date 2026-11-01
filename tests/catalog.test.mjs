@@ -60,8 +60,8 @@ test('a domino splits into exactly two free ships flying apart', () => {
 });
 
 
-test('Pinwheel and Monster are symmetric under a half turn in every phase', () => {
-  for (const id of ['pinwheel', 'monster']) {
+test('Ant and Monster are symmetric under a half turn in every phase', () => {
+  for (const id of ['ant', 'monster']) {
     let p = Pattern.fromRLE(byId[id].rle);
     for (let g = 0; g < byId[id].period; g++, p = p.next()) {
       const turned = Pattern.fromCells(p.cells().map(([x, y]) => [-x, -y]));
@@ -93,3 +93,26 @@ for (const e of CATALOG.filter((e) => e.apgcode)) {
 test('every name is either sourced or explicitly provisional', () => {
   for (const e of CATALOG) assert.ok(Boolean(e.source) !== Boolean(e.provisional), e.name);
 });
+
+// The glossary RLEs (rule written s0/b2 there), copied from the LFoD Universe
+// collection: each must be a phase, in some orientation, of the object shown.
+const GLOSSARY_RLE = {
+  anchor: 'o$bo2$bo$o!',
+  anchortrack: 'bo3bo$o2$o$bo3bo!',
+  ant: 'bobo$o$7bo$4bobo!',
+  lever: 'bo$o3bo$3bo!',
+  radar: 'bo$o$3bo$2bo!',
+  monster: 'o2bo$o2bo$o2bo!',
+  moon: 'o$bo$bo$o!',
+  freeship: 'o4bo$3b2obo$8bo$8bo$3b2obo$o4bo!',
+};
+for (const [id, rle] of Object.entries(GLOSSARY_RLE)) {
+  test(`${byId[id].name} is the glossary's ${id}`, () => {
+    const e = byId[id];
+    const pub = Pattern.fromRLE(rle).cells();
+    const phases = [];
+    let p = Pattern.fromRLE(e.rle);
+    for (let g = 0; g < e.period; g++, p = p.next()) phases.push(p);
+    assert.ok(SYM.some((t) => phases.some((ph) => ph.sameShape(Pattern.fromCells(pub.map(t))))));
+  });
+}

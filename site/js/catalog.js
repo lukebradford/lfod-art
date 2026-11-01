@@ -2,9 +2,10 @@
 // Every claim here (kind, period, displacement, population range, hull) is checked
 // by tests/catalog.test.mjs against the real engine.
 //
-// Names: where the Life community has already named an object (LifeWiki's
-// "OCA:Live Free or Die" page, the ConwayLife forum thread, Catagolue), we use that
-// name and record where it comes from in `source`. When an object also has a
+// Names: we use the established names. The primary source is the Live Free or
+// Die Universe glossary (the rule's original pattern collection, restored at
+// lukebradford.github.io/lfod), whose RLEs were matched to these patterns by
+// simulation in every phase and orientation. `source` links to the entry. When an object also has a
 // Catagolue apgcode, `apgcode` is recorded and the tests decode it and check it is
 // the same object. Names marked `provisional: true` are this site's own, used only
 // until the established name can be confirmed for that exact pattern.
@@ -12,13 +13,14 @@
 // All of these turned up in the exhaustive search in tools/search.mjs: every pattern
 // in a 4x4 box, and up to 7 cells in a 5x5 box, run to its eventual cycle.
 
-const LIFEWIKI = 'https://conwaylife.com/wiki/OCA:Live_Free_or_Die';
+const GLOSSARY = 'https://lukebradford.github.io/lfod/glossary.html#';
+const src = (id) => ({ label: 'LFoD Universe glossary', url: GLOSSARY + id });
 
 export const CATALOG = [
   {
     id: 'dot',
     name: 'Dot',
-    source: { label: 'LifeWiki', url: LIFEWIKI },
+    source: src('dot'),
     rle: 'x = 1, y = 1, rule = B2/S0\no!',
     kind: 'still', period: 1, dx: 0, dy: 0, pop: [1, 1], hull: [1, 1],
     note: 'One cell with no neighbours, and the only still life this rule has. The only way to survive here is to be alone, so a lone cell lives forever.',
@@ -27,61 +29,78 @@ export const CATALOG = [
     id: 'checker',
     name: 'Checker',
     aka: 'duoplet',
-    source: { label: 'LifeWiki', url: LIFEWIKI },
+    source: src('checker'),
     rle: 'x = 2, y = 2, rule = B2/S0\no$bo!',
     kind: 'osc', period: 2, dx: 0, dy: 0, pop: [2, 2], hull: [2, 2],
     note: 'Two cells touching at a corner. Each has a neighbour, so both die; the two empty corners each see exactly two, so both are born. It swaps diagonals forever.',
   },
   {
-    id: 'bow',
-    name: 'Bow',
-    provisional: true,
+    id: 'lever',
+    name: 'Lever',
+    source: src('lever'),
+    rle: 'x = 5, y = 3, rule = B2/S0\nbo$o3bo$3bo!',
+    kind: 'osc', period: 4, dx: 0, dy: 0, pop: [4, 5], hull: [5, 3],
+    note: 'The smallest period-4 oscillator by bounding box and by average population.',
+  },
+  {
+    id: 'radar',
+    name: 'Radar',
+    source: src('radar'),
+    rle: 'x = 4, y = 4, rule = B2/S0\nbo$o$3bo$2bo!',
+    kind: 'osc', period: 4, dx: 0, dy: 0, pop: [4, 6], hull: [4, 4],
+    note: 'Two pairs of cells in opposite corners fold into a square block, then open into the other two corners, sweeping round like a radar.',
+  },
+  {
+    id: 'anchor',
+    name: 'Anchor',
+    source: src('anchor'),
     rle: 'x = 5, y = 2, rule = B2/S0\nbobo$o3bo!',
     kind: 'osc', period: 4, dx: 0, dy: 0, pop: [4, 7], hull: [5, 5],
-    note: 'The period-4 oscillator that turned up most often in the search. An arrowhead fires downward, folds, and fires back.',
+    note: 'The period-4 oscillator that turned up most often in our search, a building block of many larger oscillators and a common puffer output. An arrowhead fires, folds, and fires back.',
   },
   {
-    id: 'pinwheel',
-    name: 'Pinwheel',
-    provisional: true,
+    id: 'ant',
+    name: 'Ant',
+    source: src('ant'),
+    credit: 'Josh Ball',
     rle: 'x = 8, y = 4, rule = B2/S0\n4bobo$7bo$o$bobo!',
     kind: 'osc', period: 6, dx: 0, dy: 0, pop: [6, 12], hull: [8, 6],
-    note: 'Two sparks chase each other around a centre, half a turn of symmetry apart.',
+    note: 'The smallest known period-6 oscillator: two sparks chasing each other around a centre, half a turn apart. Found by Josh Ball.',
   },
   {
-    id: 'rally',
-    name: 'Rally',
-    provisional: true,
+    id: 'anchortrack',
+    name: 'Two-slot anchor track',
+    source: src('anchor-track'),
     rle: 'x = 6, y = 5, rule = B2/S0\nbo3bo$o2$o$bo3bo!',
     kind: 'osc', period: 12, dx: 0, dy: 0, pop: [6, 14], hull: [9, 5],
-    note: 'A pair of arrows volley a disturbance back and forth between them, period 12.',
+    note: 'An anchor shuttling along a track of dots. Add more pairs of dots and the track, and its period, grows without limit.',
   },
   {
     id: 'monster',
     name: 'Monster',
-    source: { label: 'LifeWiki', url: LIFEWIKI },
+    source: src('monster'),
     rle: 'x = 4, y = 3, rule = B2/S0\no2bo$o2bo$o2bo!',
     kind: 'osc', period: 19, dx: 0, dy: 0, pop: [6, 40], hull: [16, 13],
-    note: 'Two short parallel lines open into a sixteen-cell-wide flower and close again every 19 generations.',
+    note: 'Two short parallel lines open into a sixteen-cell-wide flower and close again every 19 generations. The largest oscillator here that cannot be split into smaller ones.',
   },
   {
     id: 'moon',
     name: 'Moon',
-    source: { label: 'LifeWiki', url: LIFEWIKI },
+    source: src('moon'),
     apgcode: 'xq1_69',
     rle: 'x = 4, y = 2, rule = B2/S0\no2bo$b2o!',
     kind: 'ship', period: 1, dx: 0, dy: 1, pop: [4, 4],
-    note: 'Four cells that move one cell per generation: the speed of light, the fastest anything can travel in this universe.',
+    note: 'The smallest spaceship and the only one with period 1: four cells moving one cell per generation, the speed of light, the fastest anything can travel here.',
   },
   {
     id: 'freeship',
     name: 'Free ship',
-    source: { label: 'LifeWiki', url: 'https://conwaylife.com/wiki/OCA:Live_Free_or_Die/Free_ship' },
+    source: src('free-ship'),
     apgcode: 'xq6_1owo1z128821',
     // the upper of the two ships a domino splits into (see tests)
     rle: 'x = 8, y = 13, rule = B2/S0\n3b2o2$2bo2bo$bo4bo$3b2o$bo4bo5$obo2bobo2$obo2bobo!',
     kind: 'ship', period: 6, dx: 0, dy: -6, pop: [12, 40],
-    note: 'A light-speed ship that changes shape over six generations, trailing a large spark. A single domino (two side-by-side cells) splits into two of them flying apart.',
+    note: 'The emblem of the Live Free or Die universe: a light-speed ship that changes shape over six generations, trailing a large spark. A single domino splits into two of them flying apart.',
   },
 ];
 

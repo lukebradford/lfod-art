@@ -39,13 +39,14 @@ LFoD field over the site's lifetime.
   with a canvas tiled efficiently (bit-packed engine would be needed).
 - **Faster engine** for big fields: bit-packed rows (32 cells/word), still one
   engine module, cross-tested against `Pattern`.
-- **Names**: LifeWiki also names p4 oscillators "lever", "anchor" and "radar", a p6
-  "ant", p4 photons "key ship", "plus ship", "robot ship", "sun ship", a p8 "octopus
-  ship", and a "short free ship" (Catagolue `xq6_4q11q4z4y04`). Patterns for the
-  oscillator names were not findable (LifeWiki has no subpages for them; the
-  forum thread mentions them without RLE). Bow, Pinwheel and Rally are provisional
-  until matched. The rule's creator (credited on LifeWiki) may be able
-  to settle these directly.
+- **Anchor track periods**: the glossary lists the first iterations' periods as
+  12, 28, 124, 124, 252, 60. Extending the two-slot track by adding dot pairs 4
+  cells apart gives 12, 28, 28, 124, 252, 60, 60 in our engine, so the glossary's
+  iterations are probably built differently. Find the right construction (the
+  collection's "Anchor track periods" file) before claiming the sequence.
+- Use more of the LFoD Universe collection (~/Dropbox/Code/lfod, data/glossary.json
+  has 190 named entries, 143 with RLE): puffers, rakes, the moon laser, the anchor
+  and ant stacks, the mantis, the six shooter. Every claim still gets a test.
 - Show the short free ship, the c/2…c/5 ships and the moon laser gun (LifeWiki).
 - Shareable hero state: encode placed cells in the URL hash (no personal data).
 - Larger search: 5x5 all populations, 6x6 low population; look for slower ships
@@ -95,3 +96,11 @@ LFoD field over the site's lifetime.
   LifeWiki and the forum are behind Cloudflare, so they were read via the browser.
 - Note: LifeWiki's free ship infobox says 4 cells; simulation of its own apgcode
   gives 12–40 cells over the period. We show the simulated figures.
+- **Names, resolved (same day)**: the owner pointed to the original pattern
+  collection (`lukebradford/lfod`, glossary live at
+  lukebradford.github.io/lfod/glossary.html). Matching its RLEs by simulation:
+  Bow = **anchor**, Pinwheel = **ant** (Josh Ball), Rally = **two-slot anchor
+  track**. Added the **lever** and **radar**, the other 4-cell p4 oscillators.
+  Every card now links to its glossary entry, and tests check that each glossary
+  RLE is a phase of the pattern shown. No provisional names remain. The glossary
+  also confirms the free ship's minimum of 12 cells (LifeWiki's infobox says 4).
