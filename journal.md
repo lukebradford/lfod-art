@@ -150,3 +150,12 @@ LFoD field over the site's lifetime.
   except the zodiac's (dots and checkers).
 - Small fix: the rule diagrams' captions were squeezed to about 100 px by the default
   `figure` margins; they now take the remaining width.
+- **Bug found on the live site after deploying**: the browser kept its cached old
+  `main.js` (GitHub Pages sends `max-age=600`) next to the new HTML, so the Wakes
+  section rendered empty. Any returning visitor within ten minutes of a deploy would
+  have got a mixed version. Fix without a build step: `index.html` loads every asset
+  as `?v=dev`, with an import map that also versions the modules `main.js` imports,
+  and the deploy job replaces `?v=dev` with the commit id (and fails if any is left).
+  `tests/site.test.mjs` checks that every module in `site/js` is in the import map,
+  so a new module can't silently skip cache busting. `wakes()` also returns early if
+  its container is missing.

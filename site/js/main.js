@@ -262,6 +262,7 @@ const AHEAD = 3; // empty cells shown in front of the puffer (nothing can outrun
 
 function wakes() {
   const host = $('#strips');
+  if (!host) return;
   const strips = PUFFERS.map((e) => {
     const rows = e.band[1] - e.band[0] + 1;
     const el = document.createElement('article');

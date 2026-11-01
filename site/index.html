@@ -15,8 +15,18 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css">
-<script type="module" src="js/main.js"></script>
+<link rel="stylesheet" href="style.css?v=dev">
+<!-- Cache busting without a build step: CI replaces every "?v=dev" with the commit id,
+     so a new deploy never mixes fresh HTML with stale cached modules. Every module in
+     site/js must be listed here (a test checks). -->
+<script type="importmap">
+{ "imports": {
+  "./js/lfod.js": "./js/lfod.js?v=dev",
+  "./js/stage.js": "./js/stage.js?v=dev",
+  "./js/catalog.js": "./js/catalog.js?v=dev"
+} }
+</script>
+<script type="module" src="js/main.js?v=dev"></script>
 </head>
 <body>
 
