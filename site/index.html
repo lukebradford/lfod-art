@@ -32,7 +32,8 @@
   "./js/dominoes.js": "./js/dominoes.js?v=dev",
   "./js/abreast.js": "./js/abreast.js?v=dev",
   "./js/headon.js": "./js/headon.js?v=dev",
-  "./js/slow.js": "./js/slow.js?v=dev"
+  "./js/slow.js": "./js/slow.js?v=dev",
+  "./js/crossing.js": "./js/crossing.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -81,6 +82,7 @@
       <li><a href="#dominoes">Two dominoes</a> <span>every place for a second domino</span></li>
       <li><a href="#abreast">Side by side</a> <span>two ships flying together</span></li>
       <li><a href="#headon">Head-on</a> <span>two ships flying at each other</span></li>
+      <li><a href="#crossing">Crossing</a> <span>two ships at right angles</span></li>
       <li><a href="#slow">Slower than light</a> <span>the few ships that fly below c</span></li>
     </ol>
   </nav>
@@ -285,6 +287,38 @@
       </figcaption>
     </figure>
     <p class="aside">Both ships are free ships, the first in its smallest form. Phase <i>k</i> means the second is <i>k</i> generations further through its six-generation cycle; timing <i>t</i> means its path starts <i>t</i> columns further off. Twelve columns further is the same meeting six generations later, so six phases and twelve timings are every way two ships can approach. Beyond <span class="n-ho-dy">11</span> rows across, two empty rows always lie between them, and they never touch. Mirror images count once: flipped top to bottom a meeting is the same distance across, and turned half round, phase <i>k</i> and timing <i>t</i> become phase 6 − <i>k</i> and timing <i>t</i> + 6, so the map’s <span class="n-ho-sq">864</span> squares hold <span class="n-ho">504</span> meetings, and <span class="n-ho-apart">63</span> of them never touch. Each run plays from generation 0 on an unbounded plane until the result has settled and anything moving has left the frame; an explosion stops where it reaches the edge, still growing. Every square, the generation each result is reached by, both symmetries, and that ships passing through are exactly as if alone are checked by tests that run every meeting.</p>
+  </section>
+  <section class="crossing" id="crossing" aria-labelledby="crossing-h">
+    <h2 id="crossing-h">Crossing</h2>
+    <p class="lede">Turn one ship a quarter and their paths cross. Here is every way two free ships can meet at right angles: the second in any phase, at every timing, arriving at the crossing any number of generations before or after the first. Of <span class="n-cr-touch">759</span> crossings where they touch, <span class="n-cr-boom">746</span> explode. In the other <span class="n-cr-one">thirteen</span>, one ship flies on and the other is gone.</p>
+    <div class="flotillas crossings" id="crossings" role="list" aria-label="Two crossings in which one ship erases the other"></div>
+    <p>The one that flies on is always the one that got there first, and it flies on untouched: from the moment they meet it is exactly where and what it would have been had the other never existed. The other arrives at least <span class="n-cr-lagmin">15</span> generations late, when only the tail of the first is still crossing its path, and runs into it. Usually it leaves a few dots or a checker behind. <span class="n-cr-clean-k">Two</span> of these crossings, shown above, leave nothing at all: one ship is wiped out by another that never notices.</p>
+
+    <div class="wall-head">
+      <h3>Every crossing</h3>
+    </div>
+    <p>Head-on, two ships come through together or not at all. Crossing, they never both come through. No crossing annihilates, and none makes anything new: what is left is one of the two ships that met, dots and checkers, or an explosion.</p>
+    <figure class="stage stage-duel stage-cross" id="cstage">
+      <canvas role="img" aria-label="Two free ships crossing at right angles, simulated exactly."></canvas>
+      <div class="stage-name"><span id="cstage-name"></span></div>
+      <figcaption class="stage-gen">gen <b>0</b></figcaption>
+      <span class="player-result" id="cstage-result" aria-live="polite"></span>
+      <span class="stage-status" id="cstage-status"></span>
+    </figure>
+    <figure class="dmap-fig">
+      <canvas class="dmap" id="cmap" tabindex="0" aria-describedby="cmap-help"></canvas>
+      <figcaption>
+        <p class="dmap-hover" id="cmap-hover" aria-live="polite"></p>
+        <ul class="dlegend">
+          <li><i class="k-boom"></i>explodes</li>
+          <li><i class="k-flot"></i>one ship flies on, leaving dots or checkers</li>
+          <li><i class="k-grow"></i>one ship flies on, leaving nothing</li>
+          <li><i class="k-apart"></i>they never touch</li>
+        </ul>
+        <p class="dmap-help" id="cmap-help">Each block is one phase of the ship flying down, each row in it one timing. Across, a square is how late that ship reaches the crossing: to the right of the line it comes after the ship flying right, to the left, before. Tap one to watch it, or use the arrow keys. <a id="cstage-open" href="#">Open this one in the field at the top</a>.</p>
+      </figcaption>
+    </figure>
+    <p class="aside">Both ships are free ships; the one flying right starts in its smallest form. Phase <i>k</i> means the one flying down is <i>k</i> generations further through its six-generation cycle; timing <i>t</i> moves its path <i>t</i> columns right and its start <i>t</i> rows up, which keeps its lag the same. Six columns and six rows further on is the same crossing six generations later, so six phases and six timings are every way two ships can cross. Lag is counted from when each nose reaches the other’s path. More than <span class="n-cr-d">21</span> generations apart, the ships never touch (from 28 on they can’t even come within reach of each other). Mirror images count once: reflected in a diagonal, the two ships swap roles, so the map’s <span class="n-cr-sq">1,548</span> squares hold <span class="n-cr">777</span> crossings, <span class="n-cr-apart">18</span> of which never touch. Each run plays from generation 0 on an unbounded plane; the faint bands are the ships’ paths, drawn under the cells. Every square, the generation each result is reached by, the symmetry, and that the ship that flies on is exactly as if alone are checked by tests that run every crossing.</p>
   </section>
   <section class="slow" id="slow" aria-labelledby="slow-h">
     <h2 id="slow-h">Slower than light</h2>

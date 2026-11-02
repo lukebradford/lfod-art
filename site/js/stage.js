@@ -8,6 +8,7 @@ export const COLORS = {
   ghost: '#e8e5dc', // a cell that was alive one generation ago and is not now
   dot: '#dedad0', // graph-paper dots at cell corners
   beyond: '#efece3', // where nothing can be alive yet (past a light front or speed limit)
+  path: '#f4f1e8', // a ship's path, drawn faintly under the cells
 };
 
 export const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');

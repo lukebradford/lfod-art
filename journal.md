@@ -96,6 +96,14 @@ The motif is the limit: the light front, which the moon rides exactly, and the d
 limit from Diamonds (c/2), which the three diagonal ships reach only half of. And one
 oddity, made visible: the decade ship's nose steps backwards, which no light-speed ship can do.
 
+Session 12 found the twelfth: **right of way**. Turn one free ship a quarter and their
+paths cross. Of 759 ways to cross that touch, 746 explode, and the rest let exactly one
+ship through, never both. The one that goes on is always the one
+that reached the crossing first, untouched, exactly as if alone; the other arrived 15 to
+20 generations late and ran into its tail. Twice the late ship vanishes without a trace.
+Head-on was "both or neither"; crossing is "one or neither". The motif is precedence, and
+the site's first faint drawing of a path under the cells.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -144,8 +152,11 @@ LFoD field over the site's lifetime.
 - **Ship into wake**: a free ship fired head-on into each of the wakes (Wakes, the five
   side-by-side puffers). Does a ship eat a dot trail, or explode on the first dot? (Head-on
   ships pass only where sparks graze, so probably explode; test it.)
-- **Ship meets ship at right angles**: the perpendicular case of Head-on (a 2-D atlas of
-  crossings), and ship vs moon head-on.
+- **Ship vs moon**: head-on and crossing (the moon is c too, so the same harnesses apply
+  with a different second body: `crossOutcome`/`headOnOutcome` generalised over B's cells).
+- **Three ships through one point**: a third ship sent through a crossing that lets one
+  survive. Can a chain of crossings act as a logic gate (A passes iff B absent)? This is
+  what "one or neither" suggests: the late ship is an inhibitor. Test before claiming.
 - **Head-on, three bodies**: a ship passing through a flotilla, or through dueling
   dominoes' puffers.
 - **Other ships side by side**: moons beside free ships (three of the side-by-side
@@ -190,9 +201,6 @@ LFoD field over the site's lifetime.
 - **Light fronts elsewhere**: the shaded "beyond light" region is new in session 11
   (`COLORS.beyond`, `Stage.draw`'s `under` hook). Wakes and Two cells, parting could show
   it too, and the hero could show the light cone of a fresh beginning.
-- **Reload lands wrong**: reloading a page with a `#section` hash keeps the browser's
-  restored scroll position, because `anchors()` treats it as the reader having scrolled.
-  A fresh visit to the same link is fine. Low priority.
 
 ## Log
 
@@ -620,4 +628,48 @@ LFoD field over the site's lifetime.
 - **Bugs caught before shipping**: (1) the table overflowed a 390 px screen by 13 px (the
   period column is hidden on phones; names wrap). (2) My first expectation that the decade
   ship falls back once a period was wrong (twice: it is p10 at c/5).
+
+### 2026-11-02: Session 12, crossing
+- **New section, "Crossing"** (after Head-on; 12th in the contents, two columns of six):
+  every way two free ships can meet at right angles. Ship A is the glossary's 12-cell phase
+  flying right; ship B the same ship turned to fly down (SHIP[ph] reflected in the diagonal,
+  a turn because every phase is symmetric), `ph` generations into its flight, its path in
+  columns bx..bx+5 (bx = 18 + u), arriving `d` generations after A (`site/js/crossing.js`).
+  d is defined by noses: A's reaches column bx at bx - 8, B's reaches row 0 at bx + d - 8.
+  B six columns left and six rows lower is the same crossing six generations later, so
+  6 phases x 6 timings x lags -21..21 is every crossing (1,548 squares). Shown as: two
+  tiles of the clean erasures (one with each ship surviving), a stage, and a map (six
+  blocks of six rows, lag across with a centre line, "down first / right first").
+  The ships' paths are drawn faintly under the cells (`COLORS.path`), the first time the
+  site draws anything but cells and light fronts on a stage.
+- **Findings** (`tests/crossing.test.mjs`, 10 tests, which run every crossing):
+  - 777 crossings up to mirror image (reflection in the diagonal swaps the ships' roles:
+    (ph, u, d) -> (6 - ph, u + ph + d, -d) mod 6, an involution, found by reflecting every
+    crossing and finding it in another's run). 18 never touch; of the 759 that do, 746
+    explode and 13 leave exactly one ship. None annihilate; none leave only debris; none
+    make anything but dots and checkers; **no crossing lets both ships through**.
+  - The survivor is always the one that arrived first (d > 0: A; d < 0: B), untouched (cell
+    for cell for 120 generations; debris repeats with period 2), and the lag is always 15,
+    16, 18, 19 or 20: the late ship runs into the first one's tail.
+  - Two (up to mirror) leave nothing at all but the survivor: (1, 0, 15) and (1, 3, 18).
+  - Beyond |d| = 21 they never touch: run to 27; from 28 on, the bounding ranges (A rows
+    -2..7, columns g-6..g+8; B columns bx-2..bx+7, rows by+g-6..by+g+8) never come within
+    reach at the same generation (an algebraic test).
+- **Classifier** `crossOutcome` in `tests/objects.mjs`: 'apart' is exact (no touch through
+  generation min(bx + 16, 16 - by), when three empty columns or rows separate them and the
+  gap only grows). `tools/crossing.mjs` writes the data (about 8 s).
+- **Bug fixed: reload landed wrong.** Reloading a `#section` link put back the browser's old
+  scroll position, and a warm-cache reload could fire `load` before the first frame, so the
+  "re-scroll at load" ran before the maps sized themselves (ended 30 px off). Now
+  `history.scrollRestoration = 'manual'` when the hash names a section, and a
+  ResizeObserver on the body keeps the section at the top whenever the page changes size,
+  until the reader touches anything (wheel, touch, key, pointer) or 1.5 s after load.
+  Checked: fresh visit and reload both land at exactly 0 px.
+- `NUM` now counts to thirteen.
+- My own mistakes, caught: (1) a placeholder `MAP` left above the generated block broke
+  the module (duplicate export); the generator now appends below whatever head it finds.
+  (2) I guessed the census counts in the test before running it; the run corrected them
+  (apart counts depend on the box and are not used in the prose except as "never touch").
+  (3) On a phone-width tile I thought I saw a second object after a clean erasure; the
+  engine says gen 35 is A alone (x 29..43), clipped by the tile edge.
 

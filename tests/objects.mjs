@@ -408,3 +408,50 @@ export function headOnOutcome(ph, t, dy, { settle = 200 } = {}) {
   }
   throw new Error(`unclassified: ${ph} ${t} ${dy}`);
 }
+
+// --- two free ships crossing at right angles -------------------------------------------
+// The placements are defined in site/js/crossing.js (shared with the page).
+import { X as CX, crossB, crossPair } from '../site/js/crossing.js';
+
+// What two free ships crossing at right angles become. One of
+//   { kind: 'apart' }        through generation min(bx + 16, 16 - by) the pair is exactly
+//                            the two ships run alone; by then three columns separate A
+//                            (columns >= g - 6) from B's path (columns <= bx + 7), or
+//                            three rows separate B (rows >= by + g - 6) from A's path
+//                            (rows <= 7), and the gap only widens, so they never touch
+//   { kind: 'explodes', touch } the standard above, measured from 150 generations after
+//                            they first touch
+//   { kind: 'nothing', at, touch } every cell dead at `at`, not at at - 1
+//   { kind: 'objects', at, objects, survivors, touch } at `at` (not at - 1) the pattern
+//                            decomposes into named objects that run on for 150 generations
+//                            as if alone. `survivors`: which of the two ships ('A', 'B')
+//                            are still there at `at`, exactly where and as they would be
+//                            had they never met
+// or throws (the caller must explain it). `touch` is the first generation the pair
+// differs from the two ships run alone.
+export function crossOutcome(ph, u, d, { settle = 200 } = {}) {
+  const cells = crossPair(ph, u, d), bx = CX + u, by = -bx - d;
+  const J = [Pattern.fromCells(cells)], A = [Pattern.fromCells(SHIP[0])], B = [Pattern.fromCells(crossB(ph, u, d))];
+  const sure = Math.min(bx + 16, 16 - by);
+  let touch = -1;
+  for (let g = 0; ; g++) {
+    if (touch < 0 && !sameCells(J[g], new Set([...A[g].cells(), ...B[g].cells()].map((c) => c.join())))) touch = g;
+    if (touch < 0 && g >= sure) return { kind: 'apart' };
+    if (J[g].population > 600) {
+      if (explodes(cells, touch + 150)) return { kind: 'explodes', touch };
+      throw new Error(`large but not explosive: ${ph} ${u} ${d}`);
+    }
+    if (touch >= 0 && g >= touch + settle + 150) break;
+    J.push(J[g].next()); A.push(A[g].next()); B.push(B[g].next());
+  }
+  const gone = J.findIndex((q) => !q.population);
+  if (gone >= 0) return { kind: 'nothing', at: gone, touch };
+  for (let g = touch; g <= touch + settle; g++) {
+    const dc = decompose(J[g], 150);
+    if (!dc) continue;
+    const have = new Set(J[g].cells().map((c) => c.join()));
+    const survivors = [['A', A[g]], ['B', B[g]]].filter(([, q]) => q.cells().every((c) => have.has(c.join()))).map(([n]) => n);
+    return { kind: 'objects', at: g, objects: tally(dc), survivors, touch };
+  }
+  throw new Error(`unclassified: ${ph} ${u} ${d}`);
+}

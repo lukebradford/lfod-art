@@ -459,3 +459,10 @@ section h2:hover .h-link, section h2 .h-link:focus-visible { opacity: 1; }
   .slow-table td:nth-child(4) { padding-right: 8px; }
   .slow-table th:nth-child(3), .slow-table td:nth-child(3) { display: none; }
 }
+
+/* Crossing */
+.crossings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.crossings .stage { aspect-ratio: 4 / 3; }
+.crossings .ho-note { grid-column: 1 / -1; margin: 0; background: var(--paper); padding: 12px 14px; font-style: italic; color: var(--muted); font-size: 16px; line-height: 1.45; }
+.stage-cross { margin-top: 18px; height: min(46vw, 460px); }
+@media (max-width: 600px) { .stage-cross { height: 300px; } .crossings .stage { aspect-ratio: 1 / 1; } }
