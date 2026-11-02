@@ -7,6 +7,7 @@ import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 import { QUADS, SETTLE, VANISH } from './four.js';
 import * as F5 from './five.js';
 import * as D2 from './dominoes.js';
+import * as SB from './abreast.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -1293,6 +1294,331 @@ function dominoes() {
   start();
 }
 
+// ---------------------------------------------------------------------------
+// Side by side: a second free ship beside a first, flying the same way. The fleet flies
+// every flotilla and puffer together as one exact pattern, the camera moving with it at
+// the speed of light (like the Wakes); the map shows every placement (abreast.js, every
+// square checked by tests/abreast.test.mjs) and the stage plays whichever is chosen.
+const FLEET_RUN = 1500;
+const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+
+function abreast() {
+  const fleetFig = $('#fleet'), fig = $('#sstage'), map = $('#smap');
+  if (!fleetFig || !fig || !map) return;
+  const { E, DY, SHIP, MAP, OUT, FLEET, shipPair, outcomeAt, fleetLanes, fleetCells } = SB;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = typeof v === 'number' ? v.toLocaleString('en') : v; };
+
+  // ----- counts for the prose, from the data
+  const n = { ' ': 0, '.': 0, '#': 0, o: 0, flotilla: 0, puffer: 0 };
+  for (const rows of MAP) for (const row of rows) for (const c of row) n[c]++;
+  for (const v of Object.values(OUT)) { const k = v.split(':')[1]; if (k in n) n[k]++; }
+  const total = n['.'] + n['#'] + n.o;
+  fill('.n-sb', total); fill('.n-sb-apart', n['.']); fill('.n-sb-touch', n['#'] + n.o);
+  fill('.n-sb-boom', n['#']); fill('.n-sb-one', n.o - n.flotilla - n.puffer);
+  fill('.n-sb-e', E); fill('.n-sb-dy', DY);
+  const flots = FLEET.filter((f) => f.kind === 'flotilla').length;
+  fill('.n-sb-keep', NUM[FLEET.length]); fill('.n-sb-flot-k', NUM[flots]); fill('.n-sb-puff-k', NUM[FLEET.length - flots]);
+
+  const ahead = (e) => (e === 0 ? 'level' : `${Math.abs(e)} ${e > 0 ? 'ahead' : 'behind'}`);
+  const across = (dy) => `${Math.abs(dy)} row${Math.abs(dy) === 1 ? '' : 's'} across`;
+  const phaseWords = (ph) => (ph === 0 ? 'in step' : `${ph} generation${ph === 1 ? '' : 's'} ahead in its cycle`);
+  const wakeWords = (w) => phrase(w).replace(/^an? /, 'a ');
+  const fleetIndex = (ph, e, dy) => FLEET.findIndex((f) => [[f.ph, f.e, f.dy], ...f.also].some((p) => p[0] === ph && p[1] === e && p[2] === Math.abs(dy)));
+  // numbered within their kind: flotilla 1-4, puffer 1-5
+  const numberOf = (f) => FLEET.filter((x) => x.kind === f.kind).indexOf(f) + 1;
+  const placeWords = (f) => `${phaseWords(f.ph)}, ${ahead(f.e)}, ${across(f.dy)}`;
+
+  // ----- the flotillas: one tile each, the camera flying with them
+  const ftiles = FLEET.filter((f) => f.kind === 'flotilla').map((f) => {
+    const el = document.createElement('figure');
+    el.className = 'stage-flot';
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<div class="stage"><canvas></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><b></b> <span></span><br><i></i></figcaption>';
+    el.querySelector('figcaption b').textContent = numberOf(f);
+    el.querySelector('figcaption span').textContent = `exactly two free ships, ${NUM[f.clean.length]} generations in six`;
+    el.querySelector('figcaption i').textContent = placeWords(f);
+    const canvas = el.querySelector('canvas');
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', `Flotilla ${numberOf(f)}: two free ships flying together forever, ${placeWords(f)}, simulated exactly.`);
+    $('#flotillas').append(el);
+    el.addEventListener('click', () => choose({ ph: f.ph, e: f.e, dy: f.dy }, true));
+    const t = { f, el, gen: el.querySelector('.stage-gen b'), stage: new Stage(canvas), cur: Pattern.fromCells(shipPair(f.ph, f.e, f.dy)), prev: null };
+    t.stage.onresize = () => tdraw(t);
+    return t;
+  });
+  function tdraw(t) {
+    const { W, H } = t.stage, f = t.f;
+    const cs = Math.max(2, Math.floor(Math.min(W, H) / 26));
+    // the pair's paths run from column g - 6 to g + e + 8 (the bodies in the front nine
+    // columns, a spark trailing behind now and then), rows f.rows: centre on the bodies
+    const ox = Math.round(W / 2 - (t.cur.gen + 4 + f.e / 2) * cs);
+    const oy = Math.round(H / 2 - ((f.rows[0] + f.rows[1] + 1) / 2) * cs);
+    t.stage.draw(t.cur, t.prev, cs, ox, oy);
+    t.gen.textContent = t.cur.gen;
+  }
+  const tclock = new Clock($('#flotillas'), 6, () => {
+    for (const t of ftiles) { t.prev = t.cur; t.cur = t.cur.next(); tdraw(t); }
+  });
+  for (const t of ftiles) tdraw(t);
+
+  // ----- the fleet: the puffers
+  const lanes = fleetLanes();
+  const rowsTotal = lanes.at(-1).bottom - lanes[0].top + 1;
+  const fstage = new Stage(fleetFig.querySelector('canvas'));
+  const labels = fleetFig.querySelector('.fleet-labels');
+  const fgen = $('#fleet-gen'), key = $('#fleet-key');
+  fleetFig.querySelector('canvas').setAttribute('aria-label', `${NUM[lanes.length]} puffers, each two free ships flying side by side at the speed of light, simulated exactly as one pattern, with their trails.`);
+  lanes.forEach(({ f }) => {
+    const b = document.createElement('b');
+    b.textContent = numberOf(f);
+    labels.append(b);
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.innerHTML = '<b></b><span></span>';
+    btn.querySelector('b').textContent = numberOf(f);
+    btn.querySelector('span').textContent = `lays ${wakeWords(f.wake)} every six generations · ${placeWords(f)}`;
+    btn.addEventListener('click', () => choose({ ph: f.ph, e: f.e, dy: f.dy }, true));
+    li.append(btn);
+    key.append(li);
+  });
+  // the camera's leading column: no cell of any lane is ever further right than g + 8 + e
+  const maxE = Math.max(0, ...lanes.map(({ f }) => f.e));
+  let fcs = 4, foy = 0, fstart = null, fcur = null, fprev = null;
+  const P0 = Pattern.fromCells(fleetCells());
+  function flayout() {
+    const { W, dpr } = fstage;
+    const css = W / dpr >= 700 ? 3 : 2;
+    fcs = Math.max(2, Math.round(css * dpr));
+    const H = (rowsTotal + 2) * fcs;
+    fleetFig.querySelector('.stage').style.height = `${H / dpr}px`;
+    foy = (1 - lanes[0].top) * fcs;
+    labels.style.height = `${H / dpr}px`;
+    lanes.forEach(({ top, bottom }, i) => {
+      labels.children[i].style.top = `${(foy + ((top + bottom + 1) / 2) * fcs) / dpr}px`;
+    });
+    if (!fstart) {
+      // open with the trails already spanning the stage
+      let p = P0, q = null;
+      for (let g = 0, g0 = Math.ceil(W / fcs); g < g0; g++) { q = p; p = p.next(); }
+      fstart = { cur: p, prev: q };
+      fcur = p; fprev = q;
+    }
+    fdraw();
+  }
+  function fdraw() {
+    if (!fcur) return;
+    const ox = fstage.W - (AHEAD + 1) * fcs - (fcur.gen + 8 + maxE) * fcs;
+    fstage.draw(fcur, fprev, fcs, ox, foy);
+    fgen.textContent = fcur.gen;
+  }
+  fstage.onresize = flayout;
+  const fclock = new Clock(fleetFig, 10, () => {
+    if (!fstart) return;
+    if (fcur.gen >= fstart.cur.gen + FLEET_RUN) { fcur = fstart.cur; fprev = fstart.prev; }
+    else { fprev = fcur; fcur = fcur.next(); }
+    fdraw();
+  });
+  fleetFig.addEventListener('click', () => fclock.setPlaying(!fclock.playing));
+  flayout();
+
+  // ----- the stage: a chosen placement, from generation 0, the camera moving with the ships
+  const read = (ph, e, dy) => {
+    const c = outcomeAt(ph, e, dy);
+    if (c === '#') return { kind: 'explodes', at: null };
+    if (c === '.') return { kind: 'apart', at: null };
+    const [at, rest] = c.split(':');
+    if (rest === 'flotilla' || rest === 'puffer') { const f = FLEET[fleetIndex(ph, e, dy)]; return { kind: rest, at: +at, f, n: numberOf(f) }; }
+    return parseOutcome(c);
+  };
+  const words = (o) => {
+    if (o.kind === 'explodes') return 'explodes';
+    if (o.kind === 'apart') return 'they never touch: each flies on exactly as if alone';
+    if (o.kind === 'flotilla') return `flotilla ${o.n}: together forever, from gen ${o.at}`;
+    if (o.kind === 'puffer') return `puffer ${o.n}: ${wakeWords(o.f.wake)} every six generations, from gen ${o.at}`;
+    if (o.kind === 'nothing') return `nothing, gone by gen ${o.at}`;
+    return `${phrase(o.objects)}, by gen ${o.at}`;
+  };
+  const where = (p) => `phase ${p.ph}, ${ahead(p.e)}, ${across(p.dy)}`;
+
+  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
+  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#sstage-name');
+  const resEl = $('#sstage-result'), statusEl = $('#sstage-status'), openEl = $('#sstage-open');
+  const first = FLEET[0];
+  let sel = { ph: first.ph, e: first.e, dy: first.dy }, o = null, cur = null, prev = null, cs = 8, oy = 0, end = 0, done = false;
+  const still = () => reducedMotion.matches && !clock.playing;
+  // the pair's paths run from column g - 6 (the first ship's tail) to g + e + 8: centre that
+  const ox = () => Math.round(stage.W * 0.58 - (cur.gen + 1 + sel.e / 2) * cs);
+  const inView = (p) => p.x0 * cs + ox() >= 0 && p.y0 * cs + oy >= 0 && (p.y0 + p.h) * cs + oy <= stage.H;
+
+  function start() {
+    o = read(sel.ph, sel.e, sel.dy);
+    cur = Pattern.fromCells(shipPair(sel.ph, sel.e, sel.dy)); prev = null; done = false;
+    statusEl.textContent = '';
+    nameEl.textContent = where(sel);
+    resEl.textContent = words(o);
+    canvas.setAttribute('aria-label', `Two free ships side by side, ${where(sel)}, simulated exactly: ${words(o)}.`);
+    openEl.href = encodeHash(Pattern.fromCells(shipPair(sel.ph, sel.e, sel.dy)));
+    layout();
+    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
+  }
+  function layout() {
+    const { W, H } = stage;
+    const want = Math.min(110, Math.max(64, Math.round(W / stage.dpr / 5)));
+    cs = Math.max(2, Math.floor(Math.min(W / want, H / 36)));
+    // rows -2 .. dy + 7 are the two ships' lanes (dy may be negative)
+    oy = Math.round(H / 2 - ((Math.min(0, sel.dy) - 2 + Math.max(0, sel.dy) + 8) / 2) * cs);
+    // clean runs last until what is left behind has streamed out of the frame
+    const cols = Math.ceil(W / cs);
+    end = o.kind === 'apart' ? 36 : o.kind === 'flotilla' ? o.at + 60 : (o.at ?? 0) + Math.ceil(cols * 0.6) + 8;
+    draw();
+  }
+  function draw() {
+    stage.draw(cur, prev, cs, ox(), oy);
+    genEl.textContent = cur.gen;
+    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
+  }
+  function finished() {
+    if (o.kind === 'explodes') {
+      if (cur.population > 300 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
+      return cur.gen > 1500;
+    }
+    return cur.gen >= end;
+  }
+  const clock = new Clock(fig, 10, () => {
+    if (done) { start(); clock.hold = 400; return; }
+    prev = cur; cur = cur.next(); draw();
+    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
+  });
+  canvas.addEventListener('click', () => {
+    const wasStill = still();
+    clock.setPlaying(!clock.playing);
+    if (wasStill) start();
+  });
+  stage.onresize = () => { if (cur) layout(); };
+
+  // ----- the phase buttons
+  const phases = $('#sphases');
+  const pbtn = SHIP.map((cells, ph) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const x0 = Math.min(...cells.map((c) => c[0])), y0 = Math.min(...cells.map((c) => c[1]));
+    b.append(sglyph(cells.map(([x, y]) => [x - x0, y - y0])));
+    const t = document.createElement('span');
+    t.textContent = `phase ${ph}`;
+    b.append(t);
+    b.setAttribute('aria-label', `Second ship ${phaseWords(ph)}`);
+    b.addEventListener('click', () => {
+      if (sel.ph === ph) return;
+      // open on this phase's first flotilla or puffer; with none, keep the place if it can be
+      const f = FLEET.find((x) => x.ph === ph);
+      let p = f ? { ph, e: f.e, dy: f.dy } : { ph, e: sel.e, dy: sel.dy };
+      if (outcomeAt(ph, p.e, p.dy) === ' ') p = { ph, e: 0, dy: DY - 2 };
+      choose(p, false);
+    });
+    phases.append(b);
+    return b;
+  });
+
+  // ----- the map: every place for the second ship, for the chosen phase
+  const mctx = map.getContext('2d', { alpha: false });
+  const cols = 2 * E + 1, nrows = 2 * DY + 1;
+  let q = 8, mox = 0, hover = null;
+  const hoverEl = $('#smap-hover');
+  function mlayout() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const W = Math.round(map.parentElement.clientWidth * dpr);
+    q = Math.max(3, Math.min(Math.floor(W / cols), Math.round(22 * dpr)));
+    mox = Math.floor((W - cols * q) / 2);
+    if (map.width !== W || map.height !== nrows * q) {
+      map.width = W; map.height = nrows * q;
+      map.style.height = `${nrows * q / dpr}px`;
+    }
+    mdraw();
+  }
+  function mdraw() {
+    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
+    const box = (X, Y, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X, Y, w, ht); };
+    box(0, 0, map.width, map.height, COLORS.paper);
+    // a ring of width w just outside a square
+    const ring = (e, dy, color, w) => {
+      const X = mox + (e + E) * q + h - w, Y = (dy + DY) * q + h - w, S = s + 2 * w;
+      box(X, Y, S, w, color); box(X, Y + S - w, S, w, color);
+      box(X, Y, w, S, color); box(X + S - w, Y, w, S, color);
+    };
+    for (let r = 0; r < nrows; r++) for (let c = 0; c < cols; c++) {
+      const e = c - E, dy = r - DY, X = mox + c * q, Y = r * q;
+      const v = outcomeAt(sel.ph, e, dy);
+      if (v === '#') box(X + h, Y + h, s, s, '#d7d2c7');
+      else if (v === '.') {
+        const d = Math.max(1, Math.round(q / 7)), k = (q - d) >> 1;
+        box(X + k, Y + k, d, d, '#c9c4b9');
+      } else if (v === ' ') continue;
+      else if (v.endsWith(':puffer')) box(X + h, Y + h, s, s, COLORS.free);
+      else if (v.endsWith(':flotilla')) {
+        const w = Math.max(2, Math.round(q * 0.2));
+        box(X + h, Y + h, s, s, COLORS.free); box(X + h + w, Y + h + w, s - 2 * w, s - 2 * w, COLORS.paper);
+      } else {
+        const i = Math.max(2, Math.round(q * 0.24));
+        box(X + i, Y + i, q - 2 * i, q - 2 * i, COLORS.ink);
+      }
+    }
+    ring(0, 0, '#c9c4b9', Math.max(1, Math.round(q / 12)));
+    if (hover && (hover.e !== sel.e || hover.dy !== sel.dy)) ring(hover.e, hover.dy, COLORS.ink, Math.max(1, Math.round(q / 10)));
+    ring(sel.e, sel.dy, /:(puffer|flotilla)$/.test(outcomeAt(sel.ph, sel.e, sel.dy)) ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
+  }
+  const at = (ev) => {
+    const r = map.getBoundingClientRect();
+    const c = Math.floor(((ev.clientX - r.left) * (map.width / r.width) - mox) / q);
+    const row = Math.floor((ev.clientY - r.top) * (map.height / r.height) / q);
+    if (c < 0 || c >= cols || row < 0 || row >= nrows) return null;
+    const e = c - E, dy = row - DY;
+    return outcomeAt(sel.ph, e, dy) !== ' ' ? { ph: sel.ph, e, dy } : null;
+  };
+  const describe = (p) => `${where(p)}: ${words(read(p.ph, p.e, p.dy))}.`;
+  function choose(p, user) {
+    sel = p; hover = null;
+    pbtn.forEach((b, i) => b.setAttribute('aria-pressed', i === p.ph));
+    hoverEl.textContent = describe(p);
+    map.setAttribute('aria-label', `A map of every place for a second free ship in phase ${p.ph} beside the first, coloured by what happens. Use the arrow keys to choose one.`);
+    mdraw(); start();
+    if (user) {
+      clock.hold = 0; clock.setPlaying(true);
+      const r = fig.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+  }
+  map.addEventListener('click', (ev) => { const p = at(ev); if (p) choose(p, true); });
+  map.addEventListener('pointermove', (ev) => {
+    if (ev.pointerType !== 'mouse') return;
+    const p = at(ev);
+    if (p?.e === hover?.e && p?.dy === hover?.dy) return;
+    hover = p;
+    hoverEl.textContent = describe(p || sel);
+    mdraw();
+  });
+  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
+  map.addEventListener('keydown', (ev) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+    if (!d) return;
+    ev.preventDefault();
+    let { e, dy } = sel;
+    do { e += d[0]; dy += d[1]; } while (Math.abs(dy) <= DY && Math.abs(e) <= E && outcomeAt(sel.ph, e, dy) === ' ');
+    if (Math.abs(dy) <= DY && Math.abs(e) <= E) choose({ ph: sel.ph, e, dy }, false);
+    clock.hold = 0; clock.setPlaying(true);
+  });
+  map.setAttribute('role', 'img');
+  openEl.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const hh = openEl.getAttribute('href');
+    if (location.hash === hh) history.replaceState(null, '', location.pathname + location.search);
+    location.hash = hh;
+    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+  });
+  new ResizeObserver(mlayout).observe(map.parentElement);
+  choose(sel, false);
+}
+
 hero();
 laws();
 parting();
@@ -1304,4 +1630,5 @@ four();
 fivePuffers();
 fiveCensus();
 dominoes();
+abreast();
 reducedMotion.addEventListener?.('change', wake);

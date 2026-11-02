@@ -29,7 +29,8 @@
   "./js/four.js": "./js/four.js?v=dev",
   "./js/share.js": "./js/share.js?v=dev",
   "./js/five.js": "./js/five.js?v=dev",
-  "./js/dominoes.js": "./js/dominoes.js?v=dev"
+  "./js/dominoes.js": "./js/dominoes.js?v=dev",
+  "./js/abreast.js": "./js/abreast.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -188,8 +189,50 @@
       </figcaption>
     </figure>
     <p>Close together, they almost always explode. In line, or nearly (up to five rows across), the two inner ships fly straight at each other. Usually that explodes too, but at the right distances the two ships annihilate, or leave a few dots and checkers, and the outer two fly away. Six to eight rows across, every meeting explodes. From twelve rows on, they never touch: a free ship never strays more than four rows beyond its domino, so at least two empty rows always lie between them, and no cell can see across two. At ten and eleven rows the ships only just brush past each other. Often that explodes too, but when it doesn’t, all four fly on, sometimes leaving a dot or a checker behind.</p>
-    <p>And at eleven rows across and two along, the ships flying the same way never get free of each other. Neither ship changes in the slightest: at every generation each domino is exactly what it would be alone. But every six generations their sparks reach the row halfway between them at the same moment, and a cell is born there, alone, so it lives forever. The glossary calls this <a href="https://lukebradford.github.io/lfod/glossary.html#dueling-dominoes">dueling dominoes</a>, “the smallest pattern that exhibits infinite linear growth”. Of all <span class="n-dom">479</span> placements here, it is the only one that grows.</p>
+    <p>And at eleven rows across and two along, the ships flying the same way never get free of each other. Neither ship changes in the slightest: at every generation each domino is exactly what it would be alone. But every six generations their sparks reach the row halfway between them at the same moment, and a cell is born there, alone, so it lives forever. The glossary calls this <a href="https://lukebradford.github.io/lfod/glossary.html#dueling-dominoes">dueling dominoes</a>, “the smallest pattern that exhibits infinite linear growth”. Of all <span class="n-dom">479</span> placements here, it is the only one that grows. Each of its puffers is just two free ships flying side by side, and there are more ways for two ships to do that: see <a href="#abreast-h">side by side</a>, below.</p>
     <p class="aside">Mirror images are the same placement, so the map is symmetric about the first domino. Of the <span class="n-dom">479</span>, <span class="n-dom-boom">347</span> explode, <span class="n-dom-apart">65</span> never touch, and <span class="n-dom-settle">66</span> touch and settle. Beyond 24 cells along, the map repeats every 12: the inner ships meet six generations later, in the same phase, and the pairs flying the same way are too far apart to touch. Each run plays from generation 0 on an unbounded plane until the result has settled and the ships have left the frame; an explosion stops where it reaches the edge, still growing. Every square, the generation each result is reached by, the symmetry, the repeat (checked out to 72 cells along), and every dot dueling dominoes lays down (for 700 generations) are checked by tests that run each placement and compare it with the two dominoes run alone.</p>
+  </section>
+  <section class="abreast" aria-labelledby="abreast-h">
+    <h2 id="abreast-h">Side by side</h2>
+    <p class="lede">Dueling dominoes is four free ships flying in two pairs. A free ship moves at the speed of light, so two flying the same way can never gain on each other or fall behind: whatever passes between them happens again six generations later, and again, forever, unless it destroys them. So here is every way to set a second free ship beside a first, flying the same way, in any of its six phases, anywhere close enough to touch. Nearly every one explodes. These <span class="n-sb-keep">nine</span> fly on together forever.</p>
+    <div class="flotillas" id="flotillas" role="list" aria-label="The four flotillas"></div>
+    <p>The first <span class="n-sb-flot-k">four</span> are flotillas: two ships that hold together forever and leave nothing behind. Every six generations their sparks reach across the gap and touch. For one, two or three generations something passes between them; then it is gone without a trace. The first is exactly two free ships, each just as it would be alone, in five generations out of every six.</p>
+    <div class="fleet-head"><span class="strip-gen">gen <b id="fleet-gen">0</b></span></div>
+    <figure class="fleet" id="fleet">
+      <div class="fleet-labels" aria-hidden="true"></div>
+      <div class="stage"><canvas role="img"></canvas></div>
+    </figure>
+    <ol class="fleet-key" id="fleet-key"></ol>
+    <p>The other <span class="n-sb-puff-k">five</span> are puffers. Where their sparks touch, something is left behind that is alone, and so can never die: a dot or two, or a checker, every six generations. The second is the puffer dueling dominoes makes two of; the others do not appear among the glossary’s patterns. In all nine, neither ship is ever changed for good: in at least three generations of every six, each is exactly what it would be alone.</p>
+
+    <div class="wall-head">
+      <h3>Every placement</h3>
+    </div>
+    <p>Of the <span class="n-sb-touch">1,429</span> places where the second ship touches the first, <span class="n-sb-boom">1,369</span> explode. In <span class="n-sb-one">45</span> more, a single free ship flies on, sometimes with dots, checkers or a moon. Two ships never come through a meeting and part as strangers: they explode, only one ship comes out, or they stay together forever. Choose the second ship’s phase, then a place for it.</p>
+    <figure class="stage stage-duel stage-abreast" id="sstage">
+      <canvas role="img" aria-label="Two free ships side by side, simulated exactly."></canvas>
+      <div class="stage-name"><span id="sstage-name"></span></div>
+      <figcaption class="stage-gen">gen <b>0</b></figcaption>
+      <span class="player-result" id="sstage-result" aria-live="polite"></span>
+      <span class="stage-status" id="sstage-status"></span>
+    </figure>
+    <div class="sphases" role="group" aria-label="The second ship’s phase" id="sphases"></div>
+    <figure class="dmap-fig">
+      <canvas class="dmap" id="smap" tabindex="0" aria-describedby="smap-help"></canvas>
+      <figcaption>
+        <p class="dmap-hover" id="smap-hover" aria-live="polite"></p>
+        <ul class="dlegend">
+          <li><i class="k-origin"></i>level with the first ship</li>
+          <li><i class="k-boom"></i>explodes</li>
+          <li><i class="k-settle"></i>one ship flies on</li>
+          <li><i class="k-apart"></i>they never touch</li>
+          <li><i class="k-flot"></i>a flotilla</li>
+          <li><i class="k-grow"></i>a puffer</li>
+        </ul>
+        <p class="dmap-help" id="smap-help">Each square is a place for the second ship: to the right is further ahead, down is further across. Blank squares are where the two would overlap. Tap one to watch it, or use the arrow keys. <a id="sstage-open" href="#">Open this one in the field at the top</a>.</p>
+      </figcaption>
+    </figure>
+    <p class="aside">The first ship is in its smallest form, the glossary’s twelve cells. Phase <i>k</i> means the second is <i>k</i> generations further through its six-generation cycle; <i>along</i> is how far ahead its path runs. A lone free ship never strays outside a band ten rows tall and fifteen columns long, so beyond <span class="n-sb-e">16</span> along or <span class="n-sb-dy">11</span> across two empty rows or columns always lie between the two ships, no cell can see both, and they never touch. Mirror images count once, so there are <span class="n-sb">1,938</span> placements, and <span class="n-sb-apart">509</span> of them never touch. The fleet above is one pattern, simulated exactly, its lanes far enough apart that they can never meet; the camera moves with it at the speed of light, and the trails stream out behind. Every square, the generation each result is reached by, which flotillas and puffers are the same, how each one behaves generation by generation, and that the fleet’s lanes never meet are checked by tests that run every placement.</p>
   </section>
 </main>
 

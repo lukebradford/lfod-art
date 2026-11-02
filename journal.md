@@ -71,6 +71,15 @@ proved by a ship's width. In one square, dueling dominoes, two ships fly side by
 forever, each exactly as if alone, and the only trace of their company is a dot laid
 halfway between them every six generations. Solitude that leaves something behind.
 
+Session 9 found the ninth: **company that costs nothing**. Two free ships flying the
+same way never gain on each other, so whatever passes between them repeats forever. Of
+every way to set one beside another, nearly all explode, and none part as strangers: they
+explode, only one ship comes out, or they stay together forever. Four stay together as
+flotillas whose sparks touch every six generations and leave no trace; five become
+puffers whose touching leaves a dot or a checker behind. Dueling dominoes was one of
+them all along. The motif is the formation: things that move together, shown with a
+camera that flies with them.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -112,10 +121,19 @@ LFoD field over the site's lifetime.
   horizontal and one vertical send ships at right angles, so they can only cross; a
   second map (and does anything there grow?). Also domino vs moon, and a domino fired
   into a dot wake.
-- **Two free ships abreast**: dueling dominoes is two free ships 11 rows apart and 2
-  along. Search all relative positions/phases of two (or three) free ships flying the
-  same way: other dot-layers, new composite ships, rakes? `dominoOutcome` style
-  comparison against the ships run alone is the right test.
+- **Three ships abreast**: Side by side covers two free ships. A third beside any of the
+  four flotillas or five puffers (or two flotillas side by side) could give rakes,
+  wider dot lattices, or puffers whose trails interact. Same harness
+  (`shipPairOutcome` generalised), same map, more phases.
+- **Ships head-on**: two free ships flying at each other (every offset and phase), a
+  collision atlas like the moon's. And a free ship fired into each of the five new wakes.
+- **Other ships side by side**: moons beside free ships (three of the side-by-side
+  results throw off a moon flying with the surviving ship), the glossary's p4 ships
+  (dot ship, dotset ship) side by side.
+- **Name check**: the four flotillas and three of the puffers matched nothing in the
+  glossary's RLEs (a scratch scan of every entry's leading 14 columns, all orientations,
+  200 generations); entries with only pictures were not checked. Ask the owner whether
+  they have names before giving them any.
 - **Four-cell tiles, larger**: tapping a four-cell tile could play it large, as the
   three-cell wall does with the Diamonds stage.
 - **Anchor track periods**: the glossary lists the first iterations' periods as
@@ -452,4 +470,45 @@ LFoD field over the site's lifetime.
   "only").
 - Phone: the stage shows fewer columns (cells stay about 5 CSS px); the map shows the
   right-hand half plus the first domino when 73 columns would be under 9 px each.
+
+### 2026-11-02: Session 9, side by side
+- **New section, "Side by side"** (after Two dominoes): every way to set a second free
+  ship beside a first, flying the same way. The first is in its 12-cell phase (the
+  glossary's form); the second in any of its six phases, its path `e` cells ahead and
+  `dy` rows across. A lone free ship's cells stay in columns g-6..g+8 and rows -2..7
+  (tested), so beyond 16 along or 11 across two empty rows or columns always separate
+  them: the map (6 x 33 x 23) is complete. Shown as: four flotilla tiles, each with a
+  camera flying with it; a "fleet" stage of the five puffers flying together as one exact
+  pattern, camera moving at c, trails streaming out behind (lanes separated so they can
+  never meet, tested); and an explorer (phase buttons, a map of every placement, a
+  moving-camera stage, and "open in the field at the top").
+- **Findings** (`tests/abreast.test.mjs`, 16 tests, which run every placement):
+  - 1,938 placements up to mirror image: 509 never touch; of the 1,429 that do, 1,369
+    explode, 45 leave a single free ship (sometimes with dots, checkers or a moon), 6
+    become flotillas and 9 puffers. None vanish, and two ships never come out of a
+    meeting both free and apart.
+  - **4 distinct flotillas** (periodic, p6, c; bound, i.e. not two independent halves).
+    At 1, 2 or 3 generations of every 6 something passes between them; at the rest the
+    pattern is exactly the two ships run alone. The first (in step, 3 ahead, 9 across) is
+    exactly two free ships 5 generations in 6: at the heavy phase the sparks meet and the
+    population is 82 instead of 80, then nothing.
+  - **5 distinct puffers**: a checker every 6 (in step, 3 ahead, 10 across); a dot every 6
+    (in step, 2 ahead, 11 across: the puffer dueling dominoes makes, matched to the
+    glossary's RLE by simulation); and three with the second ship 3 phases ahead, 9 across,
+    laying one or two dots every 6. In all nine, at least 3 generations in 6 the pattern is
+    exactly the two ships alone plus a frozen trail.
+- **Classifier** `shipPairOutcome` in `tests/objects.mjs`: 'apart' is decided exactly
+  (identical to the lone ships for 7 generations means both are back where they started,
+  6 cells on, so forever); a flotilla by exact periodicity with displacement (6, 0), which
+  is a proof; puffers by the 50-period front-and-frozen-wake test. Ship geometry
+  (`SHIP`, `shipPair`) lives in `site/js/abreast.js`, shared by page and tests.
+  `tools/abreast.mjs` writes the data (about 17 s).
+- **My own mistakes, caught**: (1) I first assumed swapping the two ships was a symmetry.
+  It isn't for ph ≠ 0 (it needs a time shift, and they may interact during it), so the
+  census uses the vertical flip only. (2) The first classifier ran the flotilla and
+  puffer checks before decomposition, so a lone surviving ship counted as a flotilla, and
+  a ship leaving dots as a puffer with an empty wake; decomposition now comes first.
+  (3) A "clean generation" test that allowed extra cells behind the ships let a moving
+  spark through; extra cells must now be frozen (there 6 and 12 generations later).
+- Two dominoes now points down to Side by side.
 

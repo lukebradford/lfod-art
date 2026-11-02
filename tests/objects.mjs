@@ -251,3 +251,115 @@ export function dominoOutcome(dx, dy, { horizon = 200, settle = 100 } = {}) {
   }
   return null;
 }
+
+// --- two free ships abreast -----------------------------------------------------------
+// The ships and placements are defined in site/js/abreast.js (shared with the page).
+export { SHIP, SHIP_E, SHIP_DY, shipB, shipPair } from '../site/js/abreast.js';
+import { SHIP, shipB, shipPair } from '../site/js/abreast.js';
+const shiftKey = (p, sx) => p.cells().map(([x, y]) => `${x + sx},${y}`).sort().join(';');
+const keyOf = (p) => shiftKey(p, 0);
+
+// What two free ships abreast become. Returns null if their cells overlap, else one of
+//   { kind: 'apart' }        for 7 generations the pair is exactly the two ships run
+//                            alone, so (both being back where they started, 6 cells on)
+//                            they never touch
+//   { kind: 'explodes' }     the standard above
+//   { kind: 'nothing', at }  every cell dead at `at`, not at at - 1
+//   { kind: 'flotilla', at } from `at` (not at - 1) the whole pattern repeats every 6
+//                            generations, 6 cells further on, which (the rule being
+//                            deterministic) means forever; and it is not the two halves
+//                            flying independently (`bound`)
+//   { kind: 'objects', at, objects } at `at` (not at - 1) the pattern decomposes into
+//                            named objects that run on for 150 generations as if alone
+//   { kind: 'puffer', at, wake } from `at` (not at - 1), for PUFF_PERIODS periods of 6:
+//                            the leading 20 columns reappear exactly 6 cells on, every
+//                            other cell is unchanged; `wake` tallies what is laid down
+//                            per period (each piece a dot or checker)
+// or throws if none of these holds (the caller must explain it).
+export function shipPairOutcome(ph, e, dy, { horizon = 400 } = {}) {
+  const cells = shipPair(ph, e, dy);
+  const p0 = Pattern.fromCells(cells);
+  if (p0.population !== SHIP[0].length + SHIP[ph].length) return null;
+  {
+    let J = p0, A = Pattern.fromCells(SHIP[0]), B = Pattern.fromCells(shipB(ph, e, dy));
+    let touch = false;
+    for (let g = 0; g <= 6 && !touch; g++) {
+      if (!sameCells(J, new Set([...A.cells(), ...B.cells()].map((c) => c.join())))) touch = true;
+      J = J.next(); A = A.next(); B = B.next();
+    }
+    if (!touch) return { kind: 'apart' };
+  }
+  const G = [p0];
+  for (let g = 1; g <= horizon + 6 * PUFF_PERIODS + 6; g++) {
+    G.push(G[g - 1].next());
+    if (G[g].population > 600) {
+      if (explodes(cells)) return { kind: 'explodes' };
+      throw new Error(`large but not explosive: ${ph} ${e} ${dy}`);
+    }
+  }
+  const gone = G.findIndex((q) => !q.population);
+  if (gone >= 0) return { kind: 'nothing', at: gone };
+  // named objects, each running on as if alone
+  if (decompose(G[horizon], 150)) {
+    for (let g = 1; g <= horizon; g++) {
+      const d = decompose(G[g], 150);
+      if (d) return { kind: 'objects', at: g, objects: tally(d) };
+    }
+  }
+  // a flotilla: periodic with displacement (6, 0); find the first generation it holds
+  const per = (g) => G[g + 6].population === G[g].population && keyOf(G[g + 6]) === shiftKey(G[g], 6);
+  if (per(horizon)) {
+    let at = horizon;
+    while (at > 0 && per(at - 1)) at--;
+    return { kind: 'flotilla', at, bound: bound(G[at]) };
+  }
+  // a puffer
+  const LEN = 20;
+  const pufAt = (S) => {
+    for (let k = 0; k < PUFF_PERIODS; k++) {
+      const a = G[S + 6 * k], b = G[S + 6 * k + 6];
+      const ra = a.x0 + a.w - 1, rb = b.x0 + b.w - 1;
+      if (rb - ra !== 6) return false;
+      const ca = a.cells(), cb = b.cells();
+      const k1 = (cs) => cs.map((c) => c.join()).sort().join(';');
+      if (k1(cb.filter(([x]) => x > rb - LEN)) !== k1(ca.filter(([x]) => x > ra - LEN).map(([x, y]) => [x + 6, y]))) return false;
+      if (k1(cb.filter(([x]) => x <= ra - LEN)) !== k1(ca.filter(([x]) => x <= ra - LEN))) return false;
+    }
+    return true;
+  };
+  if (pufAt(horizon)) {
+    let at = horizon;
+    while (at > 0 && pufAt(at - 1)) at--;
+    // what is laid down in one period, well behind the front
+    const a = G[horizon], b = G[horizon + 6], ra = a.x0 + a.w - 1;
+    const band = (q, lo) => q.cells().filter(([x]) => x > lo - 6 && x <= lo);
+    const laid = band(b, ra - LEN), before = new Set(band(a, ra - LEN - 6).map((c) => `${c[0] + 6},${c[1]}`));
+    // the wake repeats every 6 columns? record the cells of one 6-column band
+    const wake = tally(groups(laid, 1).map((c) => ({ name: identify(c) || '?' })));
+    return { kind: 'puffer', at, wake, repeats: laid.every((c) => before.has(c.join())) && laid.length === before.size };
+  }
+  throw new Error(`unclassified: ${ph} ${e} ${dy}`);
+}
+// a flotilla is bound if splitting it into its upper and lower halves (by the empty row
+// between them) and running each alone does not give the same next 6 generations
+function bound(p) {
+  const rows = new Set(p.cells().map((c) => c[1]));
+  let cut = null;
+  for (let y = p.y0 + 1; y < p.y0 + p.h - 1; y++) if (!rows.has(y)) { cut = y; break; }
+  if (cut === null) return true;
+  let J = p, U = Pattern.fromCells(p.cells().filter((c) => c[1] < cut)), L = Pattern.fromCells(p.cells().filter((c) => c[1] > cut));
+  for (let g = 0; g < 6; g++) {
+    J = J.next(); U = U.next(); L = L.next();
+    if (!sameCells(J, new Set([...U.cells(), ...L.cells()].map((c) => c.join())))) return true;
+  }
+  return false;
+}
+
+// The OUT notation for a ship pair outcome: 'at:objects' (as in the collision atlas, free
+// ships first), 'at:nothing', 'at:flotilla' or 'at:puffer'.
+export function shipPairCode(o) {
+  if (o.kind === 'nothing' || o.kind === 'flotilla' || o.kind === 'puffer') return `${o.at}:${o.kind}`;
+  const order = ['freeship', 'moon', 'checker', 'dot'];
+  const names = Object.keys(o.objects).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return `${o.at}:` + names.map((n) => (o.objects[n] > 1 ? `${n}×${o.objects[n]}` : n)).join(' ');
+}
