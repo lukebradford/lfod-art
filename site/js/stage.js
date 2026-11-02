@@ -7,6 +7,7 @@ export const COLORS = {
   free: '#c0391f', // a cell that survived the last generation (it had no neighbours)
   ghost: '#e8e5dc', // a cell that was alive one generation ago and is not now
   dot: '#dedad0', // graph-paper dots at cell corners
+  beyond: '#efece3', // where nothing can be alive yet (past a light front or speed limit)
 };
 
 export const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -36,10 +37,13 @@ export class Stage {
 
   // Draw `cur` (and the ghosts of `prev`) with integer cell size cs (device px) and
   // integer origin (ox, oy): world cell (x, y) covers [ox + x*cs, ox + (x+1)*cs).
-  draw(cur, prev, cs, ox, oy, { dots = true } = {}) {
+  // under(ctx), if given, paints on the bare paper before anything else (cells always
+  // land on top of it).
+  draw(cur, prev, cs, ox, oy, { dots = true, under = null } = {}) {
     const { ctx, W, H } = this;
     ctx.fillStyle = COLORS.paper;
     ctx.fillRect(0, 0, W, H);
+    if (under) under(ctx);
     // visible world rectangle (inclusive)
     const vx0 = Math.floor(-ox / cs) - 1, vy0 = Math.floor(-oy / cs) - 1;
     const vx1 = Math.ceil((W - ox) / cs) + 1, vy1 = Math.ceil((H - oy) / cs) + 1;

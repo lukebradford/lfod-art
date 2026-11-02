@@ -31,7 +31,8 @@
   "./js/five.js": "./js/five.js?v=dev",
   "./js/dominoes.js": "./js/dominoes.js?v=dev",
   "./js/abreast.js": "./js/abreast.js?v=dev",
-  "./js/headon.js": "./js/headon.js?v=dev"
+  "./js/headon.js": "./js/headon.js?v=dev",
+  "./js/slow.js": "./js/slow.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -80,6 +81,7 @@
       <li><a href="#dominoes">Two dominoes</a> <span>every place for a second domino</span></li>
       <li><a href="#abreast">Side by side</a> <span>two ships flying together</span></li>
       <li><a href="#headon">Head-on</a> <span>two ships flying at each other</span></li>
+      <li><a href="#slow">Slower than light</a> <span>the few ships that fly below c</span></li>
     </ol>
   </nav>
 
@@ -283,6 +285,40 @@
       </figcaption>
     </figure>
     <p class="aside">Both ships are free ships, the first in its smallest form. Phase <i>k</i> means the second is <i>k</i> generations further through its six-generation cycle; timing <i>t</i> means its path starts <i>t</i> columns further off. Twelve columns further is the same meeting six generations later, so six phases and twelve timings are every way two ships can approach. Beyond <span class="n-ho-dy">11</span> rows across, two empty rows always lie between them, and they never touch. Mirror images count once: flipped top to bottom a meeting is the same distance across, and turned half round, phase <i>k</i> and timing <i>t</i> become phase 6 − <i>k</i> and timing <i>t</i> + 6, so the map’s <span class="n-ho-sq">864</span> squares hold <span class="n-ho">504</span> meetings, and <span class="n-ho-apart">63</span> of them never touch. Each run plays from generation 0 on an unbounded plane until the result has settled and anything moving has left the frame; an explosion stops where it reaches the edge, still growing. Every square, the generation each result is reached by, both symmetries, and that ships passing through are exactly as if alone are checked by tests that run every meeting.</p>
+  </section>
+  <section class="slow" id="slow" aria-labelledby="slow-h">
+    <h2 id="slow-h">Slower than light</h2>
+    <p class="lede">Everything that moves on this page so far moves at the speed of light, one cell every generation. Every ship this site’s searches have turned up flies at that speed. Going slower is hard. The glossary of the Live Free or Die Universe knows <span class="n-slow">21</span> ships that do, most of them hundreds of cells. Here is the smallest at each speed, racing from one starting line.</p>
+    <div class="wall-head race-head">
+      <h3>The race</h3>
+      <span class="strip-gen">gen <b id="race-gen">0</b></span>
+    </div>
+    <div class="race" id="race" role="list" aria-label="Six ships racing, one at each known speed"></div>
+    <p>At generation 0, every ship’s nose is on the same column. The shaded side is beyond the light front, which moves one column every generation: whatever started behind that line can never be ahead of it. The moon rides it exactly. The rest fall behind, each at its own speed, and by the time the moon reaches the end of the track, the decade ship has gone a fifth of the way.</p>
+    <p>Watch the last lane. The decade ship is one of only two ships known whose nose ever moves backwards. Every five generations it falls back two cells, then creeps forward three. The other is the quintessential ship, which goes at the same speed with the same front end. No ship at the speed of light could do it: to keep up with light, a nose has to gain a cell every single generation.</p>
+
+    <div class="wall-head">
+      <h3>Diagonal</h3>
+    </div>
+    <p>Straight ahead, a ship can keep up with light. Along a diagonal it can’t: a cell two diagonal steps beyond the leading edge can only ever have one living neighbour, and birth takes two, so nothing can advance diagonally faster than one step every two generations. That limit is why every explosion is a <a href="#diamonds">diamond</a>. The three diagonal ships known go half as fast as it allows, one step every four generations. The shaded corner is beyond the diagonal limit, where no cell can be alive.</p>
+    <div class="flotillas diags" id="diags" role="list" aria-label="The three known diagonal ships"></div>
+
+    <div class="wall-head">
+      <h3>Every slow ship</h3>
+    </div>
+    <p>All <span class="n-slow">21</span>, fastest first. <span class="n-slow-c2">Twelve</span> go at half the speed of light; one each at two fifths, a third and a quarter; three at a quarter along a diagonal; and three at a fifth. The smallest have <span class="n-slow-min">36</span> cells. <span class="n-slow-jb">Twelve</span> were found by Josh Ball. Tap one to watch it, the camera flying with it.</p>
+    <div class="slow-atlas">
+      <figure class="stage stage-slow" id="slowstage">
+        <canvas role="img" aria-label="A slower-than-light ship, simulated exactly, the camera moving with it."></canvas>
+        <div class="stage-name"><span id="slowstage-name"></span></div>
+        <figcaption class="stage-gen">gen <b>0</b></figcaption>
+      </figure>
+      <table class="slow-table" id="slowtable">
+        <thead><tr><th scope="col">ship</th><th scope="col">speed</th><th scope="col">period</th><th scope="col">cells</th><th scope="col">found by</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="aside">Every ship here is the glossary’s pattern, exactly as it gives it, simulated on an unbounded plane, each lane and tile on its own. Speeds, periods and the fewest and most cells over a period are measured by tests that run each one; so are the light front and the diagonal limit, that the noses of the decade and quintessential ships (and no others) fall back, and that each racer is the smallest at its speed. On narrow screens the longest ships start with their tails cut off by the left edge of the track, and come into view as they move. Names and discoverers are the glossary’s, and so is what counts as known.</p>
   </section>
 </main>
 

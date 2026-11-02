@@ -88,6 +88,14 @@ the other had never been there, only at ten or eleven rows across, where nothing
 sparks can reach; twice they leave no trace at all. Exactly in line, nine annihilate. The
 page also got a front door: a numbered list of the ten studies, and every study a link.
 
+Session 11 found the eleventh: **slowness**. Everything the site had shown moved at c,
+because that is the easy speed here. The glossary's 21 slower ships (c/2, 2c/5, c/3, c/4,
+c/5 and c/4 diagonal) are big, rare and built, and the piece races the smallest at each
+speed from one starting line with the light front drawn as a shaded region ahead of them.
+The motif is the limit: the light front, which the moon rides exactly, and the diagonal
+limit from Diamonds (c/2), which the three diagonal ships reach only half of. And one
+oddity, made visible: the decade ship's nose steps backwards, which no light-speed ship can do.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -164,13 +172,27 @@ LFoD field over the site's lifetime.
 - Use more of the LFoD Universe collection (~/Dropbox/Code/lfod, data/glossary.json
   has 190 named entries, 143 with RLE): puffers, rakes, the moon laser, the anchor
   and ant stacks, the mantis, the six shooter. Every claim still gets a test.
-- Show the short free ship, the c/2…c/5 ships and the moon laser gun (LifeWiki).
+- Show the short free ship and the moon laser gun (LifeWiki). (The slow ships are done: session 11.)
 - Larger search: 5x5 all populations, 6x6 low population; look for slower ships
   (anything not at speed c?), longer periods, guns or puffers.
 - Hero: let a long press or drag place several cells (keyboard placement is done).
 - Accessibility: describe the hero's current state in text for screen readers (the
   status line is now `aria-live`, but population and zoom changes are not announced).
 - Consider an RSS/“what grew this session” changelog page drawn from the journal.
+
+- **Slow ships, more**: the glossary's families (quintessential, unicorn, horned, buffalo
+  and hippo ships) have more members than the smallest shown, and its c/2 and c/5 *rakes*
+  (quintessential rake, horned rake) and the buffalo bird tagalong are untouched. A rake
+  that fires slow ships would make a strip like Wakes. `tools/slow.mjs` skips entries
+  without a ship RLE; the iterations/supplement files in the collection may hold more.
+- **Slow meets fast**: a free ship or moon overtaking a slow ship (the only way two
+  things here can *catch up* with each other). Head-on with a c/2 ship. Same harness.
+- **Light fronts elsewhere**: the shaded "beyond light" region is new in session 11
+  (`COLORS.beyond`, `Stage.draw`'s `under` hook). Wakes and Two cells, parting could show
+  it too, and the hero could show the light cone of a fresh beginning.
+- **Reload lands wrong**: reloading a page with a `#section` hash keeps the browser's
+  restored scroll position, because `anchors()` treats it as the reader having scrolled.
+  A fresh visit to the same link is fine. Low priority.
 
 ## Log
 
@@ -563,4 +585,39 @@ LFoD field over the site's lifetime.
   (debris converges); the key must come from before they touch. (2) I assumed passing
   debris never changes; checkers blink, so it repeats every 2 generations instead. (3) I
   first counted three no-trace passings; up to mirror image there are two.
+
+### 2026-11-02: Session 11, slower than light
+- **New section, "Slower than light"** (after Head-on; 11th in the contents, which now has
+  rows of six): every ship in the LFoD Universe glossary that is slower than c. Three parts:
+  - **The race**: six lanes, one per orthogonal speed, the smallest ship at each (moon c,
+    dust mite c/2, zirconium 2c/5, wasp c/3, beachcomber c/4, decade c/5), noses on one
+    column at gen 0, fixed camera, one clock. The region beyond the light front (more than
+    `g` columns past the start) is shaded; the moon rides its edge. Restarts when the moon
+    reaches the end of the track. On narrow screens the longest tails start cropped (said
+    on the page) so cells stay readable.
+  - **Diagonal**: ram, slanted and giraffe ships in three tiles at one scale, the region
+    `x + y > s0 + g` shaded: the diagonal limit proved in Diamonds (c/2).
+  - **Every slow ship**: a table of all 21 (speed, period, fewest cells, discoverer) and a
+    viewer whose camera moves with the chosen ship, a whole cell at a time at its average
+    speed. Opens on the decade ship.
+- **Source**: the glossary *page* (`~/Dropbox/Code/lfod/docs/glossary.html`, the live
+  glossary) is newer than `data/glossary.json` and has many more ships (fruit fly, mouse,
+  unicorn, fox, buffalo, horned, hippo, wasp, beachcomber, decade, hammerhead). Future
+  sessions should read the page, not the JSON. `tools/slow.mjs` parses it and writes
+  `site/js/slow.js` (RLEs verbatim, one in `B2/S0` spelling, the rest `s0/b2`).
+- **Findings** (`tests/slow.test.mjs`, 31 tests): every period, displacement and population
+  range matches the glossary. Speeds known: c/2 (12 ships), 2c/5, c/3, c/4 (one each), c/5
+  (3), c/4 diagonal (3). Dust mite and fruit fly tie at 36 cells (dust mite's box is
+  smaller); ram is the smallest diagonal ship (37). Leading edges: only the decade and
+  quintessential ships ever fall back, by 2 cells every 5 generations (the glossary says
+  "from generation 1 to 2"; the decade, being p10, also does it from 6 to 7), then gain 3.
+  Diagonal ships measured by max(x + y) are monotonic, gaining one every two generations.
+  A light-speed ship can never fall back (its nose must gain every generation: `front(g) ≤
+  front(0) + g` and `front(g + p) = front(0) + g + p` force equality), so the check over
+  the slow ships covers every ship.
+- **Engine-adjacent**: `Stage.draw(..., { under })` paints on the bare paper before the
+  cells, and `COLORS.beyond` is the shade for "nothing can be alive here".
+- **Bugs caught before shipping**: (1) the table overflowed a 390 px screen by 13 px (the
+  period column is hidden on phones; names wrap). (2) My first expectation that the decade
+  ship falls back once a period was wrong (twice: it is p10 at c/5).
 

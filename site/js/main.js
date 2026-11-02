@@ -9,6 +9,7 @@ import * as F5 from './five.js';
 import * as D2 from './dominoes.js';
 import * as SB from './abreast.js';
 import * as HO from './headon.js';
+import * as SL from './slow.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -1876,6 +1877,193 @@ function headon() {
 }
 
 // Every section heading gets a link to itself, so a study can be shared directly.
+// ---------------------------------------------------------------------------
+// Slower than light: the glossary's slow ships (slow.js; every number checked by
+// tests/slow.test.mjs). A race of the smallest ship at each orthogonal speed, the moon
+// for light, noses on one column at generation 0, the region beyond the light front
+// shaded; the three diagonal ships against the diagonal speed limit (max x + y gains at
+// most one a generation, proved in Diamonds); and a table of all of them with a viewer
+// whose camera moves with the chosen ship. Each lane and tile is its own exact plane.
+const RACE_RATE = 12;
+
+function slow() {
+  const raceEl = $('#race'), diagsEl = $('#diags'), table = $('#slowtable'), fig = $('#slowstage');
+  if (!raceEl || !diagsEl || !table || !fig) return;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v; };
+  const cap = (s) => s.replace(/^./, (c) => c.toUpperCase());
+  const words = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen'];
+  fill('.n-slow', SL.SHIPS.length);
+  fill('.n-slow-c2', cap(words[SL.SHIPS.filter((e) => SL.speed(e) === 'c/2').length]));
+  fill('.n-slow-min', Math.min(...SL.SHIPS.map((e) => e.pop[0])));
+  fill('.n-slow-jb', cap(words[SL.SHIPS.filter((e) => e.credit === 'Josh Ball').length]));
+
+  const front = (p) => p.x0 + p.w - 1;
+  const lead = (p) => { let m = -Infinity; for (const [x, y] of p.cells()) if (x + y > m) m = x + y; return m; };
+  const cells = (e) => e.pop[0] === e.pop[1] ? `${e.pop[0]} cells` : `${e.pop[0]}–${e.pop[1]} cells`;
+  const facts = (e) => `${SL.speed(e)} · period ${e.period} · ${cells(e)}`;
+  const link = (e) => {
+    const a = document.createElement('a');
+    a.href = SL.GLOSSARY + e.id; a.rel = 'noopener'; a.textContent = e.name;
+    return a;
+  };
+  const moon = { ...byId.moon, id: 'moon', name: 'moon' };
+
+  // ----- the race
+  const lanes = [moon, ...SL.RACE.map(SL.byId)].map((e) => {
+    const el = document.createElement('div');
+    el.className = 'lane';
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<div class="lane-head"><span class="lane-name"></span><span class="facts"></span></div><div class="stage"><canvas role="img"></canvas></div>';
+    el.querySelector('.lane-name').append(link(e));
+    el.querySelector('.facts').textContent = facts(e) + (e.credit ? ` · ${e.credit}` : '');
+    el.querySelector('canvas').setAttribute('aria-label', `The ${e.name}, ${facts(e)}, racing from the starting line, simulated exactly.`);
+    raceEl.append(el);
+    const P0 = Pattern.fromRLE(e.rle), ext = SL.extent(e);
+    return { e, el, box: el.querySelector('.stage'), stage: new Stage(el.querySelector('canvas')), P0, ext, f0: front(P0), cur: P0, prev: null };
+  });
+  // columns behind the start line that hold every ship's tail at generation 0
+  const TAILS = Math.max(...lanes.map((l) => l.f0 - l.ext.x0)) + 2;
+  const race = { cs: 2, cols: 0, lap: 0, mx: 0, behind: TAILS, gen: $('#race-gen') };
+  function raceLayout() {
+    const { W, dpr } = lanes[0].stage;
+    // On narrow screens the longest tails start cropped by the frame's left edge (and
+    // come into view as they move), so the cells can stay big enough to read.
+    const narrow = W / dpr < 640;
+    race.behind = narrow ? Math.min(TAILS, 40) : TAILS;
+    race.cs = Math.max(2, Math.floor(W / (race.behind + (narrow ? 110 : 240))));
+    race.cols = Math.floor(W / race.cs);
+    race.mx = Math.floor((W - race.cols * race.cs) / 2);
+    race.lap = race.cols - race.behind - 2; // the moon's nose stops one column short of the edge
+    for (const l of lanes) {
+      const rows = l.ext.y1 - l.ext.y0 + 3;
+      l.box.style.height = `${(rows * race.cs) / dpr}px`;
+    }
+    if (reducedMotion.matches && !raceClock?.playing) raceTo(race.lap);
+    raceDraw();
+  }
+  function raceTo(g) {
+    for (const l of lanes) {
+      l.cur = l.P0; l.prev = null;
+      for (let i = 0; i < g; i++) { l.prev = l.cur; l.cur = l.cur.next(); }
+    }
+  }
+  function raceDraw() {
+    const { cs, mx } = race;
+    for (const l of lanes) {
+      const { W, H } = l.stage;
+      if (!W) continue;
+      const ox = mx + (race.behind - l.f0) * cs, oy = Math.round((H - (l.ext.y1 - l.ext.y0 + 1) * cs) / 2) - l.ext.y0 * cs;
+      const g = l.cur.gen;
+      l.stage.draw(l.cur, l.prev, cs, ox, oy, {
+        under: (ctx) => { ctx.fillStyle = COLORS.beyond; const X = ox + (l.f0 + g + 1) * cs; ctx.fillRect(X, 0, W - X, H); },
+      });
+    }
+    race.gen.textContent = lanes[0].cur.gen;
+  }
+  let raceClock = null;
+  lanes[0].stage.onresize = raceLayout;
+  for (const l of lanes.slice(1)) l.stage.onresize = raceDraw;
+  raceClock = new Clock(raceEl, RACE_RATE, () => {
+    if (lanes[0].cur.gen >= race.lap) { raceTo(0); raceClock.hold = 1600; }
+    else for (const l of lanes) { l.prev = l.cur; l.cur = l.cur.next(); }
+    raceDraw();
+  });
+  raceEl.addEventListener('click', () => raceClock.setPlaying(!raceClock.playing));
+  raceLayout();
+
+  // ----- diagonal tiles: one scale for all three
+  const TRAVEL = 48; // diagonal steps shown, about 190 generations
+  const dl = SL.DIAGONAL.map(SL.byId).map((e) => ({ e, ext: SL.extent(e) }));
+  const N = Math.max(...dl.map(({ ext }) => Math.max(ext.x1 - ext.x0, ext.y1 - ext.y0) + 1)) + TRAVEL + 4;
+  for (const d of dl) {
+    const { e, ext } = d;
+    const el = document.createElement('figure');
+    el.className = 'stage-flot';
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<div class="stage"><canvas role="img"></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><span></span><br><i></i></figcaption>';
+    el.querySelector('figcaption span').append(link(e));
+    el.querySelector('figcaption i').textContent = `${facts(e)} · ${e.credit}`;
+    el.querySelector('canvas').setAttribute('aria-label', `The ${e.name}, ${facts(e)}, behind the diagonal speed limit, simulated exactly.`);
+    diagsEl.append(el);
+    d.P0 = Pattern.fromRLE(e.rle); d.s0 = lead(d.P0); d.cur = d.P0; d.prev = null;
+    d.stage = new Stage(el.querySelector('canvas')); d.gen = el.querySelector('.stage-gen b');
+    // the ship's first-period box starts 2 cells in from the tile's top left corner, and
+    // the run ends, a whole number of periods later, while it is still 2 cells clear of the far edges
+    d.tx = ext.x0 - 2; d.ty = ext.y0 - 2;
+    d.lap = Math.floor((N - 3 - Math.max(ext.x1 - d.tx, ext.y1 - d.ty)) / e.dx) * e.period;
+    d.draw = () => {
+      const { W, H } = d.stage;
+      const cs = Math.max(1, Math.floor(Math.min(W, H) / N));
+      const ox = Math.round((W - N * cs) / 2) - d.tx * cs, oy = Math.round((H - N * cs) / 2) - d.ty * cs;
+      const k = d.s0 + d.cur.gen; // nothing can be alive where x + y > k
+      d.stage.draw(d.cur, d.prev, cs, ox, oy, {
+        under: (ctx) => {
+          ctx.fillStyle = COLORS.beyond;
+          const y0 = Math.floor(-oy / cs) - 1, y1 = Math.ceil((H - oy) / cs) + 1;
+          for (let y = y0; y <= y1; y++) {
+            const X = Math.max(0, ox + (k - y + 1) * cs);
+            if (X < W) ctx.fillRect(X, oy + y * cs, W - X, cs);
+          }
+        },
+      });
+      d.gen.textContent = d.cur.gen;
+    };
+    d.reset = () => {
+      d.cur = d.P0; d.prev = null;
+      if (reducedMotion.matches && !d.clock?.playing) for (let g = 0; g < d.lap; g++) { d.prev = d.cur; d.cur = d.cur.next(); }
+    };
+    d.clock = new Clock(el, RACE_RATE, () => {
+      if (d.cur.gen >= d.lap) { d.reset(); d.clock.hold = 1600; }
+      else { d.prev = d.cur; d.cur = d.cur.next(); }
+      d.draw();
+    });
+    el.addEventListener('click', () => d.clock.setPlaying(!d.clock.playing));
+    d.stage.onresize = d.draw;
+    d.reset(); d.draw();
+  }
+
+  // ----- every slow ship: the table and the viewer
+  const stage = new Stage(fig.querySelector('canvas'));
+  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#slowstage-name');
+  const view = { e: null, cur: null, prev: null, ext: null, cs: 2 };
+  const buttons = [];
+  for (const e of SL.SHIPS) {
+    const tr = document.createElement('tr');
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = e.name; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => { choose(e); if (matchMedia('(max-width: 860px)').matches) fig.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+    buttons.push([e, b]);
+    const th = document.createElement('th'); th.scope = 'row'; th.append(b);
+    tr.append(th);
+    for (const v of [SL.speed(e), e.period, e.pop[0], e.credit === 'discoverer not recorded' ? 'not recorded' : e.credit]) {
+      const td = document.createElement('td'); td.textContent = v; tr.append(td);
+    }
+    table.tBodies[0].append(tr);
+  }
+  function viewDraw() {
+    const { W, H } = stage, { e, ext } = view;
+    if (!W || !e) return;
+    const w = ext.x1 - ext.x0 + 1, h = ext.y1 - ext.y0 + 1;
+    const cs = Math.max(2, Math.min(18, Math.floor(Math.min(W / (w + 10), H / (h + 8)))));
+    // the camera moves with the ship: a whole cell at a time, at its average speed
+    const g = view.cur.gen;
+    const cx = (ext.x0 + ext.x1 + 1) / 2 + Math.floor((g * e.dx) / e.period);
+    const cy = (ext.y0 + ext.y1 + 1) / 2 + Math.floor((g * e.dy) / e.period);
+    stage.draw(view.cur, view.prev, cs, Math.round(W / 2 - cx * cs), Math.round(H / 2 - cy * cs));
+    genEl.textContent = g;
+  }
+  function choose(e) {
+    view.e = e; view.ext = SL.extent(e); view.cur = Pattern.fromRLE(e.rle); view.prev = null;
+    nameEl.replaceChildren(link(e), ` · ${SL.speed(e)} · period ${e.period}`);
+    for (const [o, b] of buttons) b.setAttribute('aria-pressed', String(o === e));
+    viewDraw();
+  }
+  const viewClock = new Clock(fig, 8, () => { view.prev = view.cur; view.cur = view.cur.next(); viewDraw(); });
+  fig.addEventListener('click', (ev) => { if (!ev.target.closest('a')) viewClock.setPlaying(!viewClock.playing); });
+  stage.onresize = viewDraw;
+  choose(SL.byId('decade-ship'));
+}
+
 function anchors() {
   for (const sec of document.querySelectorAll('main section[id]')) {
     const h = sec.querySelector('h2');
@@ -1912,5 +2100,6 @@ fiveCensus();
 dominoes();
 abreast();
 headon();
+slow();
 anchors();
 reducedMotion.addEventListener?.('change', wake);
