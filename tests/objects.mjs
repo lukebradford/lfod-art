@@ -363,3 +363,48 @@ export function shipPairCode(o) {
   const names = Object.keys(o.objects).sort((a, b) => order.indexOf(a) - order.indexOf(b));
   return `${o.at}:` + names.map((n) => (o.objects[n] > 1 ? `${n}×${o.objects[n]}` : n)).join(' ');
 }
+
+// --- two free ships head-on -----------------------------------------------------------
+// The placements are defined in site/js/headon.js (shared with the page).
+export { X0, T, headB, headPair } from '../site/js/headon.js';
+import { headB, headPair } from '../site/js/headon.js';
+
+// What two free ships flying at each other become. One of
+//   { kind: 'apart' }        through generation 26 the pair is exactly the two ships run
+//                            alone; by then they have passed (A's cells are in columns
+//                            >= g - 6, B's <= X0 + 11 - g + 6, two or more empty
+//                            columns apart), so they never touch
+//   { kind: 'explodes' }     the standard above, measured from 150 generations after
+//                            they first touch
+//   { kind: 'nothing', at }  every cell dead at `at`, not at at - 1
+//   { kind: 'objects', at, objects, through } at `at` (not at - 1) the pattern decomposes
+//                            into named objects that run on for 150 generations as if
+//                            alone. `through`: both ships are still there at `at`,
+//                            exactly where and as they would be had they never met
+// or throws (the caller must explain it). `touch` is the first generation the pair
+// differs from the two ships run alone.
+export function headOnOutcome(ph, t, dy, { settle = 200 } = {}) {
+  const cells = headPair(ph, t, dy);
+  const J = [Pattern.fromCells(cells)], A = [Pattern.fromCells(SHIP[0])], B = [Pattern.fromCells(headB(ph, t, dy))];
+  let touch = -1;
+  for (let g = 0; ; g++) {
+    if (touch < 0 && !sameCells(J[g], new Set([...A[g].cells(), ...B[g].cells()].map((c) => c.join())))) touch = g;
+    if (touch < 0 && g >= 26) return { kind: 'apart' };
+    if (J[g].population > 600) {
+      if (explodes(cells, touch + 150)) return { kind: 'explodes', touch };
+      throw new Error(`large but not explosive: ${ph} ${t} ${dy}`);
+    }
+    if (touch >= 0 && g >= touch + settle + 150) break;
+    J.push(J[g].next()); A.push(A[g].next()); B.push(B[g].next());
+  }
+  const gone = J.findIndex((q) => !q.population);
+  if (gone >= 0) return { kind: 'nothing', at: gone, touch };
+  for (let g = touch; g <= touch + settle; g++) {
+    const d = decompose(J[g], 150);
+    if (!d) continue;
+    const have = new Set(J[g].cells().map((c) => c.join()));
+    const through = [A[g], B[g]].every((q) => q.cells().every((c) => have.has(c.join())));
+    return { kind: 'objects', at: g, objects: tally(d), through, touch };
+  }
+  throw new Error(`unclassified: ${ph} ${t} ${dy}`);
+}

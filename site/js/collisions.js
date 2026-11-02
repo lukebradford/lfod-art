@@ -82,7 +82,7 @@ const NAMES = {
   monster: ['monster', 'monsters'], anchor: ['anchor', 'anchors'], lever: ['lever', 'levers'], radar: ['radar', 'radars'],
   ant: ['ant', 'ants'], puffer: ['double dot puffer', 'double dot puffers'],
 };
-const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
+const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
 
 // Short label for the atlas, e.g. "2 free ships, 4 checkers"
 export function shortLabel(o) {

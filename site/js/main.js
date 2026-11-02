@@ -8,6 +8,7 @@ import { QUADS, SETTLE, VANISH } from './four.js';
 import * as F5 from './five.js';
 import * as D2 from './dominoes.js';
 import * as SB from './abreast.js';
+import * as HO from './headon.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -283,7 +284,7 @@ function laws() {
 // Two cells parting: a vertical domino resolves into two free ships flying apart.
 // Runs until the ships near the edge of the frame, holds, then restarts at gen 0.
 function parting() {
-  const canvas = $('#parting');
+  const canvas = $('#parting-canvas');
   const genEl = canvas.parentElement.querySelector('.stage-gen b');
   const stage = new Stage(canvas);
   const start = () => Pattern.fromCells([[0, -1], [0, 0]]);
@@ -1619,6 +1620,285 @@ function abreast() {
   choose(sel, false);
 }
 
+// ---------------------------------------------------------------------------
+// Head-on: two free ships flying at each other. Tiles play the meetings they pass
+// through untouched; the map shows every meeting (headon.js, every square checked by
+// tests/headon.test.mjs) and the stage plays whichever is chosen. The camera is fixed
+// on the point where the two cross, (X0 + t - ph) / 2: A's body is centred near column
+// g + 4 and B's near X0 + t - (g + ph) - 4.
+function headon() {
+  const fig = $('#hstage'), map = $('#hmap'), tilesEl = $('#passings');
+  if (!fig || !map || !tilesEl) return;
+  const { X0, T, DY, MAP, headPair, mirror, outcomeAt } = HO;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = typeof v === 'number' ? v.toLocaleString('en') : v; };
+  const kindOf = (v) => v === '.' ? 'apart' : v === '#' ? 'explodes' : v.endsWith(':nothing') ? 'nothing'
+    : v.includes('freeship') ? 'through' : 'debris';
+
+  // ----- counts for the prose, from the data (mirror images once)
+  const n = { apart: 0, explodes: 0, nothing: 0, debris: 0, through: 0 }, seen = new Set(), passes = [];
+  let squares = 0, clean = 0;
+  for (let dy = 0; dy <= DY; dy++) for (let ph = 0; ph < 6; ph++) for (let t = 0; t < T; t++) {
+    squares++;
+    const v = outcomeAt(ph, t, dy), k = kindOf(v), [p2, t2] = mirror(ph, t);
+    const id = `${Math.min(ph * T + t, p2 * T + t2)},${dy}`;
+    if (seen.has(id)) continue;
+    seen.add(id); n[k]++;
+    if (k === 'through') {
+      // show the mirror pair's member with the lower phase
+      const [P, Tt] = p2 < ph ? [p2, t2] : [ph, t];
+      const o = parseOutcome(outcomeAt(P, Tt, dy));
+      const { freeship, ...left } = o.objects;
+      if (!Object.keys(left).length) clean++;
+      passes.push({ ph: P, t: Tt, dy, at: o.at, left, size: Object.values(left).reduce((a, b) => a + b, 0) });
+    }
+  }
+  passes.sort((a, b) => a.size - b.size || (b.left.dot ? 1 : 0) - (a.left.dot ? 1 : 0) || b.dy - a.dy || a.ph - b.ph);
+  fill('.n-ho', seen.size); fill('.n-ho-boom', n.explodes); fill('.n-ho-through', NUM[n.through]);
+  fill('.n-ho-gone', n.nothing); fill('.n-ho-debris', n.debris); fill('.n-ho-apart', n.apart);
+  fill('.n-ho-sq', squares); fill('.n-ho-dy', DY);
+  fill('.n-ho-clean-k', NUM[clean].replace(/^./, (c) => c.toUpperCase()));
+
+  const across = (dy) => (dy === 0 ? 'exactly in line' : `${dy} row${dy === 1 ? '' : 's'} across`);
+  const where = (p) => `${across(p.dy)}, phase ${p.ph}, timing ${p.t}`;
+  const leaves = (left) => (Object.keys(left).length ? `leaving ${phrase(left)}` : 'leaving no trace');
+  const centre = (p) => [(X0 + p.t - p.ph) / 2 + 0.5, (p.dy + 6) / 2];
+
+  // ----- the tiles: every way they pass through each other
+  const tiles = passes.map((p, i) => {
+    const el = document.createElement('figure');
+    el.className = 'stage-flot';
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<div class="stage"><canvas></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><b></b> <span></span><br><i></i></figcaption>';
+    el.querySelector('figcaption b').textContent = i + 1;
+    el.querySelector('figcaption span').textContent = `they pass, ${leaves(p.left)}`;
+    el.querySelector('figcaption i').textContent = where(p);
+    const canvas = el.querySelector('canvas');
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', `Two free ships meeting head-on, ${where(p)}, simulated exactly: they pass through each other, ${leaves(p.left)}.`);
+    tilesEl.append(el);
+    el.addEventListener('click', () => choose({ ph: p.ph, t: p.t, dy: p.dy }, true));
+    const tile = { p, el, gen: el.querySelector('.stage-gen b'), stage: new Stage(canvas), cur: null, prev: null, cs: 4, end: 0 };
+    tile.reset = () => {
+      tile.cur = Pattern.fromCells(headPair(p.ph, p.t, p.dy)); tile.prev = null;
+      // reduced motion: hold the frame just after they pass, both ships still in view
+      if (reducedMotion.matches && !tile.clock?.playing) for (let g = 0; g < p.at + 2; g++) { tile.prev = tile.cur; tile.cur = tile.cur.next(); }
+    };
+    tile.draw = () => {
+      const { W, H } = tile.stage;
+      const cs = tile.cs = Math.max(2, Math.floor(Math.min(W / 44, H / 30)));
+      const [cx, cy] = centre(p);
+      // both ships are gone once A's tail (column >= g - 6) is past the right edge
+      tile.end = Math.ceil(cx + W / cs / 2 + 7);
+      tile.stage.draw(tile.cur, tile.prev, cs, Math.round(W / 2 - cx * cs), Math.round(H / 2 - cy * cs));
+      tile.gen.textContent = tile.cur.gen;
+    };
+    tile.clock = new Clock(el, 10, () => {
+      if (tile.cur.gen >= tile.end) { tile.reset(); tile.clock.hold = 900; }
+      else { tile.prev = tile.cur; tile.cur = tile.cur.next(); }
+      tile.draw();
+    });
+    tile.stage.onresize = () => tile.draw();
+    tile.reset(); tile.draw();
+    return tile;
+  });
+  const note = document.createElement('p');
+  note.className = 'ho-note';
+  note.textContent = 'Both, or neither. No meeting leaves one ship.';
+  if (tiles.length % 4) tilesEl.append(note);
+
+  // ----- the stage
+  const read = (v) => v === '#' ? { kind: 'explodes', at: null } : v === '.' ? { kind: 'apart', at: null } : parseOutcome(v);
+  const words = (o) => {
+    if (o.kind === 'explodes') return 'explodes';
+    if (o.kind === 'apart') return 'they never touch: each flies on exactly as if alone';
+    if (o.kind === 'nothing') return `they annihilate: nothing is left, by gen ${o.at}`;
+    const { freeship, ...left } = o.objects;
+    if (freeship) return `they pass through each other untouched, ${leaves(left)}, by gen ${o.at}`;
+    return `both ships destroyed, leaving ${phrase(o.objects)}, by gen ${o.at}`;
+  };
+  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
+  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#hstage-name');
+  const resEl = $('#hstage-result'), statusEl = $('#hstage-status'), openEl = $('#hstage-open');
+  const firstGone = (() => { for (let ph = 0; ph < 6; ph++) for (let t = 0; t < T; t++) if (kindOf(outcomeAt(ph, t, 0)) === 'nothing') return { ph, t, dy: 0 }; })();
+  let sel = firstGone, o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, end = 0, done = false;
+  const still = () => reducedMotion.matches && !clock.playing;
+  const inView = (q) => q.x0 * cs + ox >= 0 && (q.x0 + q.w) * cs + ox <= stage.W && q.y0 * cs + oy >= 0 && (q.y0 + q.h) * cs + oy <= stage.H;
+
+  function start() {
+    o = read(outcomeAt(sel.ph, sel.t, sel.dy));
+    cur = Pattern.fromCells(headPair(sel.ph, sel.t, sel.dy)); prev = null; done = false;
+    statusEl.textContent = '';
+    nameEl.textContent = where(sel);
+    resEl.textContent = words(o);
+    canvas.setAttribute('aria-label', `Two free ships meeting head-on, ${where(sel)}, simulated exactly: ${words(o)}.`);
+    openEl.href = encodeHash(Pattern.fromCells(headPair(sel.ph, sel.t, sel.dy)));
+    layout();
+    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
+  }
+  function layout() {
+    const { W, H } = stage;
+    const want = Math.min(110, Math.max(64, Math.round(W / stage.dpr / 5)));
+    cs = Math.max(2, Math.floor(Math.min(W / want, H / 30)));
+    const [cx, cy] = centre(sel);
+    ox = Math.round(W / 2 - cx * cs); oy = Math.round(H / 2 - cy * cs);
+    // clean runs last until anything moving has left the frame (ships fly one cell per
+    // generation, from the centre), and debris has been seen for a while
+    const out = Math.ceil(cx + W / cs / 2 + 7);
+    end = o.kind === 'apart' || (o.kind === 'objects' && o.objects.freeship) ? Math.max(out, (o.at ?? 0) + 12)
+      : (o.at ?? 0) + 30;
+    draw();
+  }
+  function draw() {
+    stage.draw(cur, prev, cs, ox, oy);
+    genEl.textContent = cur.gen;
+    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
+  }
+  function finished() {
+    if (o.kind === 'explodes') {
+      if (cur.population > 300 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
+      return cur.gen > 1500;
+    }
+    return cur.gen >= end;
+  }
+  const clock = new Clock(fig, 10, () => {
+    if (done) { start(); clock.hold = 400; return; }
+    prev = cur; cur = cur.next(); draw();
+    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
+  });
+  canvas.addEventListener('click', () => {
+    const wasStill = still();
+    clock.setPlaying(!clock.playing);
+    if (wasStill) start();
+  });
+  stage.onresize = () => { if (cur) layout(); };
+
+  // ----- the map: one block of T timings by DY + 1 distances for each phase
+  const mctx = map.getContext('2d', { alpha: false });
+  const nrows = DY + 1;
+  let q = 8, per = 6, mox = 0, top = 16, gap = 8, hover = null, dpr = 1;
+  const hoverEl = $('#hmap-hover');
+  // block origin for phase ph
+  const bx = (ph) => mox + (ph % per) * (T * q + gap);
+  const by = (ph) => Math.floor(ph / per) * (top + nrows * q + gap) + top;
+  function mlayout() {
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const W = Math.round(map.parentElement.clientWidth * dpr);
+    // six blocks in a row if the squares can be 11 CSS px or more, else three, else two
+    for (per of [6, 3, 2]) {
+      gap = Math.round(14 * dpr);
+      q = Math.min(Math.round(22 * dpr), Math.floor((W - (per - 1) * gap) / (per * T)));
+      if (q >= 11 * dpr || per === 2) break;
+    }
+    top = Math.round(18 * dpr);
+    mox = Math.floor((W - per * T * q - (per - 1) * gap) / 2);
+    const H = (6 / per) * (top + nrows * q + gap) - gap;
+    if (map.width !== W || map.height !== H) {
+      map.width = W; map.height = H;
+      map.style.height = `${H / dpr}px`;
+    }
+    mdraw();
+  }
+  function mdraw() {
+    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
+    const box = (X, Y, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X, Y, w, ht); };
+    const ring = (X, Y, S, w, color) => { box(X, Y, S, w, color); box(X, Y + S - w, S, w, color); box(X, Y, w, S, color); box(X + S - w, Y, w, S, color); };
+    box(0, 0, map.width, map.height, COLORS.paper);
+    mctx.font = `${Math.round(11 * dpr)}px ${getComputedStyle(document.body).getPropertyValue('--mono') || 'monospace'}`;
+    mctx.textBaseline = 'alphabetic';
+    for (let ph = 0; ph < 6; ph++) {
+      const X0b = bx(ph), Y0b = by(ph);
+      mctx.fillStyle = sel.ph === ph ? COLORS.ink : '#77736a';
+      mctx.fillText(`phase ${ph}`, X0b + h, Y0b - Math.round(6 * dpr));
+      for (let dy = 0; dy < nrows; dy++) for (let t = 0; t < T; t++) {
+        const X = X0b + t * q, Y = Y0b + dy * q, v = outcomeAt(ph, t, dy), k = kindOf(v);
+        if (k === 'explodes') box(X + h, Y + h, s, s, '#d7d2c7');
+        else if (k === 'apart') { const d = Math.max(1, Math.round(q / 7)), c = (q - d) >> 1; box(X + c, Y + c, d, d, '#c9c4b9'); }
+        else if (k === 'through') { box(X + h, Y + h, s, s, COLORS.free); const w = Math.max(2, Math.round(q * 0.2)); box(X + h + w, Y + h + w, s - 2 * w, s - 2 * w, COLORS.paper); }
+        else if (k === 'nothing') { const i = Math.max(2, Math.round(q * 0.2)); ring(X + i, Y + i, q - 2 * i, Math.max(1, Math.round(q / 12)), COLORS.ink); }
+        else { const i = Math.max(2, Math.round(q * 0.24)); box(X + i, Y + i, q - 2 * i, q - 2 * i, COLORS.ink); }
+      }
+    }
+    const mark = (p, color, w) => ring(bx(p.ph) + p.t * q + h - w, by(p.ph) + p.dy * q + h - w, s + 2 * w, w, color);
+    if (hover && (hover.ph !== sel.ph || hover.t !== sel.t || hover.dy !== sel.dy)) mark(hover, COLORS.ink, Math.max(1, Math.round(q / 10)));
+    mark(sel, kindOf(outcomeAt(sel.ph, sel.t, sel.dy)) === 'through' ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
+  }
+  const at = (ev) => {
+    const r = map.getBoundingClientRect();
+    const X = (ev.clientX - r.left) * (map.width / r.width), Y = (ev.clientY - r.top) * (map.height / r.height);
+    for (let ph = 0; ph < 6; ph++) {
+      const t = Math.floor((X - bx(ph)) / q), dy = Math.floor((Y - by(ph)) / q);
+      if (t >= 0 && t < T && dy >= 0 && dy < nrows) return { ph, t, dy };
+    }
+    return null;
+  };
+  const describe = (p) => `${where(p)}: ${words(read(outcomeAt(p.ph, p.t, p.dy)))}.`;
+  function choose(p, user) {
+    sel = p; hover = null;
+    hoverEl.textContent = describe(p);
+    mdraw(); start();
+    if (user) {
+      clock.hold = 0; clock.setPlaying(true);
+      const r = fig.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+  }
+  map.addEventListener('click', (ev) => { const p = at(ev); if (p) choose(p, true); });
+  map.addEventListener('pointermove', (ev) => {
+    if (ev.pointerType !== 'mouse') return;
+    const p = at(ev);
+    if (p?.ph === hover?.ph && p?.t === hover?.t && p?.dy === hover?.dy) return;
+    hover = p;
+    hoverEl.textContent = describe(p || sel);
+    mdraw();
+  });
+  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
+  map.addEventListener('keydown', (ev) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
+    if (!d) return;
+    ev.preventDefault();
+    // left and right run on through the phases, as if the blocks were one long row
+    const i = sel.ph * T + sel.t + d[0], dy = sel.dy + d[1];
+    if (i < 0 || i >= 6 * T || dy < 0 || dy > DY) return;
+    choose({ ph: Math.floor(i / T), t: i % T, dy }, false);
+    clock.hold = 0; clock.setPlaying(true);
+  });
+  map.setAttribute('role', 'img');
+  map.setAttribute('aria-label', `A map of all ${squares} ways two free ships can meet head-on, in six blocks, one for each phase of the second ship, coloured by what happens. Use the arrow keys to choose one.`);
+  openEl.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const hh = openEl.getAttribute('href');
+    if (location.hash === hh) history.replaceState(null, '', location.pathname + location.search);
+    location.hash = hh;
+    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+  });
+  new ResizeObserver(mlayout).observe(map.parentElement);
+  choose(sel, false);
+}
+
+// Every section heading gets a link to itself, so a study can be shared directly.
+function anchors() {
+  for (const sec of document.querySelectorAll('main section[id]')) {
+    const h = sec.querySelector('h2');
+    if (!h || h.querySelector('.h-link')) continue;
+    const a = document.createElement('a');
+    a.className = 'h-link';
+    a.href = `#${sec.id}`;
+    a.textContent = '#';
+    a.setAttribute('aria-label', `Link to ${h.textContent}`);
+    h.append(a);
+  }
+  // A link to a section is followed before the scripts have built the sections above
+  // it, which then grow and push it down: go there again once the page is laid out
+  // (and once more at load, unless the reader has scrolled since).
+  let id = '';
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+  const target = id && document.getElementById(id);
+  if (!target || !target.matches('main section, main nav')) return;
+  let y = null;
+  requestAnimationFrame(() => { target.scrollIntoView(); y = scrollY; });
+  addEventListener('load', () => { if (y === null || Math.abs(scrollY - y) < 2) target.scrollIntoView(); }, { once: true });
+}
+
 hero();
 laws();
 parting();
@@ -1631,4 +1911,6 @@ fivePuffers();
 fiveCensus();
 dominoes();
 abreast();
+headon();
+anchors();
 reducedMotion.addEventListener?.('change', wake);

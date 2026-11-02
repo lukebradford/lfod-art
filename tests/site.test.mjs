@@ -27,3 +27,13 @@ test('modules import each other only by relative ./name.js paths the map can cat
     }
   }
 });
+
+test('ids are unique, and every in-page link points at one', () => {
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(ids.filter((id, i) => ids.indexOf(id) !== i), []);
+  for (const [, id] of html.matchAll(/href="#([a-z][\w-]*)"/g)) assert.ok(ids.includes(id), `#${id}`);
+  // the contents list names every section, in order
+  const toc = [...html.match(/<nav class="toc"[\s\S]*?<\/nav>/)[0].matchAll(/href="#([\w-]+)"/g)].map((m) => m[1]);
+  const sections = [...html.matchAll(/<section class="[^"]*" id="([\w-]+)"/g)].map((m) => m[1]).filter((id) => id !== 'rule');
+  assert.deepEqual(toc, sections);
+});

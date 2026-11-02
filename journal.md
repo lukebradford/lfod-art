@@ -80,6 +80,14 @@ puffers whose touching leaves a dot or a checker behind. Dueling dominoes was on
 them all along. The motif is the formation: things that move together, shown with a
 camera that flies with them.
 
+Session 10 found the tenth: **both, or neither**. Turned to face each other, two free
+ships close at twice the speed of light, and of every way they can meet (504, mirror
+images once) the rule allows exactly two kinds of survival: none, or total. No meeting
+leaves one ship. Seven times the two pass straight through each other, each exactly as if
+the other had never been there, only at ten or eleven rows across, where nothing but their
+sparks can reach; twice they leave no trace at all. Exactly in line, nine annihilate. The
+page also got a front door: a numbered list of the ten studies, and every study a link.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -125,8 +133,13 @@ LFoD field over the site's lifetime.
   four flotillas or five puffers (or two flotillas side by side) could give rakes,
   wider dot lattices, or puffers whose trails interact. Same harness
   (`shipPairOutcome` generalised), same map, more phases.
-- **Ships head-on**: two free ships flying at each other (every offset and phase), a
-  collision atlas like the moon's. And a free ship fired into each of the five new wakes.
+- **Ship into wake**: a free ship fired head-on into each of the wakes (Wakes, the five
+  side-by-side puffers). Does a ship eat a dot trail, or explode on the first dot? (Head-on
+  ships pass only where sparks graze, so probably explode; test it.)
+- **Ship meets ship at right angles**: the perpendicular case of Head-on (a 2-D atlas of
+  crossings), and ship vs moon head-on.
+- **Head-on, three bodies**: a ship passing through a flotilla, or through dueling
+  dominoes' puffers.
 - **Other ships side by side**: moons beside free ships (three of the side-by-side
   results throw off a moon flying with the surviving ship), the glossary's p4 ships
   (dot ship, dotset ship) side by side.
@@ -511,4 +524,43 @@ LFoD field over the site's lifetime.
   (3) A "clean generation" test that allowed extra cells behind the ships let a moving
   spark through; extra cells must now be frozen (there 6 and 12 generations later).
 - Two dominoes now points down to Side by side.
+
+### 2026-11-02: Session 10, head-on
+- **New section, "Head-on"** (after Side by side): every way two free ships can fly straight
+  at each other. Ship A is the glossary's 12-cell phase flying +x; ship B its mirror image,
+  `ph` generations into its own flight, its path starting `t` columns further off, `dy` rows
+  across (`site/js/headon.js`, shared with the tests). Twelve columns further is the same
+  meeting six generations later (tested), so 6 phases x 12 timings is every approach; beyond
+  11 rows they never touch. Shown as: tiles of the seven ways they pass through each other
+  (fixed camera on the crossing point, looping until both ships have left), and an explorer
+  (a map of all 864 squares in six blocks, one per phase, that wraps to 3 or 2 blocks per row
+  on narrow screens; a stage; "open in the field at the top").
+- **Findings** (`tests/headon.test.mjs`, 9 tests, which run every meeting):
+  - 864 squares, 504 meetings up to mirror image (two symmetries: top-bottom flip keeps the
+    square; a half turn maps phase k, timing t to phase 6 - k, timing t + 6, found by turning
+    every meeting round and finding it in another's run). 63 never touch, 390 explode, 9
+    annihilate, 35 leave only dots and checkers, 7 pass through.
+  - **Both or neither**: no meeting leaves one ship, or anything but dots and checkers (no
+    moon, monster or third ship). Where ships come out, both are the originals, exactly where
+    and as they would be alone, from the meeting on (checked cell for cell for 120
+    generations; the debris repeats with period 2 because checkers blink).
+  - Annihilation happens only exactly in line; passing through only at 10 or 11 rows. Two
+    passings leave nothing at all (10 across, phase 1, timing 11; 11 across, phase 0, timing 2).
+- **Classifier** `headOnOutcome` in `tests/objects.mjs`. 'apart' is exact: by generation 26
+  the ships' column ranges are at least two apart, forever. `tools/headon.mjs` writes the data
+  (about 4 s).
+- **Contents and links**: a numbered "Studies" list after The rule (two columns of five on
+  desktop), an `id` on every section, and a `#` self-link on each heading (hover). A link to a
+  section used to land in the wrong place, because the sections above it are built by script
+  after the browser has scrolled; the page now scrolls to it again once laid out (and at
+  load, unless the reader has scrolled). `tests/site.test.mjs` checks ids are unique, every
+  in-page link has a target, and the contents list matches the sections in order.
+- **Bug caught before shipping**: the first section id, `parting`, clashed with the parting
+  canvas's id and broke that animation (renamed `parting-canvas`; the new test catches it).
+- `phrase()` knew numbers only up to six; one head-on meeting leaves eight dots ("undefined
+  dots"). It now counts to twelve, and a test runs it over every head-on outcome.
+- My own mistakes, caught: (1) a first mirror key taken mid-collision gave false matches
+  (debris converges); the key must come from before they touch. (2) I assumed passing
+  debris never changes; checkers blink, so it repeats every 2 generations instead. (3) I
+  first counted three no-trace passings; up to mirror image there are two.
 
