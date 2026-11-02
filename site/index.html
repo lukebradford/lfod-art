@@ -28,7 +28,8 @@
   "./js/diamonds.js": "./js/diamonds.js?v=dev",
   "./js/four.js": "./js/four.js?v=dev",
   "./js/share.js": "./js/share.js?v=dev",
-  "./js/five.js": "./js/five.js?v=dev"
+  "./js/five.js": "./js/five.js?v=dev",
+  "./js/dominoes.js": "./js/dominoes.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -144,7 +145,7 @@
     </div>
     <p class="lede">One more cell, and there are <span class="n-five">6,634</span> ways to place five close enough to meet. <span class="n-five-boom">6,151</span> explode, <span class="n-five-vanish">59</span> vanish and <span class="n-five-settle">415</span> settle. The last nine do something no smaller placement does: they grow forever and never explode. Each becomes a <a href="https://lukebradford.github.io/lfod/glossary.html#double-dot-puffer">double dot puffer</a>, which flies off at the speed of light and leaves a dot behind every two generations. One of them makes two, flying apart.</p>
     <div class="pstrips" id="pstrips" role="list" aria-label="The nine five-cell placements that become double dot puffers, all from generation 0"></div>
-    <p>The double dot puffer is the smallest known puffer: six cells, in the form the glossary gives. These start with five and grow into it within <span class="n-five-puff-by">9</span> generations. In this universe a trail is a line of dots, each a cell alone, so each one lives forever.</p>
+    <p>The double dot puffer is the smallest known puffer: six cells, in the form the glossary gives. These start with five and grow into it within <span class="n-five-puff-by">9</span> generations. In this universe a trail is a line of dots, each a cell alone, so each one lives forever. Four cells can grow forever too, but only if they start too far apart to meet: see <a href="#dominoes-h">two dominoes</a>, below.</p>
 
     <div class="wall-head">
       <h3>All <span class="n-five-calm">483</span></h3>
@@ -160,6 +161,35 @@
       <div class="mosaic" id="mosaic"></div>
     </div>
     <p class="aside">Peace keeps getting rarer as cells are added. Four pairs in <span class="n-pairs">5</span> don’t explode, then <span class="n-triples-calm">10</span> triples in <span class="n-triples">31</span>, <span class="n-quads-calm">70</span> placements of four in <span class="n-quads">430</span>, and now <span class="n-five-calm">483</span> in <span class="n-five">6,634</span>, about one in fourteen. One explosion takes its time: at generation 40 it is still only 25 cells, and then it goes like all the rest. The puffers’ strips are drawn on a fixed plane, and each run lasts until the last puffer reaches the right edge. The pair’s puffers leave their strip halfway through, and like everything else here they keep going. Every count, fate and generation on this page is checked by tests that enumerate all <span class="n-five">6,634</span> placements independently of it and run each one. The puffers are checked over fifty periods: every cell they leave behind is a dot, and nothing else ever changes.</p>
+  </section>
+
+  <section class="dominoes" aria-labelledby="dominoes-h">
+    <h2 id="dominoes-h">Two dominoes</h2>
+    <p class="lede">A domino, two cells side by side, parts into two free ships that fly apart forever. Put down two dominoes and four ships fly out. What becomes of them depends only on where the second domino sits. Here is every place it can go, out to <span class="n-dom-lat">12</span> rows across and <span class="n-dom-lon">36</span> cells along, and what happens.</p>
+    <figure class="stage stage-duel" id="duel">
+      <canvas role="img" aria-label="Two dominoes, simulated exactly."></canvas>
+      <div class="stage-name"><span id="duel-name">dueling dominoes</span></div>
+      <figcaption class="stage-gen">gen <b>0</b></figcaption>
+      <span class="player-result" id="duel-result" aria-live="polite"></span>
+      <span class="stage-status" id="duel-status"></span>
+    </figure>
+    <figure class="dmap-fig">
+      <canvas class="dmap" id="dmap" tabindex="0" aria-describedby="dmap-help"></canvas>
+      <figcaption>
+        <p class="dmap-hover" id="dmap-hover" aria-live="polite"></p>
+        <ul class="dlegend">
+          <li><i class="k-first"></i>the first domino</li>
+          <li><i class="k-boom"></i>explodes</li>
+          <li><i class="k-settle"></i>they touch, then settle</li>
+          <li><i class="k-apart"></i>they never touch</li>
+          <li><i class="k-grow"></i>grows forever</li>
+        </ul>
+        <p class="dmap-help" id="dmap-help">Each square is a place for the second domino’s top cell. Tap one to watch it, or use the arrow keys. <a id="duel-open" href="#">Open this one in the field at the top</a>.</p>
+      </figcaption>
+    </figure>
+    <p>Close together, they almost always explode. In line, or nearly (up to five rows across), the two inner ships fly straight at each other. Usually that explodes too, but at the right distances the two ships annihilate, or leave a few dots and checkers, and the outer two fly away. Six to eight rows across, every meeting explodes. From twelve rows on, they never touch: a free ship never strays more than four rows beyond its domino, so at least two empty rows always lie between them, and no cell can see across two. At ten and eleven rows the ships only just brush past each other. Often that explodes too, but when it doesn’t, all four fly on, sometimes leaving a dot or a checker behind.</p>
+    <p>And at eleven rows across and two along, the ships flying the same way never get free of each other. Neither ship changes in the slightest: at every generation each domino is exactly what it would be alone. But every six generations their sparks reach the row halfway between them at the same moment, and a cell is born there, alone, so it lives forever. The glossary calls this <a href="https://lukebradford.github.io/lfod/glossary.html#dueling-dominoes">dueling dominoes</a>, “the smallest pattern that exhibits infinite linear growth”. Of all <span class="n-dom">479</span> placements here, it is the only one that grows.</p>
+    <p class="aside">Mirror images are the same placement, so the map is symmetric about the first domino. Of the <span class="n-dom">479</span>, <span class="n-dom-boom">347</span> explode, <span class="n-dom-apart">65</span> never touch, and <span class="n-dom-settle">66</span> touch and settle. Beyond 24 cells along, the map repeats every 12: the inner ships meet six generations later, in the same phase, and the pairs flying the same way are too far apart to touch. Each run plays from generation 0 on an unbounded plane until the result has settled and the ships have left the frame; an explosion stops where it reaches the edge, still growing. Every square, the generation each result is reached by, the symmetry, the repeat (checked out to 72 cells along), and every dot dueling dominoes lays down (for 700 generations) are checked by tests that run each placement and compare it with the two dominoes run alone.</p>
   </section>
 </main>
 

@@ -6,6 +6,7 @@ import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, se
 import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 import { QUADS, SETTLE, VANISH } from './four.js';
 import * as F5 from './five.js';
+import * as D2 from './dominoes.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -1090,6 +1091,208 @@ function fiveCensus() {
   choose(ant, ant.b, false);
 }
 
+// ---------------------------------------------------------------------------
+// Two dominoes: a map of every place a second domino can go near a first, drawn at
+// its true position around the first (MAP in dominoes.js; every square is checked by
+// tests/dominoes.test.mjs), and a stage that plays whichever square is chosen.
+function dominoes() {
+  const fig = $('#duel'), map = $('#dmap');
+  if (!fig || !map) return;
+  const { MAP, LAT, LON, DUEL, pairCells, outcomeAt } = D2;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v.toLocaleString('en'); };
+  const kinds = { '#': 0, '.': 0, s: 0 };
+  let total = 0;
+  for (const row of MAP) for (const e of row) if (e) { total++; kinds[e === '#' || e === '.' ? e : 's']++; }
+  fill('.n-dom', total); fill('.n-dom-boom', kinds['#']); fill('.n-dom-apart', kinds['.']);
+  fill('.n-dom-settle', kinds.s - 1); fill('.n-dom-lat', LAT); fill('.n-dom-lon', LON);
+
+  const read = (e) => e === '#' ? { kind: 'explodes', at: null, objects: {} }
+    : e === '.' ? { kind: 'apart', at: 12, objects: { freeship: 4 } }
+    : e === 'puffers' ? { kind: 'puffers', at: DUEL.first, objects: {} }
+    : parseOutcome(e);
+  const words = (o, dx) => o.kind === 'explodes' ? 'explodes'
+    : o.kind === 'apart' ? 'they never touch: four free ships, each flying as if alone'
+    : o.kind === 'puffers' ? `two puffers flying apart, laying a dot every ${DUEL.period} generations, forever`
+    : o.kind === 'nothing' ? `nothing, gone by gen ${o.at}`
+    : ships(o, dx) + `, by gen ${o.at}`;
+  // (tests check: with two ships left, from 3 along they are the outer two; with four,
+  // all four are whole)
+  function ships(o, dx) {
+    const { freeship, ...debris } = o.objects;
+    const left = Object.keys(debris).length ? phrase(debris) : '';
+    if (freeship === 2 && Math.abs(dx) >= 3) return left ? `the inner ships are destroyed, leaving ${left}; the outer two fly on` : 'the inner ships annihilate; the outer two fly on';
+    if (freeship === 4) return left ? `all four ships fly on, leaving ${left}` : 'they touch, and all four ships fly on unchanged';
+    return phrase(o.objects);
+  }
+  const rows = (n) => (n === 0 ? 'in line' : `${n} row${n === 1 ? '' : 's'} across`);
+  const where = (dx, dy) => Math.abs(dx) === DUEL.dx && Math.abs(dy) === DUEL.dy ? 'dueling dominoes'
+    : `${rows(Math.abs(dy))}, ${Math.abs(dx)} along`;
+
+  // ----- the stage
+  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
+  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#duel-name');
+  const resEl = $('#duel-result'), statusEl = $('#duel-status'), openEl = $('#duel-open');
+  let sel = { dx: DUEL.dx, dy: DUEL.dy }, o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, end = 0, done = false;
+  const still = () => reducedMotion.matches && !clock.playing;
+  const inView = (p) => p.x0 * cs + ox >= 0 && (p.x0 + p.w) * cs + ox <= stage.W
+    && p.y0 * cs + oy >= 0 && (p.y0 + p.h) * cs + oy <= stage.H;
+
+  function start() {
+    o = read(outcomeAt(sel.dx, sel.dy));
+    cur = Pattern.fromCells(pairCells(sel.dx, sel.dy)); prev = null; done = false;
+    statusEl.textContent = '';
+    nameEl.textContent = where(sel.dx, sel.dy);
+    resEl.textContent = words(o, sel.dx);
+    canvas.setAttribute('aria-label', `Two dominoes, ${where(sel.dx, sel.dy)}, simulated exactly: ${words(o, sel.dx)}.`);
+    openEl.href = encodeHash(Pattern.fromCells(pairCells(sel.dx, sel.dy)));
+    layout();
+    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
+  }
+  function layout() {
+    const { W, H } = stage;
+    // up to 96 cells across; fewer on a phone, so cells stay about 5 CSS px or more
+    const want = Math.min(96, Math.max(56, Math.round(W / stage.dpr / 5)));
+    cs = Math.max(2, Math.floor(Math.min(W / want, H / 34)));
+    // centre on the point halfway between the dominoes (the whole pattern is symmetric about it)
+    ox = Math.round(W / 2 - (sel.dx + 1) / 2 * cs);
+    oy = Math.round(H / 2 - (sel.dy + 2) / 2 * cs);
+    // clean runs last until anything flying has left the frame (ships move one cell per gen)
+    end = Math.max(o.at ?? 0, Math.ceil(W / cs / 2 + Math.abs(sel.dx) / 2) + 10);
+    draw();
+  }
+  function draw() {
+    stage.draw(cur, prev, cs, ox, oy);
+    genEl.textContent = cur.gen;
+    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
+  }
+  function finished() {
+    if (o.kind === 'explodes') {
+      if (cur.population > 400 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
+      return cur.gen > 2000;
+    }
+    if (o.kind === 'puffers') {
+      // stop while the leading ships are still a step inside the frame
+      const nx = cur.x0 - 1, nw = cur.w + 2;
+      return nx * cs + ox < 0 || (nx + nw) * cs + ox > stage.W;
+    }
+    return cur.gen >= end;
+  }
+  const clock = new Clock(fig, 10, () => {
+    if (done) { start(); clock.hold = 400; return; }
+    prev = cur; cur = cur.next(); draw();
+    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2400; }
+  });
+  canvas.addEventListener('click', () => {
+    const wasStill = still();
+    clock.setPlaying(!clock.playing);
+    if (wasStill) start();
+  });
+  stage.onresize = () => { if (cur) layout(); };
+
+  // ----- the map: every place for the second domino's top cell, around the first
+  const mctx = map.getContext('2d', { alpha: false });
+  let q = 8, x0 = -LON, cols = 2 * LON + 1, mox = 0, hover = null;
+  const nrows = 2 * LAT + 1;
+  const hoverEl = $('#dmap-hover');
+  const isFirst = (dx, dy) => dx === 0 && (dy === 0 || dy === 1);
+  function mlayout() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const W = Math.round(map.parentElement.clientWidth * dpr);
+    // whole device pixels per square; on narrow screens show fewer columns to the left
+    // (the map is symmetric), keeping squares big enough to tap and the first domino in view
+    cols = Math.max(LON + 2, Math.min(2 * LON + 1, Math.floor(W / Math.round(9 * dpr))));
+    x0 = LON - cols + 1;
+    q = Math.max(3, Math.floor(W / cols));
+    mox = Math.floor((W - cols * q) / 2);
+    if (map.width !== W || map.height !== nrows * q) {
+      map.width = W; map.height = nrows * q;
+      map.style.height = `${nrows * q / dpr}px`;
+    }
+    mdraw();
+  }
+  function mdraw() {
+    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
+    const box = (X, Y, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X, Y, w, ht); };
+    box(0, 0, map.width, map.height, COLORS.paper);
+    for (let r = 0; r < nrows; r++) for (let c = 0; c < cols; c++) {
+      const dx = x0 + c, dy = r - LAT, X = mox + c * q, Y = r * q;
+      const e = outcomeAt(dx, dy);
+      if (isFirst(dx, dy)) {
+        if (dy === 0) box(X + h, Y + h, s, q + s, COLORS.ink); // the first domino: two cells joined
+      } else if (e === '#') box(X + h, Y + h, s, s, '#d7d2c7');
+      else if (e === 'puffers') box(X + h, Y + h, s, s, COLORS.free);
+      else if (e === '.') {
+        const d = Math.max(1, Math.round(q / 7)), k = (q - d) >> 1;
+        box(X + k, Y + k, d, d, '#c9c4b9');
+      } else if (e) {
+        const i = Math.max(2, Math.round(q * 0.24));
+        box(X + i, Y + i, q - 2 * i, q - 2 * i, COLORS.ink);
+      }
+    }
+    // a ring of width w just outside a square
+    const ring = (p, color, w) => {
+      const c = p.dx - x0, r = p.dy + LAT;
+      if (c < 0 || c >= cols) return;
+      const X = mox + c * q + h - w, Y = r * q + h - w, S = s + 2 * w;
+      box(X, Y, S, w, color); box(X, Y + S - w, S, w, color);
+      box(X, Y, w, S, color); box(X + S - w, Y, w, S, color);
+    };
+    if (hover && (hover.dx !== sel.dx || hover.dy !== sel.dy)) ring(hover, COLORS.ink, Math.max(1, Math.round(q / 10)));
+    ring(sel, outcomeAt(sel.dx, sel.dy) === 'puffers' ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
+  }
+  const at = (e) => {
+    const r = map.getBoundingClientRect();
+    const c = Math.floor(((e.clientX - r.left) * (map.width / r.width) - mox) / q);
+    const row = Math.floor((e.clientY - r.top) * (map.height / r.height) / q);
+    if (c < 0 || c >= cols || row < 0 || row >= nrows) return null;
+    const dx = x0 + c, dy = row - LAT;
+    return outcomeAt(dx, dy) ? { dx, dy } : null;
+  };
+  const describe = (p) => `${where(p.dx, p.dy)}: ${words(read(outcomeAt(p.dx, p.dy)), p.dx)}.`;
+  function choose(p, user) {
+    sel = p; hover = null;
+    hoverEl.textContent = describe(p);
+    mdraw(); start();
+    if (user) {
+      clock.hold = 0; clock.setPlaying(true);
+      const r = fig.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
+    }
+  }
+  map.addEventListener('click', (e) => { const p = at(e); if (p) choose(p, true); });
+  map.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const p = at(e);
+    if (p?.dx === hover?.dx && p?.dy === hover?.dy) return;
+    hover = p;
+    hoverEl.textContent = describe(p || sel);
+    mdraw();
+  });
+  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
+  map.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    let { dx, dy } = sel;
+    do { dx += d[0]; dy += d[1]; } while (Math.abs(dy) <= LAT && dx >= x0 && dx <= LON && !outcomeAt(dx, dy));
+    if (Math.abs(dy) <= LAT && dx >= x0 && dx <= LON) choose({ dx, dy }, false);
+    clock.hold = 0; clock.setPlaying(true);
+  });
+  map.setAttribute('role', 'img');
+  map.setAttribute('aria-label', `A map of all ${total} places for a second domino near a first, coloured by what happens. Use the arrow keys to choose one.`);
+  // opening a placement in the hero: the hero listens for #rle= links
+  openEl.addEventListener('click', (e) => {
+    e.preventDefault();
+    const h = openEl.getAttribute('href');
+    if (location.hash === h) history.replaceState(null, '', location.pathname + location.search);
+    location.hash = h;
+    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+  });
+  new ResizeObserver(mlayout).observe(map.parentElement);
+  hoverEl.textContent = describe(sel);
+  start();
+}
+
 hero();
 laws();
 parting();
@@ -1100,4 +1303,5 @@ wall(diamonds());
 four();
 fivePuffers();
 fiveCensus();
+dominoes();
 reducedMotion.addEventListener?.('change', wake);

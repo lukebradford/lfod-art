@@ -186,3 +186,68 @@ export function puffer(cells, maxAt = 160) {
   }
   return null;
 }
+
+// --- two dominoes ---------------------------------------------------------------------
+// A vertical domino at (0, 0), (0, 1) parts into two free ships flying left and right.
+// Put a second one with its top cell at (dx, dy). Compare the pair with each domino run
+// alone. Returns:
+//   'apart'              for all `horizon` generations the pair is exactly the union of
+//                        the two dominoes run alone: they never touch
+//   'explodes'           by the standard above, measured from 150 generations after the
+//                        dominoes first touch (far apart, their ships meet late)
+//   'at:nothing'         every cell is dead at generation `at` (and not at at - 1)
+//   'at:objects'         at generation `at` (>= 12, when a lone domino has parted) the
+//                        pattern is exactly the lone dominoes' ships that are still whole
+//                        plus debris made of named objects, and all of these run on for
+//                        150 generations exactly as they would alone; not yet so at at - 1
+//                        (or at 12)
+//   null                 none of these by `settle` generations after they touch (the
+//                        caller must explain it)
+export const DOMINO = [[0, 0], [0, 1]];
+export const dominoPair = (dx, dy) => [...DOMINO, [dx, dy], [dx, dy + 1]];
+const run = (p, n) => { for (let i = 0; i < n; i++) p = p.next(); return p; };
+const sameCells = (p, set) => p.population === set.size && p.cells().every((c) => set.has(c.join()));
+const RANK = ['monster', 'freeship', 'moon', 'anchor', 'lever', 'radar', 'ant', 'checker', 'dot'];
+
+export function dominoOutcome(dx, dy, { horizon = 200, settle = 100 } = {}) {
+  const cells = dominoPair(dx, dy);
+  const J = [Pattern.fromCells(cells)], A = [Pattern.fromCells(DOMINO)], B = [Pattern.fromCells([[dx, dy], [dx, dy + 1]])];
+  const apart = (g) => sameCells(J[g], new Set([...A[g].cells(), ...B[g].cells()].map((c) => c.join())));
+  let touch = -1, big = false;
+  for (let g = 0; ; g++) {
+    if (touch < 0 && !apart(g)) touch = g;
+    if (J[g].population > 300) { big = true; break; }
+    if (g >= (touch < 0 ? horizon : touch + settle + 150)) break;
+    J.push(J[g].next()); A.push(A[g].next()); B.push(B[g].next());
+  }
+  if (touch < 0) return 'apart';
+  if (big) {
+    if (explodes(cells, touch + 150)) return 'explodes';
+    throw new Error(`large but not explosive: ${dx}, ${dy}`);
+  }
+  const gone = J.findIndex((q) => !q.population);
+  if (gone >= 0) return `${gone}:nothing`;
+  // nothing before they touch can be the final result (the lone ships are about to meet)
+  for (let g = Math.max(12, touch); g <= touch + settle; g++) {
+    const have = new Set(J[g].cells().map((c) => c.join()));
+    // each lone domino's two ships (left and right of its own column)
+    const ships = [];
+    for (const [q, x] of [[A[g], 0], [B[g], dx]]) {
+      const cs = q.cells();
+      ships.push(cs.filter((c) => c[0] < x), cs.filter((c) => c[0] > x));
+    }
+    if (ships.some((s) => !s.length)) throw new Error('a lone domino has not parted');
+    const whole = ships.filter((s) => s.every((c) => have.has(c.join())));
+    const taken = new Set(whole.flat().map((c) => c.join()));
+    const rest = J[g].cells().filter((c) => !taken.has(c.join()));
+    const debris = rest.length ? decompose(Pattern.fromCells(rest), 150) : [];
+    if (!debris) continue;
+    const parts = [...whole.map((s) => run(Pattern.fromCells(s), 150)), ...debris.map((d) => run(Pattern.fromCells(d.cells), 150))];
+    if (!sameCells(J[g + 150], new Set(parts.flatMap((q) => q.cells().map((c) => c.join()))))) continue;
+    const t = tally(debris);
+    if (whole.length) t.freeship = (t.freeship || 0) + whole.length;
+    const names = Object.keys(t).sort((p, q) => RANK.indexOf(p) - RANK.indexOf(q));
+    return `${g}:` + names.map((n) => (t[n] > 1 ? `${n}×${t[n]}` : n)).join(' ');
+  }
+  return null;
+}

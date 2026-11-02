@@ -63,6 +63,14 @@ became a mosaic, every non-exploding placement drawn as a glyph you can play, an
 started using the glossary's smallest named things (plus, snake eyes, T-tetromino) as
 landmarks.
 
+Session 8 found the eighth: **company at a distance**. Two dominoes far apart send out
+four free ships, and the page maps every place the second can sit (a 2-D atlas drawn at
+true position around the first, which turned out symmetric, banded and periodic: an
+emblem of the rule). Most of it is explosion; twelve rows out is untouchable solitude,
+proved by a ship's width. In one square, dueling dominoes, two ships fly side by side
+forever, each exactly as if alone, and the only trace of their company is a dot laid
+halfway between them every six generations. Solitude that leaves something behind.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -99,10 +107,15 @@ LFoD field over the site's lifetime.
   shown never to misfire on the five-cell list), or test a fixed random sample plus
   every survivor. What's new at six: the monster? other puffers? a c/2 ship?
 - **Glyph to hero**: the census glyphs (and four-cell tiles) could offer "open in the
-  field above" using the hero's `#rle=` links.
-- **Dueling dominoes**: the glossary's four-cell reaction (two dominoes far apart)
-  whose ships meet and make p6 puffers, "the smallest pattern that exhibits infinite
-  linear growth". It sits naturally next to the five-cell puffers; verify and show it.
+  field above" using the hero's `#rle=` links, as Two dominoes now does.
+- **Perpendicular dominoes**: the Two dominoes map covers parallel dominoes only. One
+  horizontal and one vertical send ships at right angles, so they can only cross; a
+  second map (and does anything there grow?). Also domino vs moon, and a domino fired
+  into a dot wake.
+- **Two free ships abreast**: dueling dominoes is two free ships 11 rows apart and 2
+  along. Search all relative positions/phases of two (or three) free ships flying the
+  same way: other dot-layers, new composite ships, rakes? `dominoOutcome` style
+  comparison against the ships run alone is the right test.
 - **Four-cell tiles, larger**: tapping a four-cell tile could play it large, as the
   three-cell wall does with the Diamonds stage.
 - **Anchor track periods**: the glossary lists the first iterations' periods as
@@ -399,4 +412,44 @@ LFoD field over the site's lifetime.
   These five-cell placements are predecessors, not smaller puffers. The page says so,
   and only claims "no smaller *placement* (cells close enough to meet)" because the
   glossary's dueling dominoes (four cells, far apart) also grow linearly.
+
+### 2026-11-02: Session 8, two dominoes
+- **New section, "Two dominoes"** (after Five cells): a map of every place a second
+  vertical domino can sit near a first (13 x 37 offsets up to symmetry, 479 placements,
+  drawn as the full symmetric 25 x 73 plane with the first domino in the middle), and a
+  wide stage that plays whichever square is tapped (or chosen with arrow keys) from
+  generation 0, exactly. Grey explodes, a small ink square touches and settles, a faint
+  dot never touches, red grows forever. It opens on **dueling dominoes** (glossary). An
+  "Open this one in the field at the top" link sends the placement to the hero via
+  `#rle=`; dueling dominoes there runs out to one pixel per cell.
+- **Findings** (all in `tests/dominoes.test.mjs`, 15 tests, which run every placement):
+  - 347 explode, 65 never touch, 66 touch and settle, 1 grows forever.
+  - A lone domino's cells never leave rows -4..5, at any generation, so from 12 rows
+    across two dominoes can never touch (rows 6 and 7 always empty; no cell sees both).
+  - 6 to 8 rows across: every placement explodes. 9 rows: all but two (17 and 29 along).
+  - 0 to 5 rows: whatever doesn't explode loses two ships; from 3 along the survivors are
+    exactly the outer two (tested), the inner pair annihilating or leaving dots/checkers.
+    One empty column apart (2 along, in line) they act as one four-cell shape, making
+    two new ships.
+  - 10 and 11 rows: whatever touches and doesn't explode keeps all four original ships,
+    each exactly as if alone, sometimes plus a dot or checker(s).
+  - From 24 along the map repeats every 12 columns: same objects, 6 generations later
+    (checked to 72; to 96 in a scratch run). Reason: the inner ships meet 6 generations
+    later in the same phase, and same-way pairs are too far apart to touch.
+  - **Dueling dominoes** (11 across, 2 along; the glossary's RLE matches up to symmetry)
+    is the only one that grows. Neither domino is disturbed at all: for 700 generations
+    the pattern is exactly the two run alone plus dots on the middle row, one in the
+    centre at gen 10, then one more each side every 6 generations, 6 cells further out
+    each time. Two p6 puffers at c, each just two free ships abreast.
+- **Shared helper** `dominoOutcome(dx, dy)` in `tests/objects.mjs`: compares the pair with
+  each domino run alone (so close-flying ships aren't misread, which the generic
+  `decompose` does when two ships are within 6 cells: my first scan reported a dozen
+  false "puffers"). Explosions are measured 150 generations after the dominoes first
+  touch (far apart, their ships only meet late; the fixed gen-150 standard missed some).
+  `tools/dominoes.mjs` writes `site/js/dominoes.js` (about 5 s).
+- The Five cells text now points down to Two dominoes (four cells can grow forever, but
+  only if they start too far apart to meet; the four-cell census already proves the
+  "only").
+- Phone: the stage shows fewer columns (cells stay about 5 CSS px); the map shows the
+  right-hand half plus the first domino when 73 columns would be under 9 px each.
 
