@@ -113,6 +113,17 @@ diagonal of ships, each exactly as if alone. The backflip closes the loop: a tra
 the flip-flop rake catches both moons every period and turns each into two checkers, a rake
 made back into a puffer. The motif is the stream: things fired at c, in lines, forever.
 
+Session 14 found the fourteenth: **standing still**. Everything that makes ships here
+had flown to do it; a gun stands still and fires. Only two are known, both fire moons,
+and both fire two ways at once from their middle line, so each is the centre of a line of
+light growing at c from both ends: the moon laser (2012, 700 cells, p4, up and down) and
+Arie Paap's p5 gun (2016, 166 cells, left and right). Two of the small guns face to face
+turn the Collisions atlas into a machine: in line, two moons vanish at an even distance and
+start to fuse at an odd one, so at an odd number of cells apart every pair meets halfway
+and leaves nothing, forever, and at an even number the first pair has not finished fusing
+when the next arrives, and everything explodes. Odd or even is all that matters. The motif
+is the fixed camera: the first strips on the site where nothing moves but what is fired.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -210,6 +221,22 @@ LFoD field over the site's lifetime.
 - Accessibility: describe the hero's current state in text for screen readers (the
   status line is now `aria-live`, but population and zoom changes are not announced).
 - Consider an RSS/“what grew this session” changelog page drawn from the journal.
+- **Guns as inputs**: the p5 gun's stream is moons 5 apart on one row, the laser's 4 apart
+  on one column. A dot or checker in the stream (Collisions says a lone moon on a dot leaves
+  a checker and a dot at two offsets, and explodes at the rest; what does the *next* moon
+  do to that?); a gun firing into a rake's wake; a gun's stream crossing another's at
+  right angles (two offsets and a timing, so a 3-D atlas: find whether any crossing is
+  clean); the laser face to face with itself (stacked, moons meeting vertically: the same
+  parity rule should hold, test it). The glossary's "Logic gates.rle" and "Moon
+  reactions.rle" files are untouched.
+- **Face to face, every distance**: the page shows 100 and 101 and tests 40..61. A map of
+  distances (and of the second gun's phase, 0..4, which shifts parity: calm iff d + phase
+  is odd, seen in a scratch run) would make it an atlas like the others; also two guns side
+  by side (streams parallel, never meeting, unless offset by a row or two: the Collisions
+  atlas has moon-on-moon at offsets up to 5).
+- **What is the p5 gun made of?** It looks like two copies of a p5 oscillator (Paap's bow
+  tie, found the same day) held nose to nose, with the moons born in the gap. Check by
+  running the halves alone before saying so on the page.
 
 - **Slow ships, more**: the glossary's families (quintessential, unicorn, horned, buffalo
   and hippo ships) have more members than the smallest shown, and the buffalo bird tagalong
@@ -730,3 +757,41 @@ LFoD field over the site's lifetime.
 - The old page's cached modules hid the new section at first (python's server sends no
   cache headers); a `cache: 'reload'` fetch fixed it locally, and the deploy's commit stamp
   handles it live.
+
+### 2026-11-02: Session 14, guns
+- **New section, "Guns"** (after Rakes; 5th in the contents, which now has fourteen in two
+  columns of seven): things that stand still and fire. Three strips in the Wakes style with a
+  *fixed* camera (`site/js/guns.js`, the `guns()` block in `main.js`), all on one clock:
+  - **p5 moon gun** (Arie Paap, August 2016, 166 cells, from the LFoD Universe news page):
+    every fifth generation a moon leaves each side along its middle row. The strip opens with
+    both streams already spanning it.
+  - **Moon laser** (Matthias Merzenich, August 2012, 700 cells, 170 wide, from the glossary):
+    every fourth generation one moon leaves upwards and one downwards from its centre column.
+    Its strip shrinks its cells to fit the gun across (whole device pixels, never below 2; 6 px
+    on desktop, 2 px on a 390 px phone) and says so by the counter ("cell 2 px"), through a
+    `--cs-fit` variable the strip's height follows.
+  - **Face to face**: two p5 guns on one line, 101 apart (every pair of moons meets halfway
+    and vanishes, forever) or, by a button, 100 apart (explodes; stopped where the diamond
+    reaches the strip's edge, held, then started over). Both open at generation 0 so the
+    streams are seen to meet.
+  - Links open either gun in the hero field (`encodeHash`).
+- **Findings** (`tests/guns.test.mjs`, 13 tests): each gun is an engine that repeats exactly
+  every period inside its box (p5: the given 19 columns plus one spark row above and below;
+  laser: exactly its 170 x 31), and everything outside the box at those generations is moons
+  flying away at c that never touch the engine or each other again (the whole at t + p is the
+  engine run alone plus the moons run alone, cell for cell, 50 periods). A moon is born as two
+  cells just outside the box one generation before it is a moon. Each gun is a mirror image of
+  itself both ways and fires along its middle line (row 21..24; column 83..86). Face to face:
+  calm (periodic, moons only between the guns except at the meeting point, population there
+  constant) at every odd distance 41..61 and at 101; explodes at every even one 40..60 and at
+  100. Why: the Collisions atlas's in-line rows (even gap `12:nothing`, odd gap `11:monster`).
+- **Not shown, seen in a scratch run**: the second gun's phase shifts the parity (calm iff
+  d + phase is odd), as it must, since a phase is a moon one cell further along.
+- **Bug caught before shipping**: the laser strip stayed black. Its fitted cell size equalled
+  the default, so setting `--cs-fit` changed no height, no resize fired, and the early
+  "wait for the resize" return never came back. Layout now always draws; a height change
+  brings it back through the observer.
+- **Test-harness lessons**: the period cut must be at the engine's own phase (settle mod
+  period), or a half-born moon straddles the box; and a moon straddles any box edge it was
+  born on, so the engine box must end where the moon's first two cells begin, not include them.
+- Mobile check through a 390 px iframe again (the window stops at 500).

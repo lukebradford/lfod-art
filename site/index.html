@@ -34,7 +34,8 @@
   "./js/headon.js": "./js/headon.js?v=dev",
   "./js/slow.js": "./js/slow.js?v=dev",
   "./js/crossing.js": "./js/crossing.js?v=dev",
-  "./js/rakes.js": "./js/rakes.js?v=dev"
+  "./js/rakes.js": "./js/rakes.js?v=dev",
+  "./js/guns.js": "./js/guns.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -77,6 +78,7 @@
       <li><a href="#bestiary">Bestiary</a> <span>the small things that last</span></li>
       <li><a href="#wakes">Wakes</a> <span>seven puffers and the solitude they leave</span></li>
       <li><a href="#rakes">Rakes</a> <span>puffers whose trail is ships</span></li>
+      <li><a href="#guns">Guns</a> <span>two things that stand still and fire</span></li>
       <li><a href="#collisions">Collisions</a> <span>a moon meets a dot, a checker, a moon</span></li>
       <li><a href="#diamonds">Diamonds</a> <span>why every explosion has one shape</span></li>
       <li><a href="#four">Four cells</a> <span>every quiet beginning of four</span></li>
@@ -120,6 +122,19 @@
     <p class="aside">Each strip follows its rake exactly, one generation per step, and all of them step together. Everything fired or left behind is simulated, including what has left the strip; the moons go on forever, and so do the free ships, which climb at forty-five degrees only because the camera is moving. Every few minutes they start over, and the counters jump back. Tap to pause. Patterns are from the <a href="https://lukebradford.github.io/lfod/glossary.html">LFoD Universe glossary</a>. Their periods, speeds, populations, what each fires and leaves every period, and that nothing fired or left ever touches the rake or anything else again, are all checked by tests that follow each one for fifty periods.</p>
   </section>
 
+  <section class="guns" id="guns" aria-labelledby="guns-h">
+    <h2 id="guns-h">Guns</h2>
+    <p class="lede">Everything on this page that makes ships has to fly to do it: a rake moves at the speed of light and leaves its ships behind. A gun stands still. Only <span class="n-guns">two</span> are known in this universe. Both fire moons, and both fire two ways at once, so each stands at the centre of a line of light that lengthens at the speed of light from both ends.</p>
+    <div class="strips" id="gstrips"></div>
+    <p class="aside">Each strip holds its gun still, one generation per step, and both step together. Everything fired is simulated, including what has left the strip; a moon goes on forever. Each gun is shown exactly as its source gives it, the small one firing left and right, the laser up and down, and the line by the counter says how big its cells are drawn. Tap a strip to pause it, and <a id="gun-open-p5" href="#">open the small gun</a> or <a id="gun-open-laser" href="#">the laser</a> in the field at the top to watch it fire into the open.</p>
+    <div class="wall-head">
+      <h3>Face to face</h3>
+    </div>
+    <p>Stand two of the small guns on one line, facing each other, and their inner streams meet halfway. Collisions found what two moons exactly in line do: an even number of cells apart they vanish, an odd number apart they begin to fuse into a monster. Which happens here is decided by whether the guns are an odd or an even number of cells apart. At an odd distance every pair meets in the middle and leaves nothing, forever: two guns firing at each other with nothing to show for it. At an even distance the first pair begins to fuse, the next pair arrives five generations later, long before it has finished, and everything explodes.</p>
+    <div class="strips" id="fstrips"></div>
+    <div class="sphases" role="group" aria-label="How far apart the guns stand" id="face-choice"></div>
+    <p class="aside">Odd or even is all that matters: every odd distance from 41 to 61 is tested to go on forever, and every even one to explode. Shown are <span class="n-face-odd">101</span> and <span class="n-face-even">100</span>. The explosion is stopped where it reaches the edge of the strip, and the strip starts over.</p>
+  </section>
   <section class="collide" id="collisions" aria-labelledby="collide-h">
     <h2 id="collide-h">Collisions</h2>
     <p class="lede">Nothing can catch a moon: it already moves at the speed of light. But things can stand in its way, or come the other way. Send one at a dot, a checker or another moon, and what happens depends only on how many rows off-centre it hits and, against anything that moves or blinks, whether the gap between them is even or odd. Here is every way it can go.</p>

@@ -12,6 +12,7 @@ import * as HO from './headon.js';
 import * as SL from './slow.js';
 import * as CR from './crossing.js';
 import * as RK from './rakes.js';
+import * as GN from './guns.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -558,6 +559,164 @@ function rakes() {
     }
   });
   host.addEventListener('click', () => clock.setPlaying(!clock.playing));
+}
+
+// ---------------------------------------------------------------------------
+// Guns: things that stand still and fire (guns.js; every field checked by
+// tests/guns.test.mjs). The camera is fixed on the gun, which never moves; its moons
+// leave along its middle line both ways at c, so each strip is a line of light
+// lengthening from its centre. A strip opens with its streams already spanning it. The
+// streams repeat in space every period, so starting over after GUN_RUN generations (a
+// multiple of both periods) changes nothing on the strip but the counter. The moon
+// laser is 170 cells wide: its strip, and the face-to-face strip, shrink their cells
+// (whole device pixels, never below 2) to fit, and say so by the counter.
+const GUN_RUN = 900;
+const STREAM = 30; // rows of stream shown above and below a gun that fires up and down
+
+function guns() {
+  const host = $('#gstrips'), fhost = $('#fstrips');
+  if (!host || !fhost) return;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v; };
+  fill('.n-guns', NUM[GN.GUNS.length]);
+  fill('.n-face-odd', GN.FACE.odd); fill('.n-face-even', GN.FACE.even);
+  for (const e of GN.GUNS) {
+    const a = $(`#gun-open-${e.id}`);
+    if (a) a.href = encodeHash(Pattern.fromRLE(e.rle));
+  }
+
+  // one strip: a fixed camera on `cells` (P0), the band of rows [top, bottom] it and its
+  // engine occupy, `cols` columns that must fit across (0: as many as the strip holds)
+  function strip(where, { name, facts, note, links, cols, top, bottom, rows, P0, label }) {
+    const el = document.createElement('article');
+    el.className = 'strip';
+    el.innerHTML = `
+      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-scale">cell <b>6</b> px</span><span class="strip-gen">gen <b>0</b></span></div>
+      <figure class="stage"><canvas role="img"></canvas><span class="stage-status"></span></figure>
+      <p class="strip-note"></p>`;
+    el.querySelector('h3').textContent = name;
+    el.querySelector('.facts').textContent = facts;
+    const noteEl = el.querySelector('.strip-note');
+    noteEl.append(note + ' ');
+    links.forEach(([text, url], i) => {
+      const a = document.createElement('a');
+      a.href = url; a.textContent = text; a.rel = 'noopener';
+      noteEl.append(i ? ' · ' : '', a);
+    });
+    const canvas = el.querySelector('canvas');
+    canvas.setAttribute('aria-label', label);
+    const fig = el.querySelector('.stage');
+    fig.style.setProperty('--rows', rows);
+    where.append(el);
+    const s = { el, fig, stage: new Stage(canvas), genEl: el.querySelector('.strip-gen b'), scaleEl: el.querySelector('.strip-scale b'), statusEl: el.querySelector('.stage-status'), P0, rows, top, bottom };
+    s.cur = P0; s.prev = null; s.cs = 2; s.start = null;
+    s.layout = () => {
+      const { dpr } = s.stage;
+      const css = parseFloat(getComputedStyle(fig).getPropertyValue('--cs')) || 5;
+      let cs = Math.max(2, Math.floor(css * dpr));
+      if (cols) {
+        // shrink to fit the gun across, in whole device pixels; the strip's height follows
+        const wide = Math.max(2, Math.floor(canvas.getBoundingClientRect().width * dpr / (cols + 4)));
+        cs = Math.min(cs, wide);
+        fig.style.setProperty('--cs-fit', cs / dpr + 'px'); // if the height changes, the observer brings us back
+      }
+      s.cs = cs;
+      s.scaleEl.textContent = cs / dpr % 1 ? (cs / dpr).toFixed(1) : cs / dpr;
+      if (s.open) s.open();
+      draw(s);
+    };
+    s.stage.onresize = s.layout;
+    return s;
+  }
+  function draw(s) {
+    const { W, H } = s.stage;
+    // the gun's box centred across; the band [top, bottom] centred down
+    const ox = Math.round((W - s.width * s.cs) / 2 - s.x0 * s.cs);
+    const oy = Math.round((H - (s.bottom - s.top + 1) * s.cs) / 2 - s.top * s.cs);
+    s.stage.draw(s.cur, s.prev, s.cs, ox, oy);
+    s.genEl.textContent = s.cur.gen;
+  }
+
+  const strips = GN.GUNS.map((e) => {
+    const [x0, y0, x1, y1] = e.box, vertical = e.axis === 'y';
+    const P0 = Pattern.fromRLE(e.rle);
+    const ways = vertical ? 'one up and one down' : 'one left and one right';
+    const facts = `period ${e.period} · still · ${e.pop0} cells · fires ${e.fires.moon} moons every ${e.period} generations, ${ways}`;
+    const s = strip(host, {
+      name: e.name, facts, note: e.note,
+      links: [[e.source.label, e.source.url], ['forum post', e.forum]],
+      cols: vertical ? x1 - x0 + 1 : 0,
+      top: vertical ? y0 - STREAM : y0 - 1, bottom: vertical ? y1 + STREAM : y1 + 1,
+      rows: vertical ? y1 - y0 + 1 + 2 * STREAM : y1 - y0 + 3,
+      P0, label: `${e.name}: ${facts}.`,
+    });
+    s.x0 = x0; s.width = x1 - x0 + 1;
+    s.open = () => {
+      if (s.start) return;
+      // open with the streams spanning the strip: across it, or up to its top and bottom
+      const span = vertical ? STREAM : Math.ceil(s.stage.W / s.cs / 2);
+      const g0 = e.settle + e.period * Math.ceil(span / e.period);
+      let p = P0, q = null;
+      for (let g = 0; g < g0; g++) { q = p; p = p.next(); }
+      s.start = { cur: p, prev: q };
+      s.cur = p; s.prev = q;
+    };
+    s.step = () => {
+      if (s.cur.gen >= s.start.cur.gen + GUN_RUN) { s.cur = s.start.cur; s.prev = s.start.prev; }
+      else { s.prev = s.cur; s.cur = s.cur.next(); }
+    };
+    return s;
+  });
+
+  // face to face: two small guns on one line, at an odd or an even distance
+  const g = GN.byId[GN.FACE.gun], G0 = Pattern.fromRLE(g.rle).cells();
+  const [gx0, gy0, gx1, gy1] = g.box;
+  const choice = $('#face-choice');
+  const face = strip(fhost, {
+    name: 'Face to face', facts: '', note: '', links: [],
+    cols: gx1 - gx0 + 1 + GN.FACE.odd, top: gy0 - 1, bottom: gy1 + 1, rows: gy1 - gy0 + 3,
+    P0: Pattern.fromCells(GN.facing(G0, GN.FACE.odd)), label: 'Two p5 moon guns facing each other, simulated exactly.',
+  });
+  face.el.querySelector('.strip-note').remove();
+  face.x0 = gx0; face.width = gx1 - gx0 + 1 + GN.FACE.odd;
+  face.open = () => { if (!face.start) face.start = { cur: face.P0, prev: null }; };
+  const set = (parity) => {
+    const d = GN.FACE[parity];
+    face.d = d; face.parity = parity;
+    face.P0 = Pattern.fromCells(GN.facing(G0, d));
+    face.width = gx1 - gx0 + 1 + d;
+    face.start = { cur: face.P0, prev: null };
+    face.cur = face.P0; face.prev = null;
+    face.statusEl.textContent = '';
+    face.el.querySelector('.facts').textContent = `two p5 moon guns, ${d} cells apart · ${parity === 'odd' ? 'every pair of moons vanishes, forever' : 'explodes'}`;
+    for (const b of choice.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.parity === parity));
+    draw(face);
+  };
+  face.step = () => {
+    if (face.statusEl.textContent || face.cur.gen >= GUN_RUN) { set(face.parity); return; }
+    face.prev = face.cur; face.cur = face.cur.next();
+    // an explosion grows out of the guns' band: stop it where it reaches the strip's edge
+    const half = Math.floor(face.stage.H / face.cs / 2), mid = (face.top + face.bottom) / 2;
+    if (face.cur.y0 <= mid - half || face.cur.y0 + face.cur.h - 1 >= mid + half) {
+      face.statusEl.textContent = `explodes · gen ${face.cur.gen} · stopped at the edge`;
+      clock.hold = 2200;
+    }
+  };
+  for (const parity of ['odd', 'even']) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.parity = parity;
+    b.textContent = `${GN.FACE[parity]} apart (${parity})`;
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); set(parity); clock.setPlaying(true); });
+    choice.append(b);
+  }
+  set('odd');
+
+  for (const s of strips) s.layout();
+  face.layout();
+  const all = [...strips, face];
+  const clock = new Clock(host.parentElement, 10, () => {
+    for (const s of all) { if (!s.start) continue; s.step(); draw(s); }
+  });
+  for (const h of [host, fhost]) h.addEventListener('click', () => clock.setPlaying(!clock.playing));
 }
 
 // ---------------------------------------------------------------------------
@@ -1391,7 +1550,7 @@ function dominoes() {
 // the speed of light (like the Wakes); the map shows every placement (abreast.js, every
 // square checked by tests/abreast.test.mjs) and the stage plays whichever is chosen.
 const FLEET_RUN = 1500;
-const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen'];
+const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
 
 function abreast() {
   const fleetFig = $('#fleet'), fig = $('#sstage'), map = $('#smap');
@@ -2475,6 +2634,7 @@ parting();
 for (const e of CATALOG) card(e);
 wakes();
 rakes();
+guns();
 collisions();
 wall(diamonds());
 four();
