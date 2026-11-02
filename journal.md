@@ -104,6 +104,15 @@ that reached the crossing first, untouched, exactly as if alone; the other arriv
 Head-on was "both or neither"; crossing is "one or neither". The motif is precedence, and
 the site's first faint drawing of a path under the cells.
 
+Session 13 found the thirteenth: **the throw**. Nothing here can catch a moon, but a
+rake can throw one: three of the glossary's four rakes fire moons backwards, and since the
+rake flies at c too, a moon and the rake that threw it part at 2c, as fast as any two things
+in this universe can separate. The fourth, the free rake, fires free ships sideways, and
+because the camera flies with the rake its ships climb away at forty-five degrees: a
+diagonal of ships, each exactly as if alone. The backflip closes the loop: a trailer behind
+the flip-flop rake catches both moons every period and turns each into two checkers, a rake
+made back into a puffer. The motif is the stream: things fired at c, in lines, forever.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -175,9 +184,20 @@ LFoD field over the site's lifetime.
   collection's "Anchor track periods" file) before claiming the sequence.
 - **More wakes**: nickel puffer (p5) and radar puffer did not verify with the simple
   front-zone test within 40 columns / 96 generations of settling; find out why (longer
-  transient? a rake, whose debris moves?) before showing them. Rakes (free rake,
-  nickel rake, tricycle rake, flip-flop rake) need a test that tracks the emitted ships.
-  Trailers (dot eater, anchor eater) that consume a wake would make a lovely strip.
+  transient? a rake, whose debris moves?) before showing them. The fake rake puffer (p8,
+  24 cells, 4 dots a period in our scratch run) could join Wakes. Trailers (dot eater,
+  anchor eater) that consume a wake would make a lovely strip beside the backflip.
+- **Streams as inputs**: the rakes make endless lines of moons and free ships at exact
+  spacings. A moon stream fired into a dot wake (does the first moon clear a path for the
+  rest?), two tricycle rakes nose to nose (moon streams meeting head-on: the collisions
+  atlas says what one pair does; a stream is that pair every 6 cells), a free rake's
+  diagonal of ships crossing a second rake's (every crossing in Crossing, in sequence).
+  The rake harness in `tests/rakes.test.mjs` (engine cut + named pieces + independence)
+  generalises: add a second body and look for the first period at which the pieces differ.
+- **Rakes of other periods**: the glossary says the free rake's reaction on other anchor
+  tracks gives higher periods (the two-slot anchor track's periods are 12, 28, ... per the
+  bestiary); build one and see whether the ships come out at every period. Also the
+  glossary's c/2 and c/5 rakes (quintessential rake, horned rake), untouched.
 - **Wakes on the hero?** A puffer crossing the hero diagonally would be dramatic, but
   the hero is the monster's place. Perhaps a second, wide hero mode.
 - Use more of the LFoD Universe collection (~/Dropbox/Code/lfod, data/glossary.json
@@ -192,9 +212,9 @@ LFoD field over the site's lifetime.
 - Consider an RSS/“what grew this session” changelog page drawn from the journal.
 
 - **Slow ships, more**: the glossary's families (quintessential, unicorn, horned, buffalo
-  and hippo ships) have more members than the smallest shown, and its c/2 and c/5 *rakes*
-  (quintessential rake, horned rake) and the buffalo bird tagalong are untouched. A rake
-  that fires slow ships would make a strip like Wakes. `tools/slow.mjs` skips entries
+  and hippo ships) have more members than the smallest shown, and the buffalo bird tagalong
+  is untouched. A slow rake (see Rakes of other periods) would make a strip whose stream
+  moves at an odd relative speed. `tools/slow.mjs` skips entries
   without a ship RLE; the iterations/supplement files in the collection may hold more.
 - **Slow meets fast**: a free ship or moon overtaking a slow ship (the only way two
   things here can *catch up* with each other). Head-on with a c/2 ship. Same harness.
@@ -673,3 +693,40 @@ LFoD field over the site's lifetime.
   (3) On a phone-width tile I thought I saw a second object after a clean erasure; the
   engine says gen 35 is A alone (x 29..43), clipped by the tile edge.
 
+### 2026-11-02: Session 13, rakes
+- **New section, "Rakes"** (after Wakes; 3rd in the contents, which now has thirteen):
+  puffers whose trail is ships. Five strips in the Wakes style (`site/js/rakes.js`, the
+  `rakes()` block in `main.js`), each camera flying with its rake at c, all stepping on one
+  clock, each opening with its stream already spanning the strip and starting over after 900
+  generations:
+  - Tricycle rake (p3, 130 cells): one moon backwards every period, nothing else. Flip-flop
+    rake (p4, 131): two moons a period, one above the other, nothing else. Nickel rake (p5,
+    98): a moon backwards and a dot on each side every period, so the moons fly down a
+    corridor of dots. Against a camera moving with the rake the moons pass at 2c.
+  - Free rake (p12, 50 cells): one free ship *upwards* every period, plus two dots and a
+    checker behind. Its strip is tall (engine band + 48 rows) and the ships climb away at
+    45° because the camera moves; on a phone they leave by the left edge instead.
+  - Backflip (p4, 164 cells): the flip-flop rake with a 33-cell trailer in its 13 rearmost
+    columns (checked cell for cell) that turns both moons into four checkers a period, a
+    frozen wake again.
+- **Harness** (`tests/rakes.test.mjs`, 23 tests, 50 periods each): the *engine* is the
+  rightmost `length` columns (and, for the free rake, rows `top` and below, since its ships
+  leave upward). From `settle` on, every period: the front advances exactly p; the engine
+  repeats exactly, shifted p; everything outside it splits into named objects (groups within
+  2, then whatever is unidentified regrouped within 4, because a free ship's spark can trail
+  3 or 4 rows behind its body and ships in the stream are 12 apart); the whole at t + p is
+  exactly the engine run alone plus the rest run alone (nothing fired ever touches the rake
+  again); and each piece run alone for p is itself shifted by its velocity (moons back at c,
+  ships up at c, wake still). Counts per period are measured 20 periods apart.
+- **Found by the harness, not by me**: the glossary's "initial" phase is not the settled one
+  for three of the five. The nickel rake needs 5 generations, the backflip 2, and the free
+  rake 15 (its ships must also be in a phase whose spark is within 4 rows of the body for
+  the grouping to work: generation 3 mod 6; 3 itself still carried start-up debris in the
+  engine). The free rake's 40-cell ship phase splits into 16 + 24 cells at radius 2, which
+  first looked like two objects per period; run alone, the 24-cell piece dies in one
+  generation, and together they are one free ship (the tests count one a period).
+- **Mobile check** was done through a 390 px iframe (the Chrome window would not shrink);
+  the strips, facts lines and notes wrap as Wakes does.
+- The old page's cached modules hid the new section at first (python's server sends no
+  cache headers); a `cache: 'reload'` fetch fixed it locally, and the deploy's commit stamp
+  handles it live.

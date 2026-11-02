@@ -33,7 +33,8 @@
   "./js/abreast.js": "./js/abreast.js?v=dev",
   "./js/headon.js": "./js/headon.js?v=dev",
   "./js/slow.js": "./js/slow.js?v=dev",
-  "./js/crossing.js": "./js/crossing.js?v=dev"
+  "./js/crossing.js": "./js/crossing.js?v=dev",
+  "./js/rakes.js": "./js/rakes.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -75,6 +76,7 @@
       <li><a href="#parting">Two cells, parting</a> <span>a domino becomes two ships</span></li>
       <li><a href="#bestiary">Bestiary</a> <span>the small things that last</span></li>
       <li><a href="#wakes">Wakes</a> <span>seven puffers and the solitude they leave</span></li>
+      <li><a href="#rakes">Rakes</a> <span>puffers whose trail is ships</span></li>
       <li><a href="#collisions">Collisions</a> <span>a moon meets a dot, a checker, a moon</span></li>
       <li><a href="#diamonds">Diamonds</a> <span>why every explosion has one shape</span></li>
       <li><a href="#four">Four cells</a> <span>every quiet beginning of four</span></li>
@@ -109,6 +111,13 @@
     <p class="lede">Some travellers leave something behind. A puffer flies at the speed of light and lays down a trail as it goes. In this universe the trail is made of solitude: nearly everything these seven leave behind is a dot, one cell with no neighbours, which will therefore live forever. That is why their wakes are red.</p>
     <div class="strips" id="strips"></div>
     <p class="aside">Each strip follows its puffer exactly, one generation per step, and all of them step together, so every wake streams past at the same speed: the speed of light. The whole trail is simulated, including the part that has scrolled out of view. Every few minutes they start over, and the counters jump back. Tap to pause. Patterns are from the <a href="https://lukebradford.github.io/lfod/glossary.html">LFoD Universe glossary</a>. Their periods, speeds, populations and wakes are all checked by tests.</p>
+  </section>
+
+  <section class="rakes" id="rakes" aria-labelledby="rakes-h">
+    <h2 id="rakes-h">Rakes</h2>
+    <p class="lede">A puffer leaves dots. A rake leaves ships. The glossary knows <span class="n-rakes">four</span>, and <span class="n-rakes-moon">three</span> of them fire moons backwards. A rake flies at the speed of light, and so does what it fires, so a moon and the rake that fired it part at twice the speed of light: as fast as any two things in this universe can separate. Each strip here flies with its rake, and the moons stream away behind it at two cells a generation.</p>
+    <div class="strips" id="rstrips"></div>
+    <p class="aside">Each strip follows its rake exactly, one generation per step, and all of them step together. Everything fired or left behind is simulated, including what has left the strip; the moons go on forever, and so do the free ships, which climb at forty-five degrees only because the camera is moving. Every few minutes they start over, and the counters jump back. Tap to pause. Patterns are from the <a href="https://lukebradford.github.io/lfod/glossary.html">LFoD Universe glossary</a>. Their periods, speeds, populations, what each fires and leaves every period, and that nothing fired or left ever touches the rake or anything else again, are all checked by tests that follow each one for fifty periods.</p>
   </section>
 
   <section class="collide" id="collisions" aria-labelledby="collide-h">

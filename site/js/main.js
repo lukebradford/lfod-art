@@ -11,6 +11,7 @@ import * as SB from './abreast.js';
 import * as HO from './headon.js';
 import * as SL from './slow.js';
 import * as CR from './crossing.js';
+import * as RK from './rakes.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -465,6 +466,93 @@ function wakes() {
     for (const s of strips) {
       if (!s.start) continue;
       if (s.cur.gen >= s.start.cur.gen + RUN) { s.cur = s.start.cur; s.prev = s.start.prev; }
+      else { s.prev = s.cur; s.cur = s.cur.next(); }
+      draw(s);
+    }
+  });
+  host.addEventListener('click', () => clock.setPlaying(!clock.playing));
+}
+
+// ---------------------------------------------------------------------------
+// Rakes: puffers whose trail is ships (rakes.js; every field checked by
+// tests/rakes.test.mjs). Each strip's camera moves with its rake at the speed of light,
+// like the Wakes. Moons fired backwards fly at c the other way, so they stream out of the
+// strip at two cells a generation; the free rake's ships fly straight up at c, so against
+// the moving camera they climb away at forty-five degrees. The backflip's checkers are
+// frozen, so they stream out at one. Each strip opens with its stream already spanning
+// it, and starts over (counter visibly jumping back) after RAKE_RUN generations.
+const RAKE_RUN = 900;
+
+function rakes() {
+  const host = $('#rstrips');
+  if (!host) return;
+  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v; };
+  fill('.n-rakes', NUM[RK.RAKES.length]);
+  fill('.n-rakes-moon', NUM[RK.RAKES.filter((e) => 'moon' in e.fires).length]);
+  const strips = RK.ALL.map((e) => {
+    const up = e.dir === RK.UP;
+    const band = e.band[1] - e.band[0] + 1;
+    const rows = up ? band + 48 : band + 2; // the free rake's strip is tall: its ships climb out of the top
+    const el = document.createElement('article');
+    el.className = 'strip';
+    el.innerHTML = `
+      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-gen">gen <b>0</b></span></div>
+      <figure class="stage"><canvas role="img"></canvas></figure>
+      <p class="strip-note"></p>`;
+    const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k === 'freeship' ? 'free ship' : k}${v > 1 ? 's' : ''}`).join(' and ');
+    const fires = Object.keys(e.fires).length ? `fires ${list(e.fires)} ${up ? 'sideways' : 'backwards'}` : '';
+    const wake = Object.keys(e.wake).length ? `leaves ${list(e.wake)}` : '';
+    const facts = `period ${e.period} · speed c · ${e.pop0} cells · ${[fires, wake].filter(Boolean).join(', ')} every ${e.period} generations`;
+    el.querySelector('h3').textContent = e.name;
+    el.querySelector('.facts').textContent = facts;
+    const note = el.querySelector('.strip-note');
+    const a = document.createElement('a');
+    a.href = e.source.url; a.textContent = 'glossary'; a.rel = 'noopener';
+    note.append(e.note + ' ', a);
+    const canvas = el.querySelector('canvas');
+    canvas.setAttribute('aria-label', `${e.name}: ${facts}.`);
+    el.querySelector('.stage').style.setProperty('--rows', rows);
+    host.append(el);
+
+    const s = { e, up, rows, stage: new Stage(canvas), genEl: el.querySelector('.strip-gen b'), P0: Pattern.fromRLE(e.rle) };
+    s.front0 = s.P0.x0 + s.P0.w - 1;
+    // how fast the stream crosses the strip, in cells a generation, against the camera
+    s.rel = up ? 1 : Object.keys(e.fires).length ? 2 : 1;
+    s.cur = s.P0; s.prev = null; s.start = null; s.cs = 2;
+    s.layout = () => {
+      const { W, H, dpr } = s.stage;
+      const css = parseFloat(getComputedStyle(canvas.parentElement).getPropertyValue('--cs')) || 5;
+      s.cs = Math.max(2, Math.floor(css * dpr));
+      if (!s.start) {
+        // open with the stream spanning the strip: across it, or (free rake) up to its top
+        const span = up ? rows - band : Math.ceil(W / s.cs);
+        const g0 = e.settle + Math.ceil(span / s.rel);
+        let p = s.P0, q = null;
+        for (let g = 0; g < g0; g++) { q = p; p = p.next(); }
+        s.start = { cur: p, prev: q };
+        s.cur = p; s.prev = q;
+      }
+      // the engine's band sits at the bottom of a tall strip, centred in a low one
+      s.oy = up ? H - s.cs - (e.band[1] + 1) * s.cs : Math.round((H - band * s.cs) / 2 - e.band[0] * s.cs);
+      draw(s);
+    };
+    s.stage.onresize = s.layout;
+    return s;
+  });
+
+  function draw(s) {
+    const { W } = s.stage;
+    // the camera moves exactly one cell per generation with the rake
+    const ox = W - (AHEAD + 1) * s.cs - (s.front0 + s.cur.gen) * s.cs;
+    s.stage.draw(s.cur, s.prev, s.cs, ox, s.oy);
+    s.genEl.textContent = s.cur.gen;
+  }
+
+  for (const s of strips) s.layout();
+  const clock = new Clock(host, 10, () => {
+    for (const s of strips) {
+      if (!s.start) continue;
+      if (s.cur.gen >= s.start.cur.gen + RAKE_RUN) { s.cur = s.start.cur; s.prev = s.start.prev; }
       else { s.prev = s.cur; s.cur = s.cur.next(); }
       draw(s);
     }
@@ -2386,6 +2474,7 @@ laws();
 parting();
 for (const e of CATALOG) card(e);
 wakes();
+rakes();
 collisions();
 wall(diamonds());
 four();
