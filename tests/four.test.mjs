@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Pattern, Field, classify } from '../site/js/lfod.js';
 import { QUADS, SETTLE, VANISH } from '../site/js/four.js';
-import { parseOutcome, phrase } from '../site/js/collisions.js';
+import { parseOutcome, phrase } from '../site/js/outcomes.js';
 import { placements, canon, norm, decompose, tally, explodes } from './objects.mjs';
 
 const all = placements(4);

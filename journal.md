@@ -849,3 +849,9 @@ Changes asked for by the site's owner, one by one:
   longer called "the smallest object that dies in one generation".
 - **American usage** throughout: neighbor, center, backward, sweeping around, travelers.
 
+
+Follow-up, same day: `site/og.png` (the link preview) is re-rendered by `tools/og.mjs` in
+the new palette (white, ink, blue). `collisions.js` is now `outcomes.js`: only the outcome
+parser and `phrase`, which Four and Five cells use, with a small test of its own; the
+collision atlas data and its test are gone, as are the four tools (`abreast`, `crossing`,
+`dominoes`, `headon`) that generated data for the removed sections.

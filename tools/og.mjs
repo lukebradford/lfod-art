@@ -1,6 +1,7 @@
 // Renders site/og.png (1200x630 social preview): evil eyes (two cells a knight's move apart),
 // 140 generations into their explosion, simulated by the shipped engine and drawn in
-// the site's colours (red: survived; ink: newborn; pale: just died).
+// the site's colors (blue: survived; ink: newborn; pale: just died). Keep these in step
+// with COLORS in site/js/stage.js.
 // Usage: node tools/og.mjs
 import zlib from 'node:zlib';
 import fs from 'node:fs';
@@ -9,7 +10,7 @@ import { EVIL_EYES } from '../site/js/diamonds.js';
 
 const W = 1200, H = 630, GEN = 140, cs = 2;
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const PAPER = hex('#fbfaf6'), INK = hex('#141414'), FREE = hex('#c0391f'), GHOST = hex('#e8e5dc');
+const PAPER = hex('#ffffff'), INK = hex('#0c0c0e'), FREE = hex('#1f4bff'), GHOST = hex('#e9e9ee');
 
 const f = Field.around(Pattern.fromCells(EVIL_EYES), GEN + 4);
 for (let g = 0; g < GEN; g++) f.step();

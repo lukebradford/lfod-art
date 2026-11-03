@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { Pattern } from '../site/js/lfod.js';
 import { byId } from '../site/js/catalog.js';
 import { FIVE, LATE, PUFF, SETTLE, VANISH, cellsOf } from '../site/js/five.js';
-import { parseOutcome, phrase } from '../site/js/collisions.js';
+import { parseOutcome, phrase } from '../site/js/outcomes.js';
 import { placements, extend, canon, norm, decompose, tally, explodes, puffer, orient } from './objects.mjs';
 
 const P4 = placements(4);

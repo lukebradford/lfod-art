@@ -1,5 +1,5 @@
 // Shared by the tests (not itself a test file): identify debris as named objects.
-// Used by the collisions, diamonds, four- and five-cell tests and tools/five.mjs.
+// Used by the diamonds, four- and five-cell, rake and gun tests and tools/five.mjs.
 import { Pattern, Field } from '../site/js/lfod.js';
 import { byId, PUFFERS } from '../site/js/catalog.js';
 

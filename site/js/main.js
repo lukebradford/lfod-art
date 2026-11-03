@@ -2,7 +2,7 @@ import { Pattern, Field, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
 import { Stage, Clock, reducedMotion, wake, paintField, COLORS } from './stage.js';
 import { encodeHash, decodeHash } from './share.js';
-import { parseOutcome, phrase } from './collisions.js';
+import { parseOutcome, phrase } from './outcomes.js';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 import { QUADS, SETTLE, VANISH } from './four.js';
 import * as F5 from './five.js';
