@@ -33,7 +33,7 @@ export const RAKES = [
     credit: 'Josh Ball',
     rle: 'x = 41, y = 21, rule = s0/b2\n39bo$27bo5bobo4bo$26bob2o6bo3bo$26bo11bo$bobo4bo7bo2bo4bobo3bo6bo$4bo2b3o2bo3bo19bo$bo3b2ob3obo23bo$4bo4bobo4bo3bo6b2o3bo2bo2bo$11bo24bobo$2bo7bobobo5bo2bo2bo9bo$b2o5bo3b3o9b3o8bo$obo3bobo5bo9bobo9bo$obob2o2bo2bo24bobo$b2o3bo3b2o4bo7bo2bo2bo5bobo$2bob2o4bo5bo7bo$10bo11bo4bo6b2o$17bo5b2obo2bo7bo$14bobo5b4o3bo2bo5bo$24b3obo7bo3bo$23bo3bo7bo4bo$39bo!',
     period: 4, pop0: 131, settle: 0, length: 41, fires: { moon: 2 }, dir: BACK, wake: {}, band: [0, 20],
-    note: 'Two barrels: every fourth generation a moon leaves each, one above the other, and nothing else is left. The glossary knows no other rake of period 4. Discovered by Josh Ball.',
+    note: 'Two barrels: every fourth generation a moon leaves each, one above the other, and nothing else is left. Discovered by Josh Ball.',
   },
   {
     id: 'nickel',
@@ -50,7 +50,7 @@ export const RAKES = [
     source: src('free-rake'),
     rle: 'x = 37, y = 18, rule = s0/b2\no$bo$bo32bo$o29bo4bo$31bo3bo$33bo$4bobo9bobo13bo$3bo3bo7bo3bo3bo3bo$22b3o3$28bo4bo$4b3o5bo18b2obo$11bobo22bo$15bo20bo$15bo15b2obo$11bobo14bo4bo$4b3o5bo!',
     period: 12, pop0: 50, settle: 15, length: 46, top: -4, fires: { freeship: 1 }, dir: UP, wake: { dot: 2, checker: 1 }, band: [-4, 19],
-    note: 'The first rake found in this universe, and the only one that fires free ships. They leave sideways, so a line of them climbs away from the rake at forty-five degrees. The glossary says it is one reaction held up by a flotilla of anchor tracks, and that other tracks give rakes of higher periods. Behind it, two dots and a checker are left every period.',
+    note: 'The first known rake in this universe, by the glossary’s account. It fires free ships, which leave sideways, so a line of them climbs away from the rake at forty-five degrees. The glossary says it is one reaction held up by a flotilla of anchor tracks, and that other tracks give rakes of higher periods. Behind it, two dots and a checker are left every period.',
   },
 ];
 

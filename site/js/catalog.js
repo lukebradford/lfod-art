@@ -23,7 +23,7 @@ export const CATALOG = [
     source: src('dot'),
     rle: 'x = 1, y = 1, rule = B2/S0\no!',
     kind: 'still', period: 1, dx: 0, dy: 0, pop: [1, 1], hull: [1, 1],
-    note: 'One cell with no neighbours, and the only still life this rule has. The only way to survive here is to be alone, so a lone cell lives forever.',
+    note: 'One cell with no neighbors, and the only still life this rule has. The only way to survive here is to be alone, so a lone cell lives forever.',
   },
   {
     id: 'checker',
@@ -32,7 +32,7 @@ export const CATALOG = [
     source: src('checker'),
     rle: 'x = 2, y = 2, rule = B2/S0\no$bo!',
     kind: 'osc', period: 2, dx: 0, dy: 0, pop: [2, 2], hull: [2, 2],
-    note: 'Two cells touching at a corner. Each has a neighbour, so both die; the two empty corners each see exactly two, so both are born. It swaps diagonals forever.',
+    note: 'Two cells touching at a corner. Each has a neighbor, so both die; the two empty corners each see exactly two, so both are born. It swaps diagonals forever.',
   },
   {
     id: 'lever',
@@ -48,7 +48,7 @@ export const CATALOG = [
     source: src('radar'),
     rle: 'x = 4, y = 4, rule = B2/S0\nbo$o$3bo$2bo!',
     kind: 'osc', period: 4, dx: 0, dy: 0, pop: [4, 6], hull: [4, 4],
-    note: 'Two pairs of cells in opposite corners fold into a square block, then open into the other two corners, sweeping round like a radar.',
+    note: 'Two pairs of cells in opposite corners fold into a square block, then open into the other two corners, sweeping around like a radar.',
   },
   {
     id: 'anchor',
@@ -65,7 +65,7 @@ export const CATALOG = [
     credit: 'Josh Ball',
     rle: 'x = 8, y = 4, rule = B2/S0\n4bobo$7bo$o$bobo!',
     kind: 'osc', period: 6, dx: 0, dy: 0, pop: [6, 12], hull: [8, 6],
-    note: 'The smallest known period-6 oscillator: two sparks chasing each other around a centre, half a turn apart. Found by Josh Ball.',
+    note: 'The smallest known period-6 oscillator: two sparks chasing each other around a center, half a turn apart. Found by Josh Ball.',
   },
   {
     id: 'anchortrack',
@@ -172,7 +172,7 @@ export const PUFFERS = [
     rle: 'x = 4, y = 10, rule = s0/b2\n2bo$3bo$o2bo$bo$o$o$bo$o2bo$3bo$2bo!',
     period: 7, pop0: 12, settle: 4, length: 13, wake: { dot: 4 }, band: [-1, 10],
     backwardMoon: true,
-    note: 'The only known object of period 7. Every period it fires a moon backwards at the speed of light, which crashes into its own trail and rearranges it.',
+    note: 'The only known object of period 7. Every period it fires a moon backward at the speed of light, which crashes into its own trail and rearranges it.',
   },
   {
     id: 'scale',

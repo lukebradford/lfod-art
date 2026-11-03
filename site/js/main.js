@@ -2,15 +2,11 @@ import { Pattern, Field, nextState } from './lfod.js';
 import { CATALOG, PUFFERS, byId } from './catalog.js';
 import { Stage, Clock, reducedMotion, wake, paintField, COLORS } from './stage.js';
 import { encodeHash, decodeHash } from './share.js';
-import { TARGETS, targetById, setup, parseOutcome, allCollisions, shortLabel, sentence, phrase } from './collisions.js';
+import { parseOutcome, phrase } from './collisions.js';
 import { PAIRS, TRIPLES, EVIL_EYES, THREE } from './diamonds.js';
 import { QUADS, SETTLE, VANISH } from './four.js';
 import * as F5 from './five.js';
-import * as D2 from './dominoes.js';
-import * as SB from './abreast.js';
-import * as HO from './headon.js';
 import * as SL from './slow.js';
-import * as CR from './crossing.js';
 import * as RK from './rakes.js';
 import * as GN from './guns.js';
 
@@ -145,7 +141,7 @@ function hero() {
 
   const clock = new Clock(canvas, 7, step);
   const syncButton = () => {
-    playBtn.textContent = clock.playing ? 'pause' : 'play';
+    playBtn.textContent = clock.playing ? 'Pause' : 'Play';
     playBtn.setAttribute('aria-label', clock.playing ? 'Pause' : 'Play');
   };
   syncButton();
@@ -241,11 +237,11 @@ function hero() {
 function laws() {
   const host = $('#laws');
   const examples = [
-    { title: 'Birth', text: 'An empty cell with exactly two living neighbours comes alive.', centre: 0, nbrs: [0, 5] },
-    { title: 'Freedom', text: 'A living cell with no living neighbours survives.', centre: 1, nbrs: [] },
+    { title: 'Birth', text: 'An empty cell with exactly two living neighbors comes alive.', centre: 0, nbrs: [0, 5] },
+    { title: 'Freedom', text: 'A living cell with no living neighbors survives.', centre: 1, nbrs: [] },
     { title: 'Death', text: 'A living cell with any company at all dies.', centre: 1, nbrs: [2] },
   ];
-  // neighbour index order around the centre (row-major, skipping the centre)
+  // neighbor index order around the centre (row-major, skipping the centre)
   const ring = [0, 1, 2, 3, 5, 6, 7, 8];
   for (const ex of examples) {
     const fig = document.createElement('figure');
@@ -286,7 +282,10 @@ function laws() {
 
 // ---------------------------------------------------------------------------
 // Two cells parting: a vertical domino resolves into two free ships flying apart.
-// Runs until the ships near the edge of the frame, holds, then restarts at gen 0.
+// The ships fly on out of the frame (still simulated, the counter still running); once
+// the nearer edge of each is PAST cells beyond the frame, it starts again from gen 0.
+const PAST = 24;
+
 function parting() {
   const canvas = $('#parting-canvas');
   const genEl = canvas.parentElement.querySelector('.stage-gen b');
@@ -299,20 +298,21 @@ function parting() {
     cs = Math.max(2, Math.floor(Math.min(H / 20, W / 72)));
     ox = Math.round(W / 2 - 0.5 * cs);
     oy = Math.round(H / 2);
-    halfCells = Math.floor(W / 2 / cs);
+    halfCells = Math.ceil(W / 2 / cs);
     draw();
   }
   function draw() {
     stage.draw(cur, prev, cs, ox, oy);
     genEl.textContent = cur.gen;
   }
+  // how far the innermost live cell is from the domino's column (the ships fly apart
+  // along the row, so this is the distance of the nearer ship's trailing edge)
+  const inner = (p) => Math.min(...p.cells().map(([x]) => Math.abs(x)));
   const clock = new Clock(canvas, 10, () => {
-    // stop when the next generation would put a ship within two cells of the edge
-    if (Math.max(-cur.x0, cur.x0 + cur.w) + 3 > halfCells) {
-      cur = start(); prev = null; clock.hold = 300;
+    if (cur.population && inner(cur) > halfCells + PAST) {
+      cur = start(); prev = null; clock.hold = 500;
     } else {
       prev = cur; cur = cur.next();
-      if (Math.max(-cur.x0, cur.x0 + cur.w) + 3 > halfCells) clock.hold = 1600;
     }
     draw();
   });
@@ -336,7 +336,7 @@ function card(e) {
   const el = document.createElement('article');
   el.className = 'card';
   el.innerHTML = `
-    <figure class="stage"><canvas role="img"></canvas><figcaption class="stage-gen">gen <b>0</b></figcaption></figure>
+    <figure class="stage"><canvas role="img"></canvas><figcaption class="stage-gen">GEN <b>0</b></figcaption></figure>
     <div class="card-body">
       <h3></h3>
       <div class="facts"></div>
@@ -415,7 +415,7 @@ function wakes() {
     const el = document.createElement('article');
     el.className = 'strip';
     el.innerHTML = `
-      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-gen">gen <b>0</b></span></div>
+      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-gen">GEN <b>0</b></span></div>
       <figure class="stage"><canvas role="img"></canvas></figure>
       <p class="strip-note"></p>`;
     const wake = Object.entries(e.wake).map(([k, v]) => `${v} ${k}${v > 1 ? 's' : ''}`).join(' and ');
@@ -483,6 +483,7 @@ function wakes() {
 // frozen, so they stream out at one. Each strip opens with its stream already spanning
 // it, and starts over (counter visibly jumping back) after RAKE_RUN generations.
 const RAKE_RUN = 900;
+const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
 
 function rakes() {
   const host = $('#rstrips');
@@ -497,11 +498,11 @@ function rakes() {
     const el = document.createElement('article');
     el.className = 'strip';
     el.innerHTML = `
-      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-gen">gen <b>0</b></span></div>
+      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-gen">GEN <b>0</b></span></div>
       <figure class="stage"><canvas role="img"></canvas></figure>
       <p class="strip-note"></p>`;
     const list = (o) => Object.entries(o).map(([k, v]) => `${v} ${k === 'freeship' ? 'free ship' : k}${v > 1 ? 's' : ''}`).join(' and ');
-    const fires = Object.keys(e.fires).length ? `fires ${list(e.fires)} ${up ? 'sideways' : 'backwards'}` : '';
+    const fires = Object.keys(e.fires).length ? `fires ${list(e.fires)} ${up ? 'sideways' : 'backward'}` : '';
     const wake = Object.keys(e.wake).length ? `leaves ${list(e.wake)}` : '';
     const facts = `period ${e.period} · speed c · ${e.pop0} cells · ${[fires, wake].filter(Boolean).join(', ')} every ${e.period} generations`;
     el.querySelector('h3').textContent = e.name;
@@ -568,17 +569,16 @@ function rakes() {
 // lengthening from its centre. A strip opens with its streams already spanning it. The
 // streams repeat in space every period, so starting over after GUN_RUN generations (a
 // multiple of both periods) changes nothing on the strip but the counter. The moon
-// laser is 170 cells wide: its strip, and the face-to-face strip, shrink their cells
+// laser is 170 cells wide: its strip shrinks its cells
 // (whole device pixels, never below 2) to fit, and say so by the counter.
 const GUN_RUN = 900;
 const STREAM = 30; // rows of stream shown above and below a gun that fires up and down
 
 function guns() {
-  const host = $('#gstrips'), fhost = $('#fstrips');
-  if (!host || !fhost) return;
+  const host = $('#gstrips');
+  if (!host) return;
   const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v; };
   fill('.n-guns', NUM[GN.GUNS.length]);
-  fill('.n-face-odd', GN.FACE.odd); fill('.n-face-even', GN.FACE.even);
   for (const e of GN.GUNS) {
     const a = $(`#gun-open-${e.id}`);
     if (a) a.href = encodeHash(Pattern.fromRLE(e.rle));
@@ -590,7 +590,7 @@ function guns() {
     const el = document.createElement('article');
     el.className = 'strip';
     el.innerHTML = `
-      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-scale">cell <b>6</b> px</span><span class="strip-gen">gen <b>0</b></span></div>
+      <div class="strip-head"><h3></h3><span class="facts"></span><span class="strip-scale">CELL <b>6</b> PX</span><span class="strip-gen">GEN <b>0</b></span></div>
       <figure class="stage"><canvas role="img"></canvas><span class="stage-status"></span></figure>
       <p class="strip-note"></p>`;
     el.querySelector('h3').textContent = name;
@@ -667,196 +667,11 @@ function guns() {
     return s;
   });
 
-  // face to face: two small guns on one line, at an odd or an even distance
-  const g = GN.byId[GN.FACE.gun], G0 = Pattern.fromRLE(g.rle).cells();
-  const [gx0, gy0, gx1, gy1] = g.box;
-  const choice = $('#face-choice');
-  const face = strip(fhost, {
-    name: 'Face to face', facts: '', note: '', links: [],
-    cols: gx1 - gx0 + 1 + GN.FACE.odd, top: gy0 - 1, bottom: gy1 + 1, rows: gy1 - gy0 + 3,
-    P0: Pattern.fromCells(GN.facing(G0, GN.FACE.odd)), label: 'Two p5 moon guns facing each other, simulated exactly.',
-  });
-  face.el.querySelector('.strip-note').remove();
-  face.x0 = gx0; face.width = gx1 - gx0 + 1 + GN.FACE.odd;
-  face.open = () => { if (!face.start) face.start = { cur: face.P0, prev: null }; };
-  const set = (parity) => {
-    const d = GN.FACE[parity];
-    face.d = d; face.parity = parity;
-    face.P0 = Pattern.fromCells(GN.facing(G0, d));
-    face.width = gx1 - gx0 + 1 + d;
-    face.start = { cur: face.P0, prev: null };
-    face.cur = face.P0; face.prev = null;
-    face.statusEl.textContent = '';
-    face.el.querySelector('.facts').textContent = `two p5 moon guns, ${d} cells apart · ${parity === 'odd' ? 'every pair of moons vanishes, forever' : 'explodes'}`;
-    for (const b of choice.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.parity === parity));
-    draw(face);
-  };
-  face.step = () => {
-    if (face.statusEl.textContent || face.cur.gen >= GUN_RUN) { set(face.parity); return; }
-    face.prev = face.cur; face.cur = face.cur.next();
-    // an explosion grows out of the guns' band: stop it where it reaches the strip's edge
-    const half = Math.floor(face.stage.H / face.cs / 2), mid = (face.top + face.bottom) / 2;
-    if (face.cur.y0 <= mid - half || face.cur.y0 + face.cur.h - 1 >= mid + half) {
-      face.statusEl.textContent = `explodes · gen ${face.cur.gen} · stopped at the edge`;
-      clock.hold = 2200;
-    }
-  };
-  for (const parity of ['odd', 'even']) {
-    const b = document.createElement('button');
-    b.type = 'button'; b.dataset.parity = parity;
-    b.textContent = `${GN.FACE[parity]} apart (${parity})`;
-    b.addEventListener('click', (ev) => { ev.stopPropagation(); set(parity); clock.setPlaying(true); });
-    choice.append(b);
-  }
-  set('odd');
-
   for (const s of strips) s.layout();
-  face.layout();
-  const all = [...strips, face];
-  const clock = new Clock(host.parentElement, 10, () => {
-    for (const s of all) { if (!s.start) continue; s.step(); draw(s); }
+  const clock = new Clock(host, 10, () => {
+    for (const s of strips) { if (!s.start) continue; s.step(); draw(s); }
   });
-  for (const h of [host, fhost]) h.addEventListener('click', () => clock.setPlaying(!clock.playing));
-}
-
-// ---------------------------------------------------------------------------
-// Collisions: a moon sent at another moon, a dot or a checker. The atlas lists every
-// offset where they touch (outcomes from collisions.js, each checked by a test);
-// choosing one plays it on the stage from generation 0, exactly. A clean run goes on
-// until the result has settled and anything moving has left the frame; an explosion
-// stops when it reaches the edge of the frame, and says so.
-function collisions() {
-  const canvas = $('#collide');
-  if (!canvas) return;
-  const stage = new Stage(canvas);
-  const genEl = canvas.parentElement.querySelector('.stage-gen b');
-  const statusEl = $('#collide-status'), resultEl = $('#collide-result');
-  const targetsEl = $('#targets'), atlas = $('#atlas');
-  const all = allCollisions();
-  $('#n-touch').textContent = all.length;
-  $('#n-explode').textContent = all.filter((c) => c.outcome.kind === 'explodes').length;
-
-  let sel = { target: targetById.moon, gap: 25, dy: 0 };
-  let o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, cols = 40, rows = 36, done = false;
-
-  const signed = (n) => (n > 0 ? '+' + n : n < 0 ? '−' + -n : '0');
-  const describe = () => `Moon versus ${sel.target.label}, offset ${signed(sel.dy)}${Object.keys(sel.target.rows).length > 1 ? `, ${sel.gap % 2 ? 'odd' : 'even'} gap` : ''}.`;
-
-  function start() {
-    o = parseOutcome(sel.target.rows[sel.gap][sel.dy - sel.target.dy[0]]);
-    cur = Pattern.fromCells(setup(sel.target, sel.dy, sel.gap));
-    prev = null; done = false;
-    statusEl.textContent = '';
-    resultEl.textContent = describe();
-    canvas.setAttribute('aria-label', `${describe()} ${sentence(o, sel.target.id)}`);
-    layout();
-  }
-
-  function layout() {
-    const { W, H } = stage;
-    cs = Math.max(2, Math.floor(Math.min(W / 36, H / 34)));
-    cols = Math.floor(W / cs); rows = Math.floor(H / cs);
-    // centre on the point of impact: halfway between two moons, or just left of a
-    // standing target so the incoming moon is in view from the start
-    const cx = sel.target.id === 'moon' ? (1 - sel.gap) / 2 : -3;
-    const cy = (sel.dy + 3) / 2 + 0.5;
-    ox = Math.round(W / 2 - cx * cs);
-    oy = Math.round(H / 2 - cy * cs);
-    draw();
-  }
-  function draw() {
-    stage.draw(cur, prev, cs, ox, oy);
-    genEl.textContent = cur.gen;
-  }
-  // world rectangle in view
-  const inView = (p) => p.x0 * cs + ox >= 0 && (p.x0 + p.w) * cs + ox <= stage.W
-    && p.y0 * cs + oy >= 0 && (p.y0 + p.h) * cs + oy <= stage.H;
-  const anyInView = (p) => p.w > 0 && (p.x0 + p.w) * cs + ox > 0 && p.x0 * cs + ox < stage.W
-    && (p.y0 + p.h) * cs + oy > 0 && p.y0 * cs + oy < stage.H;
-  // a clean run ends once its result is reached and anything moving is out of view
-  const moving = () => o.objects.moon || o.objects.freeship;
-  function finished() {
-    if (o.kind === 'explodes') {
-      if (cur.population > 400 && !inView(cur)) {
-        statusEl.textContent = 'still growing; stopped at the edge of the frame';
-        resultEl.textContent = `${describe()} ${sentence(o)}`;
-        return true;
-      }
-      return false;
-    }
-    if (cur.gen < o.at) return false;
-    if (cur.gen === o.at) resultEl.textContent = `${describe()} ${sentence(o, sel.target.id)}`;
-    if (o.kind === 'nothing') return cur.gen >= o.at + 12;
-    if (moving()) return cur.gen >= o.at + Math.ceil(Math.max(cols, rows) / 2) + 6;
-    return cur.gen >= o.at + 38; // two full turns of a monster; plenty for blinkers
-  }
-
-  const clock = new Clock(canvas, 9, () => {
-    if (done) { start(); return; }
-    prev = cur; cur = cur.next();
-    draw();
-    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
-  });
-  canvas.addEventListener('click', () => clock.setPlaying(!clock.playing));
-
-  // target choice and the atlas of outcomes
-  const tbtns = TARGETS.map((t) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = t.label;
-    b.onclick = () => {
-      const gaps = Object.keys(t.rows).map(Number);
-      // open on the most remarkable clean outcome for this target
-      const best = all.filter((c) => c.target === t && c.outcome.kind !== 'explodes')
-        .sort((a, b) => score(b) - score(a))[0];
-      sel = best ? { target: t, gap: best.gap, dy: best.dy } : { target: t, gap: gaps[0], dy: 0 };
-      choose();
-    };
-    targetsEl.append(b);
-    return [t, b];
-  });
-  const score = (c) => (c.outcome.objects.monster ? 9 : c.outcome.objects.freeship ? 8 : c.outcome.kind === 'nothing' ? 7 : Object.keys(c.outcome.objects).length === 1 ? 5 : 1);
-
-  function renderAtlas() {
-    const t = sel.target, gaps = Object.keys(t.rows).map(Number);
-    atlas.textContent = '';
-    const head = atlas.createTHead().insertRow();
-    const th0 = document.createElement('th'); th0.textContent = 'offset'; th0.scope = 'col'; head.append(th0);
-    for (const g of gaps) {
-      const th = document.createElement('th'); th.scope = 'col';
-      th.textContent = gaps.length > 1 ? (g % 2 ? 'odd gap' : 'even gap') : 'any gap';
-      head.append(th);
-    }
-    const body = atlas.createTBody();
-    for (let dy = t.dy[0]; dy <= t.dy[1]; dy++) {
-      const tr = body.insertRow();
-      const th = document.createElement('th'); th.scope = 'row'; th.textContent = signed(dy); tr.append(th);
-      for (const g of gaps) {
-        const oc = parseOutcome(t.rows[g][dy - t.dy[0]]);
-        const td = tr.insertCell();
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = shortLabel(oc);
-        b.className = oc.kind === 'explodes' ? 'boom' : 'clean';
-        b.setAttribute('aria-pressed', String(g === sel.gap && dy === sel.dy));
-        b.setAttribute('aria-label', `offset ${signed(dy)}${gaps.length > 1 ? `, ${g % 2 ? 'odd' : 'even'} gap` : ''}: ${shortLabel(oc)}`);
-        b.onclick = () => { sel = { target: t, gap: g, dy }; choose(); };
-        td.append(b);
-      }
-    }
-  }
-
-  function choose() {
-    for (const [t, b] of tbtns) b.setAttribute('aria-pressed', String(t === sel.target));
-    renderAtlas();
-    start();
-    clock.hold = 0;
-    clock.setPlaying(true); // choosing a collision is a request to watch it
-  }
-
-  stage.onresize = () => { if (cur) layout(); };
-  for (const [t, b] of tbtns) b.setAttribute('aria-pressed', String(t === sel.target));
-  renderAtlas();
-  start();
+  host.addEventListener('click', () => clock.setPlaying(!clock.playing));
 }
 
 // ---------------------------------------------------------------------------
@@ -1343,1072 +1158,6 @@ function fiveCensus() {
 }
 
 // ---------------------------------------------------------------------------
-// Two dominoes: a map of every place a second domino can go near a first, drawn at
-// its true position around the first (MAP in dominoes.js; every square is checked by
-// tests/dominoes.test.mjs), and a stage that plays whichever square is chosen.
-function dominoes() {
-  const fig = $('#duel'), map = $('#dmap');
-  if (!fig || !map) return;
-  const { MAP, LAT, LON, DUEL, pairCells, outcomeAt } = D2;
-  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = v.toLocaleString('en'); };
-  const kinds = { '#': 0, '.': 0, s: 0 };
-  let total = 0;
-  for (const row of MAP) for (const e of row) if (e) { total++; kinds[e === '#' || e === '.' ? e : 's']++; }
-  fill('.n-dom', total); fill('.n-dom-boom', kinds['#']); fill('.n-dom-apart', kinds['.']);
-  fill('.n-dom-settle', kinds.s - 1); fill('.n-dom-lat', LAT); fill('.n-dom-lon', LON);
-
-  const read = (e) => e === '#' ? { kind: 'explodes', at: null, objects: {} }
-    : e === '.' ? { kind: 'apart', at: 12, objects: { freeship: 4 } }
-    : e === 'puffers' ? { kind: 'puffers', at: DUEL.first, objects: {} }
-    : parseOutcome(e);
-  const words = (o, dx) => o.kind === 'explodes' ? 'explodes'
-    : o.kind === 'apart' ? 'they never touch: four free ships, each flying as if alone'
-    : o.kind === 'puffers' ? `two puffers flying apart, laying a dot every ${DUEL.period} generations, forever`
-    : o.kind === 'nothing' ? `nothing, gone by gen ${o.at}`
-    : ships(o, dx) + `, by gen ${o.at}`;
-  // (tests check: with two ships left, from 3 along they are the outer two; with four,
-  // all four are whole)
-  function ships(o, dx) {
-    const { freeship, ...debris } = o.objects;
-    const left = Object.keys(debris).length ? phrase(debris) : '';
-    if (freeship === 2 && Math.abs(dx) >= 3) return left ? `the inner ships are destroyed, leaving ${left}; the outer two fly on` : 'the inner ships annihilate; the outer two fly on';
-    if (freeship === 4) return left ? `all four ships fly on, leaving ${left}` : 'they touch, and all four ships fly on unchanged';
-    return phrase(o.objects);
-  }
-  const rows = (n) => (n === 0 ? 'in line' : `${n} row${n === 1 ? '' : 's'} across`);
-  const where = (dx, dy) => Math.abs(dx) === DUEL.dx && Math.abs(dy) === DUEL.dy ? 'dueling dominoes'
-    : `${rows(Math.abs(dy))}, ${Math.abs(dx)} along`;
-
-  // ----- the stage
-  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
-  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#duel-name');
-  const resEl = $('#duel-result'), statusEl = $('#duel-status'), openEl = $('#duel-open');
-  let sel = { dx: DUEL.dx, dy: DUEL.dy }, o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, end = 0, done = false;
-  const still = () => reducedMotion.matches && !clock.playing;
-  const inView = (p) => p.x0 * cs + ox >= 0 && (p.x0 + p.w) * cs + ox <= stage.W
-    && p.y0 * cs + oy >= 0 && (p.y0 + p.h) * cs + oy <= stage.H;
-
-  function start() {
-    o = read(outcomeAt(sel.dx, sel.dy));
-    cur = Pattern.fromCells(pairCells(sel.dx, sel.dy)); prev = null; done = false;
-    statusEl.textContent = '';
-    nameEl.textContent = where(sel.dx, sel.dy);
-    resEl.textContent = words(o, sel.dx);
-    canvas.setAttribute('aria-label', `Two dominoes, ${where(sel.dx, sel.dy)}, simulated exactly: ${words(o, sel.dx)}.`);
-    openEl.href = encodeHash(Pattern.fromCells(pairCells(sel.dx, sel.dy)));
-    layout();
-    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
-  }
-  function layout() {
-    const { W, H } = stage;
-    // up to 96 cells across; fewer on a phone, so cells stay about 5 CSS px or more
-    const want = Math.min(96, Math.max(56, Math.round(W / stage.dpr / 5)));
-    cs = Math.max(2, Math.floor(Math.min(W / want, H / 34)));
-    // centre on the point halfway between the dominoes (the whole pattern is symmetric about it)
-    ox = Math.round(W / 2 - (sel.dx + 1) / 2 * cs);
-    oy = Math.round(H / 2 - (sel.dy + 2) / 2 * cs);
-    // clean runs last until anything flying has left the frame (ships move one cell per gen)
-    end = Math.max(o.at ?? 0, Math.ceil(W / cs / 2 + Math.abs(sel.dx) / 2) + 10);
-    draw();
-  }
-  function draw() {
-    stage.draw(cur, prev, cs, ox, oy);
-    genEl.textContent = cur.gen;
-    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
-  }
-  function finished() {
-    if (o.kind === 'explodes') {
-      if (cur.population > 400 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
-      return cur.gen > 2000;
-    }
-    if (o.kind === 'puffers') {
-      // stop while the leading ships are still a step inside the frame
-      const nx = cur.x0 - 1, nw = cur.w + 2;
-      return nx * cs + ox < 0 || (nx + nw) * cs + ox > stage.W;
-    }
-    return cur.gen >= end;
-  }
-  const clock = new Clock(fig, 10, () => {
-    if (done) { start(); clock.hold = 400; return; }
-    prev = cur; cur = cur.next(); draw();
-    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2400; }
-  });
-  canvas.addEventListener('click', () => {
-    const wasStill = still();
-    clock.setPlaying(!clock.playing);
-    if (wasStill) start();
-  });
-  stage.onresize = () => { if (cur) layout(); };
-
-  // ----- the map: every place for the second domino's top cell, around the first
-  const mctx = map.getContext('2d', { alpha: false });
-  let q = 8, x0 = -LON, cols = 2 * LON + 1, mox = 0, hover = null;
-  const nrows = 2 * LAT + 1;
-  const hoverEl = $('#dmap-hover');
-  const isFirst = (dx, dy) => dx === 0 && (dy === 0 || dy === 1);
-  function mlayout() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const W = Math.round(map.parentElement.clientWidth * dpr);
-    // whole device pixels per square; on narrow screens show fewer columns to the left
-    // (the map is symmetric), keeping squares big enough to tap and the first domino in view
-    cols = Math.max(LON + 2, Math.min(2 * LON + 1, Math.floor(W / Math.round(9 * dpr))));
-    x0 = LON - cols + 1;
-    q = Math.max(3, Math.floor(W / cols));
-    mox = Math.floor((W - cols * q) / 2);
-    if (map.width !== W || map.height !== nrows * q) {
-      map.width = W; map.height = nrows * q;
-      map.style.height = `${nrows * q / dpr}px`;
-    }
-    mdraw();
-  }
-  function mdraw() {
-    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
-    const box = (X, Y, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X, Y, w, ht); };
-    box(0, 0, map.width, map.height, COLORS.paper);
-    for (let r = 0; r < nrows; r++) for (let c = 0; c < cols; c++) {
-      const dx = x0 + c, dy = r - LAT, X = mox + c * q, Y = r * q;
-      const e = outcomeAt(dx, dy);
-      if (isFirst(dx, dy)) {
-        if (dy === 0) box(X + h, Y + h, s, q + s, COLORS.ink); // the first domino: two cells joined
-      } else if (e === '#') box(X + h, Y + h, s, s, '#d7d2c7');
-      else if (e === 'puffers') box(X + h, Y + h, s, s, COLORS.free);
-      else if (e === '.') {
-        const d = Math.max(1, Math.round(q / 7)), k = (q - d) >> 1;
-        box(X + k, Y + k, d, d, '#c9c4b9');
-      } else if (e) {
-        const i = Math.max(2, Math.round(q * 0.24));
-        box(X + i, Y + i, q - 2 * i, q - 2 * i, COLORS.ink);
-      }
-    }
-    // a ring of width w just outside a square
-    const ring = (p, color, w) => {
-      const c = p.dx - x0, r = p.dy + LAT;
-      if (c < 0 || c >= cols) return;
-      const X = mox + c * q + h - w, Y = r * q + h - w, S = s + 2 * w;
-      box(X, Y, S, w, color); box(X, Y + S - w, S, w, color);
-      box(X, Y, w, S, color); box(X + S - w, Y, w, S, color);
-    };
-    if (hover && (hover.dx !== sel.dx || hover.dy !== sel.dy)) ring(hover, COLORS.ink, Math.max(1, Math.round(q / 10)));
-    ring(sel, outcomeAt(sel.dx, sel.dy) === 'puffers' ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
-  }
-  const at = (e) => {
-    const r = map.getBoundingClientRect();
-    const c = Math.floor(((e.clientX - r.left) * (map.width / r.width) - mox) / q);
-    const row = Math.floor((e.clientY - r.top) * (map.height / r.height) / q);
-    if (c < 0 || c >= cols || row < 0 || row >= nrows) return null;
-    const dx = x0 + c, dy = row - LAT;
-    return outcomeAt(dx, dy) ? { dx, dy } : null;
-  };
-  const describe = (p) => `${where(p.dx, p.dy)}: ${words(read(outcomeAt(p.dx, p.dy)), p.dx)}.`;
-  function choose(p, user) {
-    sel = p; hover = null;
-    hoverEl.textContent = describe(p);
-    mdraw(); start();
-    if (user) {
-      clock.hold = 0; clock.setPlaying(true);
-      const r = fig.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
-    }
-  }
-  map.addEventListener('click', (e) => { const p = at(e); if (p) choose(p, true); });
-  map.addEventListener('pointermove', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    const p = at(e);
-    if (p?.dx === hover?.dx && p?.dy === hover?.dy) return;
-    hover = p;
-    hoverEl.textContent = describe(p || sel);
-    mdraw();
-  });
-  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
-  map.addEventListener('keydown', (e) => {
-    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (!d) return;
-    e.preventDefault();
-    let { dx, dy } = sel;
-    do { dx += d[0]; dy += d[1]; } while (Math.abs(dy) <= LAT && dx >= x0 && dx <= LON && !outcomeAt(dx, dy));
-    if (Math.abs(dy) <= LAT && dx >= x0 && dx <= LON) choose({ dx, dy }, false);
-    clock.hold = 0; clock.setPlaying(true);
-  });
-  map.setAttribute('role', 'img');
-  map.setAttribute('aria-label', `A map of all ${total} places for a second domino near a first, coloured by what happens. Use the arrow keys to choose one.`);
-  // opening a placement in the hero: the hero listens for #rle= links
-  openEl.addEventListener('click', (e) => {
-    e.preventDefault();
-    const h = openEl.getAttribute('href');
-    if (location.hash === h) history.replaceState(null, '', location.pathname + location.search);
-    location.hash = h;
-    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
-  });
-  new ResizeObserver(mlayout).observe(map.parentElement);
-  hoverEl.textContent = describe(sel);
-  start();
-}
-
-// ---------------------------------------------------------------------------
-// Side by side: a second free ship beside a first, flying the same way. The fleet flies
-// every flotilla and puffer together as one exact pattern, the camera moving with it at
-// the speed of light (like the Wakes); the map shows every placement (abreast.js, every
-// square checked by tests/abreast.test.mjs) and the stage plays whichever is chosen.
-const FLEET_RUN = 1500;
-const NUM = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
-
-function abreast() {
-  const fleetFig = $('#fleet'), fig = $('#sstage'), map = $('#smap');
-  if (!fleetFig || !fig || !map) return;
-  const { E, DY, SHIP, MAP, OUT, FLEET, shipPair, outcomeAt, fleetLanes, fleetCells } = SB;
-  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = typeof v === 'number' ? v.toLocaleString('en') : v; };
-
-  // ----- counts for the prose, from the data
-  const n = { ' ': 0, '.': 0, '#': 0, o: 0, flotilla: 0, puffer: 0 };
-  for (const rows of MAP) for (const row of rows) for (const c of row) n[c]++;
-  for (const v of Object.values(OUT)) { const k = v.split(':')[1]; if (k in n) n[k]++; }
-  const total = n['.'] + n['#'] + n.o;
-  fill('.n-sb', total); fill('.n-sb-apart', n['.']); fill('.n-sb-touch', n['#'] + n.o);
-  fill('.n-sb-boom', n['#']); fill('.n-sb-one', n.o - n.flotilla - n.puffer);
-  fill('.n-sb-e', E); fill('.n-sb-dy', DY);
-  const flots = FLEET.filter((f) => f.kind === 'flotilla').length;
-  fill('.n-sb-keep', NUM[FLEET.length]); fill('.n-sb-flot-k', NUM[flots]); fill('.n-sb-puff-k', NUM[FLEET.length - flots]);
-
-  const ahead = (e) => (e === 0 ? 'level' : `${Math.abs(e)} ${e > 0 ? 'ahead' : 'behind'}`);
-  const across = (dy) => `${Math.abs(dy)} row${Math.abs(dy) === 1 ? '' : 's'} across`;
-  const phaseWords = (ph) => (ph === 0 ? 'in step' : `${ph} generation${ph === 1 ? '' : 's'} ahead in its cycle`);
-  const wakeWords = (w) => phrase(w).replace(/^an? /, 'a ');
-  const fleetIndex = (ph, e, dy) => FLEET.findIndex((f) => [[f.ph, f.e, f.dy], ...f.also].some((p) => p[0] === ph && p[1] === e && p[2] === Math.abs(dy)));
-  // numbered within their kind: flotilla 1-4, puffer 1-5
-  const numberOf = (f) => FLEET.filter((x) => x.kind === f.kind).indexOf(f) + 1;
-  const placeWords = (f) => `${phaseWords(f.ph)}, ${ahead(f.e)}, ${across(f.dy)}`;
-
-  // ----- the flotillas: one tile each, the camera flying with them
-  const ftiles = FLEET.filter((f) => f.kind === 'flotilla').map((f) => {
-    const el = document.createElement('figure');
-    el.className = 'stage-flot';
-    el.setAttribute('role', 'listitem');
-    el.innerHTML = '<div class="stage"><canvas></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><b></b> <span></span><br><i></i></figcaption>';
-    el.querySelector('figcaption b').textContent = numberOf(f);
-    el.querySelector('figcaption span').textContent = `exactly two free ships, ${NUM[f.clean.length]} generations in six`;
-    el.querySelector('figcaption i').textContent = placeWords(f);
-    const canvas = el.querySelector('canvas');
-    canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', `Flotilla ${numberOf(f)}: two free ships flying together forever, ${placeWords(f)}, simulated exactly.`);
-    $('#flotillas').append(el);
-    el.addEventListener('click', () => choose({ ph: f.ph, e: f.e, dy: f.dy }, true));
-    const t = { f, el, gen: el.querySelector('.stage-gen b'), stage: new Stage(canvas), cur: Pattern.fromCells(shipPair(f.ph, f.e, f.dy)), prev: null };
-    t.stage.onresize = () => tdraw(t);
-    return t;
-  });
-  function tdraw(t) {
-    const { W, H } = t.stage, f = t.f;
-    const cs = Math.max(2, Math.floor(Math.min(W, H) / 26));
-    // the pair's paths run from column g - 6 to g + e + 8 (the bodies in the front nine
-    // columns, a spark trailing behind now and then), rows f.rows: centre on the bodies
-    const ox = Math.round(W / 2 - (t.cur.gen + 4 + f.e / 2) * cs);
-    const oy = Math.round(H / 2 - ((f.rows[0] + f.rows[1] + 1) / 2) * cs);
-    t.stage.draw(t.cur, t.prev, cs, ox, oy);
-    t.gen.textContent = t.cur.gen;
-  }
-  const tclock = new Clock($('#flotillas'), 6, () => {
-    for (const t of ftiles) { t.prev = t.cur; t.cur = t.cur.next(); tdraw(t); }
-  });
-  for (const t of ftiles) tdraw(t);
-
-  // ----- the fleet: the puffers
-  const lanes = fleetLanes();
-  const rowsTotal = lanes.at(-1).bottom - lanes[0].top + 1;
-  const fstage = new Stage(fleetFig.querySelector('canvas'));
-  const labels = fleetFig.querySelector('.fleet-labels');
-  const fgen = $('#fleet-gen'), key = $('#fleet-key');
-  fleetFig.querySelector('canvas').setAttribute('aria-label', `${NUM[lanes.length]} puffers, each two free ships flying side by side at the speed of light, simulated exactly as one pattern, with their trails.`);
-  lanes.forEach(({ f }) => {
-    const b = document.createElement('b');
-    b.textContent = numberOf(f);
-    labels.append(b);
-    const li = document.createElement('li');
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.innerHTML = '<b></b><span></span>';
-    btn.querySelector('b').textContent = numberOf(f);
-    btn.querySelector('span').textContent = `lays ${wakeWords(f.wake)} every six generations · ${placeWords(f)}`;
-    btn.addEventListener('click', () => choose({ ph: f.ph, e: f.e, dy: f.dy }, true));
-    li.append(btn);
-    key.append(li);
-  });
-  // the camera's leading column: no cell of any lane is ever further right than g + 8 + e
-  const maxE = Math.max(0, ...lanes.map(({ f }) => f.e));
-  let fcs = 4, foy = 0, fstart = null, fcur = null, fprev = null;
-  const P0 = Pattern.fromCells(fleetCells());
-  function flayout() {
-    const { W, dpr } = fstage;
-    const css = W / dpr >= 700 ? 3 : 2;
-    fcs = Math.max(2, Math.round(css * dpr));
-    const H = (rowsTotal + 2) * fcs;
-    fleetFig.querySelector('.stage').style.height = `${H / dpr}px`;
-    foy = (1 - lanes[0].top) * fcs;
-    labels.style.height = `${H / dpr}px`;
-    lanes.forEach(({ top, bottom }, i) => {
-      labels.children[i].style.top = `${(foy + ((top + bottom + 1) / 2) * fcs) / dpr}px`;
-    });
-    if (!fstart) {
-      // open with the trails already spanning the stage
-      let p = P0, q = null;
-      for (let g = 0, g0 = Math.ceil(W / fcs); g < g0; g++) { q = p; p = p.next(); }
-      fstart = { cur: p, prev: q };
-      fcur = p; fprev = q;
-    }
-    fdraw();
-  }
-  function fdraw() {
-    if (!fcur) return;
-    const ox = fstage.W - (AHEAD + 1) * fcs - (fcur.gen + 8 + maxE) * fcs;
-    fstage.draw(fcur, fprev, fcs, ox, foy);
-    fgen.textContent = fcur.gen;
-  }
-  fstage.onresize = flayout;
-  const fclock = new Clock(fleetFig, 10, () => {
-    if (!fstart) return;
-    if (fcur.gen >= fstart.cur.gen + FLEET_RUN) { fcur = fstart.cur; fprev = fstart.prev; }
-    else { fprev = fcur; fcur = fcur.next(); }
-    fdraw();
-  });
-  fleetFig.addEventListener('click', () => fclock.setPlaying(!fclock.playing));
-  flayout();
-
-  // ----- the stage: a chosen placement, from generation 0, the camera moving with the ships
-  const read = (ph, e, dy) => {
-    const c = outcomeAt(ph, e, dy);
-    if (c === '#') return { kind: 'explodes', at: null };
-    if (c === '.') return { kind: 'apart', at: null };
-    const [at, rest] = c.split(':');
-    if (rest === 'flotilla' || rest === 'puffer') { const f = FLEET[fleetIndex(ph, e, dy)]; return { kind: rest, at: +at, f, n: numberOf(f) }; }
-    return parseOutcome(c);
-  };
-  const words = (o) => {
-    if (o.kind === 'explodes') return 'explodes';
-    if (o.kind === 'apart') return 'they never touch: each flies on exactly as if alone';
-    if (o.kind === 'flotilla') return `flotilla ${o.n}: together forever, from gen ${o.at}`;
-    if (o.kind === 'puffer') return `puffer ${o.n}: ${wakeWords(o.f.wake)} every six generations, from gen ${o.at}`;
-    if (o.kind === 'nothing') return `nothing, gone by gen ${o.at}`;
-    return `${phrase(o.objects)}, by gen ${o.at}`;
-  };
-  const where = (p) => `phase ${p.ph}, ${ahead(p.e)}, ${across(p.dy)}`;
-
-  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
-  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#sstage-name');
-  const resEl = $('#sstage-result'), statusEl = $('#sstage-status'), openEl = $('#sstage-open');
-  const first = FLEET[0];
-  let sel = { ph: first.ph, e: first.e, dy: first.dy }, o = null, cur = null, prev = null, cs = 8, oy = 0, end = 0, done = false;
-  const still = () => reducedMotion.matches && !clock.playing;
-  // the pair's paths run from column g - 6 (the first ship's tail) to g + e + 8: centre that
-  const ox = () => Math.round(stage.W * 0.58 - (cur.gen + 1 + sel.e / 2) * cs);
-  const inView = (p) => p.x0 * cs + ox() >= 0 && p.y0 * cs + oy >= 0 && (p.y0 + p.h) * cs + oy <= stage.H;
-
-  function start() {
-    o = read(sel.ph, sel.e, sel.dy);
-    cur = Pattern.fromCells(shipPair(sel.ph, sel.e, sel.dy)); prev = null; done = false;
-    statusEl.textContent = '';
-    nameEl.textContent = where(sel);
-    resEl.textContent = words(o);
-    canvas.setAttribute('aria-label', `Two free ships side by side, ${where(sel)}, simulated exactly: ${words(o)}.`);
-    openEl.href = encodeHash(Pattern.fromCells(shipPair(sel.ph, sel.e, sel.dy)));
-    layout();
-    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
-  }
-  function layout() {
-    const { W, H } = stage;
-    const want = Math.min(110, Math.max(64, Math.round(W / stage.dpr / 5)));
-    cs = Math.max(2, Math.floor(Math.min(W / want, H / 36)));
-    // rows -2 .. dy + 7 are the two ships' lanes (dy may be negative)
-    oy = Math.round(H / 2 - ((Math.min(0, sel.dy) - 2 + Math.max(0, sel.dy) + 8) / 2) * cs);
-    // clean runs last until what is left behind has streamed out of the frame
-    const cols = Math.ceil(W / cs);
-    end = o.kind === 'apart' ? 36 : o.kind === 'flotilla' ? o.at + 60 : (o.at ?? 0) + Math.ceil(cols * 0.6) + 8;
-    draw();
-  }
-  function draw() {
-    stage.draw(cur, prev, cs, ox(), oy);
-    genEl.textContent = cur.gen;
-    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
-  }
-  function finished() {
-    if (o.kind === 'explodes') {
-      if (cur.population > 300 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
-      return cur.gen > 1500;
-    }
-    return cur.gen >= end;
-  }
-  const clock = new Clock(fig, 10, () => {
-    if (done) { start(); clock.hold = 400; return; }
-    prev = cur; cur = cur.next(); draw();
-    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
-  });
-  canvas.addEventListener('click', () => {
-    const wasStill = still();
-    clock.setPlaying(!clock.playing);
-    if (wasStill) start();
-  });
-  stage.onresize = () => { if (cur) layout(); };
-
-  // ----- the phase buttons
-  const phases = $('#sphases');
-  const pbtn = SHIP.map((cells, ph) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    const x0 = Math.min(...cells.map((c) => c[0])), y0 = Math.min(...cells.map((c) => c[1]));
-    b.append(sglyph(cells.map(([x, y]) => [x - x0, y - y0])));
-    const t = document.createElement('span');
-    t.textContent = `phase ${ph}`;
-    b.append(t);
-    b.setAttribute('aria-label', `Second ship ${phaseWords(ph)}`);
-    b.addEventListener('click', () => {
-      if (sel.ph === ph) return;
-      // open on this phase's first flotilla or puffer; with none, keep the place if it can be
-      const f = FLEET.find((x) => x.ph === ph);
-      let p = f ? { ph, e: f.e, dy: f.dy } : { ph, e: sel.e, dy: sel.dy };
-      if (outcomeAt(ph, p.e, p.dy) === ' ') p = { ph, e: 0, dy: DY - 2 };
-      choose(p, false);
-    });
-    phases.append(b);
-    return b;
-  });
-
-  // ----- the map: every place for the second ship, for the chosen phase
-  const mctx = map.getContext('2d', { alpha: false });
-  const cols = 2 * E + 1, nrows = 2 * DY + 1;
-  let q = 8, mox = 0, hover = null;
-  const hoverEl = $('#smap-hover');
-  function mlayout() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const W = Math.round(map.parentElement.clientWidth * dpr);
-    q = Math.max(3, Math.min(Math.floor(W / cols), Math.round(22 * dpr)));
-    mox = Math.floor((W - cols * q) / 2);
-    if (map.width !== W || map.height !== nrows * q) {
-      map.width = W; map.height = nrows * q;
-      map.style.height = `${nrows * q / dpr}px`;
-    }
-    mdraw();
-  }
-  function mdraw() {
-    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
-    const box = (X, Y, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X, Y, w, ht); };
-    box(0, 0, map.width, map.height, COLORS.paper);
-    // a ring of width w just outside a square
-    const ring = (e, dy, color, w) => {
-      const X = mox + (e + E) * q + h - w, Y = (dy + DY) * q + h - w, S = s + 2 * w;
-      box(X, Y, S, w, color); box(X, Y + S - w, S, w, color);
-      box(X, Y, w, S, color); box(X + S - w, Y, w, S, color);
-    };
-    for (let r = 0; r < nrows; r++) for (let c = 0; c < cols; c++) {
-      const e = c - E, dy = r - DY, X = mox + c * q, Y = r * q;
-      const v = outcomeAt(sel.ph, e, dy);
-      if (v === '#') box(X + h, Y + h, s, s, '#d7d2c7');
-      else if (v === '.') {
-        const d = Math.max(1, Math.round(q / 7)), k = (q - d) >> 1;
-        box(X + k, Y + k, d, d, '#c9c4b9');
-      } else if (v === ' ') continue;
-      else if (v.endsWith(':puffer')) box(X + h, Y + h, s, s, COLORS.free);
-      else if (v.endsWith(':flotilla')) {
-        const w = Math.max(2, Math.round(q * 0.2));
-        box(X + h, Y + h, s, s, COLORS.free); box(X + h + w, Y + h + w, s - 2 * w, s - 2 * w, COLORS.paper);
-      } else {
-        const i = Math.max(2, Math.round(q * 0.24));
-        box(X + i, Y + i, q - 2 * i, q - 2 * i, COLORS.ink);
-      }
-    }
-    ring(0, 0, '#c9c4b9', Math.max(1, Math.round(q / 12)));
-    if (hover && (hover.e !== sel.e || hover.dy !== sel.dy)) ring(hover.e, hover.dy, COLORS.ink, Math.max(1, Math.round(q / 10)));
-    ring(sel.e, sel.dy, /:(puffer|flotilla)$/.test(outcomeAt(sel.ph, sel.e, sel.dy)) ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
-  }
-  const at = (ev) => {
-    const r = map.getBoundingClientRect();
-    const c = Math.floor(((ev.clientX - r.left) * (map.width / r.width) - mox) / q);
-    const row = Math.floor((ev.clientY - r.top) * (map.height / r.height) / q);
-    if (c < 0 || c >= cols || row < 0 || row >= nrows) return null;
-    const e = c - E, dy = row - DY;
-    return outcomeAt(sel.ph, e, dy) !== ' ' ? { ph: sel.ph, e, dy } : null;
-  };
-  const describe = (p) => `${where(p)}: ${words(read(p.ph, p.e, p.dy))}.`;
-  function choose(p, user) {
-    sel = p; hover = null;
-    pbtn.forEach((b, i) => b.setAttribute('aria-pressed', i === p.ph));
-    hoverEl.textContent = describe(p);
-    map.setAttribute('aria-label', `A map of every place for a second free ship in phase ${p.ph} beside the first, coloured by what happens. Use the arrow keys to choose one.`);
-    mdraw(); start();
-    if (user) {
-      clock.hold = 0; clock.setPlaying(true);
-      const r = fig.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
-    }
-  }
-  map.addEventListener('click', (ev) => { const p = at(ev); if (p) choose(p, true); });
-  map.addEventListener('pointermove', (ev) => {
-    if (ev.pointerType !== 'mouse') return;
-    const p = at(ev);
-    if (p?.e === hover?.e && p?.dy === hover?.dy) return;
-    hover = p;
-    hoverEl.textContent = describe(p || sel);
-    mdraw();
-  });
-  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
-  map.addEventListener('keydown', (ev) => {
-    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
-    if (!d) return;
-    ev.preventDefault();
-    let { e, dy } = sel;
-    do { e += d[0]; dy += d[1]; } while (Math.abs(dy) <= DY && Math.abs(e) <= E && outcomeAt(sel.ph, e, dy) === ' ');
-    if (Math.abs(dy) <= DY && Math.abs(e) <= E) choose({ ph: sel.ph, e, dy }, false);
-    clock.hold = 0; clock.setPlaying(true);
-  });
-  map.setAttribute('role', 'img');
-  openEl.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    const hh = openEl.getAttribute('href');
-    if (location.hash === hh) history.replaceState(null, '', location.pathname + location.search);
-    location.hash = hh;
-    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
-  });
-  new ResizeObserver(mlayout).observe(map.parentElement);
-  choose(sel, false);
-}
-
-// ---------------------------------------------------------------------------
-// Head-on: two free ships flying at each other. Tiles play the meetings they pass
-// through untouched; the map shows every meeting (headon.js, every square checked by
-// tests/headon.test.mjs) and the stage plays whichever is chosen. The camera is fixed
-// on the point where the two cross, (X0 + t - ph) / 2: A's body is centred near column
-// g + 4 and B's near X0 + t - (g + ph) - 4.
-function headon() {
-  const fig = $('#hstage'), map = $('#hmap'), tilesEl = $('#passings');
-  if (!fig || !map || !tilesEl) return;
-  const { X0, T, DY, MAP, headPair, mirror, outcomeAt } = HO;
-  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = typeof v === 'number' ? v.toLocaleString('en') : v; };
-  const kindOf = (v) => v === '.' ? 'apart' : v === '#' ? 'explodes' : v.endsWith(':nothing') ? 'nothing'
-    : v.includes('freeship') ? 'through' : 'debris';
-
-  // ----- counts for the prose, from the data (mirror images once)
-  const n = { apart: 0, explodes: 0, nothing: 0, debris: 0, through: 0 }, seen = new Set(), passes = [];
-  let squares = 0, clean = 0;
-  for (let dy = 0; dy <= DY; dy++) for (let ph = 0; ph < 6; ph++) for (let t = 0; t < T; t++) {
-    squares++;
-    const v = outcomeAt(ph, t, dy), k = kindOf(v), [p2, t2] = mirror(ph, t);
-    const id = `${Math.min(ph * T + t, p2 * T + t2)},${dy}`;
-    if (seen.has(id)) continue;
-    seen.add(id); n[k]++;
-    if (k === 'through') {
-      // show the mirror pair's member with the lower phase
-      const [P, Tt] = p2 < ph ? [p2, t2] : [ph, t];
-      const o = parseOutcome(outcomeAt(P, Tt, dy));
-      const { freeship, ...left } = o.objects;
-      if (!Object.keys(left).length) clean++;
-      passes.push({ ph: P, t: Tt, dy, at: o.at, left, size: Object.values(left).reduce((a, b) => a + b, 0) });
-    }
-  }
-  passes.sort((a, b) => a.size - b.size || (b.left.dot ? 1 : 0) - (a.left.dot ? 1 : 0) || b.dy - a.dy || a.ph - b.ph);
-  fill('.n-ho', seen.size); fill('.n-ho-boom', n.explodes); fill('.n-ho-through', NUM[n.through]);
-  fill('.n-ho-gone', n.nothing); fill('.n-ho-debris', n.debris); fill('.n-ho-apart', n.apart);
-  fill('.n-ho-sq', squares); fill('.n-ho-dy', DY);
-  fill('.n-ho-clean-k', NUM[clean].replace(/^./, (c) => c.toUpperCase()));
-
-  const across = (dy) => (dy === 0 ? 'exactly in line' : `${dy} row${dy === 1 ? '' : 's'} across`);
-  const where = (p) => `${across(p.dy)}, phase ${p.ph}, timing ${p.t}`;
-  const leaves = (left) => (Object.keys(left).length ? `leaving ${phrase(left)}` : 'leaving no trace');
-  const centre = (p) => [(X0 + p.t - p.ph) / 2 + 0.5, (p.dy + 6) / 2];
-
-  // ----- the tiles: every way they pass through each other
-  const tiles = passes.map((p, i) => {
-    const el = document.createElement('figure');
-    el.className = 'stage-flot';
-    el.setAttribute('role', 'listitem');
-    el.innerHTML = '<div class="stage"><canvas></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><b></b> <span></span><br><i></i></figcaption>';
-    el.querySelector('figcaption b').textContent = i + 1;
-    el.querySelector('figcaption span').textContent = `they pass, ${leaves(p.left)}`;
-    el.querySelector('figcaption i').textContent = where(p);
-    const canvas = el.querySelector('canvas');
-    canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', `Two free ships meeting head-on, ${where(p)}, simulated exactly: they pass through each other, ${leaves(p.left)}.`);
-    tilesEl.append(el);
-    el.addEventListener('click', () => choose({ ph: p.ph, t: p.t, dy: p.dy }, true));
-    const tile = { p, el, gen: el.querySelector('.stage-gen b'), stage: new Stage(canvas), cur: null, prev: null, cs: 4, end: 0 };
-    tile.reset = () => {
-      tile.cur = Pattern.fromCells(headPair(p.ph, p.t, p.dy)); tile.prev = null;
-      // reduced motion: hold the frame just after they pass, both ships still in view
-      if (reducedMotion.matches && !tile.clock?.playing) for (let g = 0; g < p.at + 2; g++) { tile.prev = tile.cur; tile.cur = tile.cur.next(); }
-    };
-    tile.draw = () => {
-      const { W, H } = tile.stage;
-      const cs = tile.cs = Math.max(2, Math.floor(Math.min(W / 44, H / 30)));
-      const [cx, cy] = centre(p);
-      // both ships are gone once A's tail (column >= g - 6) is past the right edge
-      tile.end = Math.ceil(cx + W / cs / 2 + 7);
-      tile.stage.draw(tile.cur, tile.prev, cs, Math.round(W / 2 - cx * cs), Math.round(H / 2 - cy * cs));
-      tile.gen.textContent = tile.cur.gen;
-    };
-    tile.clock = new Clock(el, 10, () => {
-      if (tile.cur.gen >= tile.end) { tile.reset(); tile.clock.hold = 900; }
-      else { tile.prev = tile.cur; tile.cur = tile.cur.next(); }
-      tile.draw();
-    });
-    tile.stage.onresize = () => tile.draw();
-    tile.reset(); tile.draw();
-    return tile;
-  });
-  const note = document.createElement('p');
-  note.className = 'ho-note';
-  note.textContent = 'Both, or neither. No meeting leaves one ship.';
-  if (tiles.length % 4) tilesEl.append(note);
-
-  // ----- the stage
-  const read = (v) => v === '#' ? { kind: 'explodes', at: null } : v === '.' ? { kind: 'apart', at: null } : parseOutcome(v);
-  const words = (o) => {
-    if (o.kind === 'explodes') return 'explodes';
-    if (o.kind === 'apart') return 'they never touch: each flies on exactly as if alone';
-    if (o.kind === 'nothing') return `they annihilate: nothing is left, by gen ${o.at}`;
-    const { freeship, ...left } = o.objects;
-    if (freeship) return `they pass through each other untouched, ${leaves(left)}, by gen ${o.at}`;
-    return `both ships destroyed, leaving ${phrase(o.objects)}, by gen ${o.at}`;
-  };
-  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
-  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#hstage-name');
-  const resEl = $('#hstage-result'), statusEl = $('#hstage-status'), openEl = $('#hstage-open');
-  const firstGone = (() => { for (let ph = 0; ph < 6; ph++) for (let t = 0; t < T; t++) if (kindOf(outcomeAt(ph, t, 0)) === 'nothing') return { ph, t, dy: 0 }; })();
-  let sel = firstGone, o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, end = 0, done = false;
-  const still = () => reducedMotion.matches && !clock.playing;
-  const inView = (q) => q.x0 * cs + ox >= 0 && (q.x0 + q.w) * cs + ox <= stage.W && q.y0 * cs + oy >= 0 && (q.y0 + q.h) * cs + oy <= stage.H;
-
-  function start() {
-    o = read(outcomeAt(sel.ph, sel.t, sel.dy));
-    cur = Pattern.fromCells(headPair(sel.ph, sel.t, sel.dy)); prev = null; done = false;
-    statusEl.textContent = '';
-    nameEl.textContent = where(sel);
-    resEl.textContent = words(o);
-    canvas.setAttribute('aria-label', `Two free ships meeting head-on, ${where(sel)}, simulated exactly: ${words(o)}.`);
-    openEl.href = encodeHash(Pattern.fromCells(headPair(sel.ph, sel.t, sel.dy)));
-    layout();
-    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
-  }
-  function layout() {
-    const { W, H } = stage;
-    const want = Math.min(110, Math.max(64, Math.round(W / stage.dpr / 5)));
-    cs = Math.max(2, Math.floor(Math.min(W / want, H / 30)));
-    const [cx, cy] = centre(sel);
-    ox = Math.round(W / 2 - cx * cs); oy = Math.round(H / 2 - cy * cs);
-    // clean runs last until anything moving has left the frame (ships fly one cell per
-    // generation, from the centre), and debris has been seen for a while
-    const out = Math.ceil(cx + W / cs / 2 + 7);
-    end = o.kind === 'apart' || (o.kind === 'objects' && o.objects.freeship) ? Math.max(out, (o.at ?? 0) + 12)
-      : (o.at ?? 0) + 30;
-    draw();
-  }
-  function draw() {
-    stage.draw(cur, prev, cs, ox, oy);
-    genEl.textContent = cur.gen;
-    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
-  }
-  function finished() {
-    if (o.kind === 'explodes') {
-      if (cur.population > 300 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
-      return cur.gen > 1500;
-    }
-    return cur.gen >= end;
-  }
-  const clock = new Clock(fig, 10, () => {
-    if (done) { start(); clock.hold = 400; return; }
-    prev = cur; cur = cur.next(); draw();
-    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
-  });
-  canvas.addEventListener('click', () => {
-    const wasStill = still();
-    clock.setPlaying(!clock.playing);
-    if (wasStill) start();
-  });
-  stage.onresize = () => { if (cur) layout(); };
-
-  // ----- the map: one block of T timings by DY + 1 distances for each phase
-  const mctx = map.getContext('2d', { alpha: false });
-  const nrows = DY + 1;
-  let q = 8, per = 6, mox = 0, top = 16, gap = 8, hover = null, dpr = 1;
-  const hoverEl = $('#hmap-hover');
-  // block origin for phase ph
-  const bx = (ph) => mox + (ph % per) * (T * q + gap);
-  const by = (ph) => Math.floor(ph / per) * (top + nrows * q + gap) + top;
-  function mlayout() {
-    dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const W = Math.round(map.parentElement.clientWidth * dpr);
-    // six blocks in a row if the squares can be 11 CSS px or more, else three, else two
-    for (per of [6, 3, 2]) {
-      gap = Math.round(14 * dpr);
-      q = Math.min(Math.round(22 * dpr), Math.floor((W - (per - 1) * gap) / (per * T)));
-      if (q >= 11 * dpr || per === 2) break;
-    }
-    top = Math.round(18 * dpr);
-    mox = Math.floor((W - per * T * q - (per - 1) * gap) / 2);
-    const H = (6 / per) * (top + nrows * q + gap) - gap;
-    if (map.width !== W || map.height !== H) {
-      map.width = W; map.height = H;
-      map.style.height = `${H / dpr}px`;
-    }
-    mdraw();
-  }
-  function mdraw() {
-    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
-    const box = (X, Y, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X, Y, w, ht); };
-    const ring = (X, Y, S, w, color) => { box(X, Y, S, w, color); box(X, Y + S - w, S, w, color); box(X, Y, w, S, color); box(X + S - w, Y, w, S, color); };
-    box(0, 0, map.width, map.height, COLORS.paper);
-    mctx.font = `${Math.round(11 * dpr)}px ${getComputedStyle(document.body).getPropertyValue('--mono') || 'monospace'}`;
-    mctx.textBaseline = 'alphabetic';
-    for (let ph = 0; ph < 6; ph++) {
-      const X0b = bx(ph), Y0b = by(ph);
-      mctx.fillStyle = sel.ph === ph ? COLORS.ink : '#77736a';
-      mctx.fillText(`phase ${ph}`, X0b + h, Y0b - Math.round(6 * dpr));
-      for (let dy = 0; dy < nrows; dy++) for (let t = 0; t < T; t++) {
-        const X = X0b + t * q, Y = Y0b + dy * q, v = outcomeAt(ph, t, dy), k = kindOf(v);
-        if (k === 'explodes') box(X + h, Y + h, s, s, '#d7d2c7');
-        else if (k === 'apart') { const d = Math.max(1, Math.round(q / 7)), c = (q - d) >> 1; box(X + c, Y + c, d, d, '#c9c4b9'); }
-        else if (k === 'through') { box(X + h, Y + h, s, s, COLORS.free); const w = Math.max(2, Math.round(q * 0.2)); box(X + h + w, Y + h + w, s - 2 * w, s - 2 * w, COLORS.paper); }
-        else if (k === 'nothing') { const i = Math.max(2, Math.round(q * 0.2)); ring(X + i, Y + i, q - 2 * i, Math.max(1, Math.round(q / 12)), COLORS.ink); }
-        else { const i = Math.max(2, Math.round(q * 0.24)); box(X + i, Y + i, q - 2 * i, q - 2 * i, COLORS.ink); }
-      }
-    }
-    const mark = (p, color, w) => ring(bx(p.ph) + p.t * q + h - w, by(p.ph) + p.dy * q + h - w, s + 2 * w, w, color);
-    if (hover && (hover.ph !== sel.ph || hover.t !== sel.t || hover.dy !== sel.dy)) mark(hover, COLORS.ink, Math.max(1, Math.round(q / 10)));
-    mark(sel, kindOf(outcomeAt(sel.ph, sel.t, sel.dy)) === 'through' ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
-  }
-  const at = (ev) => {
-    const r = map.getBoundingClientRect();
-    const X = (ev.clientX - r.left) * (map.width / r.width), Y = (ev.clientY - r.top) * (map.height / r.height);
-    for (let ph = 0; ph < 6; ph++) {
-      const t = Math.floor((X - bx(ph)) / q), dy = Math.floor((Y - by(ph)) / q);
-      if (t >= 0 && t < T && dy >= 0 && dy < nrows) return { ph, t, dy };
-    }
-    return null;
-  };
-  const describe = (p) => `${where(p)}: ${words(read(outcomeAt(p.ph, p.t, p.dy)))}.`;
-  function choose(p, user) {
-    sel = p; hover = null;
-    hoverEl.textContent = describe(p);
-    mdraw(); start();
-    if (user) {
-      clock.hold = 0; clock.setPlaying(true);
-      const r = fig.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
-    }
-  }
-  map.addEventListener('click', (ev) => { const p = at(ev); if (p) choose(p, true); });
-  map.addEventListener('pointermove', (ev) => {
-    if (ev.pointerType !== 'mouse') return;
-    const p = at(ev);
-    if (p?.ph === hover?.ph && p?.t === hover?.t && p?.dy === hover?.dy) return;
-    hover = p;
-    hoverEl.textContent = describe(p || sel);
-    mdraw();
-  });
-  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
-  map.addEventListener('keydown', (ev) => {
-    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
-    if (!d) return;
-    ev.preventDefault();
-    // left and right run on through the phases, as if the blocks were one long row
-    const i = sel.ph * T + sel.t + d[0], dy = sel.dy + d[1];
-    if (i < 0 || i >= 6 * T || dy < 0 || dy > DY) return;
-    choose({ ph: Math.floor(i / T), t: i % T, dy }, false);
-    clock.hold = 0; clock.setPlaying(true);
-  });
-  map.setAttribute('role', 'img');
-  map.setAttribute('aria-label', `A map of all ${squares} ways two free ships can meet head-on, in six blocks, one for each phase of the second ship, coloured by what happens. Use the arrow keys to choose one.`);
-  openEl.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    const hh = openEl.getAttribute('href');
-    if (location.hash === hh) history.replaceState(null, '', location.pathname + location.search);
-    location.hash = hh;
-    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
-  });
-  new ResizeObserver(mlayout).observe(map.parentElement);
-  choose(sel, false);
-}
-
-// ---------------------------------------------------------------------------
-// Crossing: two free ships at right angles. Tiles play the two crossings in which one
-// ship erases the other without a trace; the map shows every crossing (crossing.js,
-// every square checked by tests/crossing.test.mjs) and the stage plays whichever is
-// chosen. The camera is fixed on the crossing: A's path is rows 0..5, B's columns
-// bx..bx + 5 (bx = X + u). A's body is near column g + 4; B's near row by + g + 4.
-function crossing() {
-  const fig = $('#cstage'), map = $('#cmap'), tilesEl = $('#crossings');
-  if (!fig || !map || !tilesEl) return;
-  const { X, D, crossPair, mirror, outcomeAt } = CR;
-  const fill = (cls, v) => { for (const el of document.querySelectorAll(cls)) el.textContent = typeof v === 'number' ? v.toLocaleString('en') : v; };
-  const kindOf = (v) => v === '.' ? 'apart' : v === '#' ? 'explodes' : v.endsWith(':nothing') ? 'nothing'
-    : /\((A|B)\)$/.test(v) ? (/:freeship \([AB]\)$/.test(v) ? 'clean' : 'one') : 'debris';
-  const read = (v) => {
-    if (v === '#') return { kind: 'explodes', at: null };
-    if (v === '.') return { kind: 'apart', at: null };
-    const who = v.match(/\((A|B)\)$/)?.[1] ?? null;
-    return { ...parseOutcome(v.replace(/ \([AB]\)$/, '')), who };
-  };
-
-  // ----- counts for the prose, from the data (mirror images once)
-  const n = { apart: 0, explodes: 0, nothing: 0, debris: 0, one: 0, clean: 0 }, seen = new Set(), cleans = [];
-  let squares = 0, lagmin = Infinity;
-  for (let ph = 0; ph < 6; ph++) for (let u = 0; u < 6; u++) for (let d = -D; d <= D; d++) {
-    squares++;
-    const v = outcomeAt(ph, u, d), k = kindOf(v);
-    if (k === 'one' || k === 'clean') lagmin = Math.min(lagmin, Math.abs(d));
-    const id = [[ph, u, d], mirror(ph, u, d)].map((a) => a.join()).sort()[0];
-    if (seen.has(id)) continue;
-    seen.add(id); n[k]++;
-    if (k === 'clean') cleans.push({ ph, u, d });
-  }
-  const touch = seen.size - n.apart, ones = n.one + n.clean;
-  fill('.n-cr', seen.size); fill('.n-cr-touch', touch); fill('.n-cr-boom', n.explodes);
-  fill('.n-cr-one', NUM[ones] ?? ones); fill('.n-cr-apart', n.apart); fill('.n-cr-sq', squares);
-  fill('.n-cr-d', D); fill('.n-cr-lagmin', lagmin);
-  fill('.n-cr-clean-k', (NUM[n.clean] ?? String(n.clean)).replace(/^./, (c) => c.toUpperCase()));
-
-  const lag = (d) => d === 0 ? 'both reach the crossing together'
-    : `the ship flying ${d > 0 ? 'down' : 'right'} arrives ${Math.abs(d)} generation${Math.abs(d) === 1 ? '' : 's'} late`;
-  const where = (p) => `phase ${p.ph}, timing ${p.u}: ${lag(p.d)}`;
-  const ship = (who) => `the ship flying ${who === 'A' ? 'right' : 'down'}`;
-  const words = (o) => {
-    if (o.kind === 'explodes') return 'explodes';
-    if (o.kind === 'apart') return 'they never touch: each flies on exactly as if alone';
-    if (o.kind === 'nothing') return `they annihilate: nothing is left, by gen ${o.at}`;
-    const { freeship, ...left } = o.objects;
-    if (freeship) return `${ship(o.who)} flies on untouched; the other is gone, ${Object.keys(left).length ? `leaving ${phrase(left)}` : 'leaving no trace'}, by gen ${o.at}`;
-    return `both ships destroyed, leaving ${phrase(o.objects)}, by gen ${o.at}`;
-  };
-  const centre = (p) => [X + p.u + 3, 3];
-  // the two paths, faint, under the cells
-  const paths = (p, cs, ox, oy, W, H) => (ctx) => {
-    ctx.fillStyle = COLORS.path;
-    ctx.fillRect(0, oy, W, 6 * cs);
-    ctx.fillRect(ox + (X + p.u) * cs, 0, 6 * cs, H);
-  };
-  // the generation by which the ships still flying (`who`: 'A', 'B' or both) have left
-  // a view of half-size (hw, hh) cells around the crossing: A's tail is at column
-  // >= g - 6, B's at row >= by + g - 6
-  const gone = (p, who, hw, hh) => {
-    const [cx, cy] = centre(p), by = -(X + p.u) - p.d;
-    return Math.ceil(Math.max(who.includes('A') ? cx + hw + 7 : 0, who.includes('B') ? cy + hh + 7 - by : 0));
-  };
-
-  // ----- the tiles: the crossings that leave nothing but the ship that came first. One
-  // of each mirror pair is shown; show the first with the ship flying right surviving
-  // and the second with the ship flying down, so both are seen.
-  const shown = cleans.sort((a, b) => Math.abs(a.d) - Math.abs(b.d))
-    .map((p, i) => { const m = mirror(p.ph, p.u, p.d); const q = { ph: m[0], u: m[1], d: m[2] }; return (i % 2 ? p.d < 0 : p.d > 0) ? p : q; });
-  for (const [i, p] of shown.entries()) {
-    const o = read(outcomeAt(p.ph, p.u, p.d));
-    const el = document.createElement('figure');
-    el.className = 'stage-flot';
-    el.setAttribute('role', 'listitem');
-    el.innerHTML = '<div class="stage"><canvas></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><b></b> <span></span><br><i></i></figcaption>';
-    el.querySelector('figcaption b').textContent = i + 1;
-    el.querySelector('figcaption span').textContent = `${ship(o.who)} flies on; the other leaves no trace`;
-    el.querySelector('figcaption i').textContent = where(p);
-    const canvas = el.querySelector('canvas');
-    canvas.setAttribute('role', 'img');
-    canvas.setAttribute('aria-label', `Two free ships crossing at right angles, ${where(p)}, simulated exactly: ${words(o)}.`);
-    tilesEl.append(el);
-    el.addEventListener('click', () => choose(p, true));
-    const tile = { stage: new Stage(canvas), gen: el.querySelector('.stage-gen b'), cur: null, prev: null, end: 0 };
-    tile.reset = () => {
-      tile.cur = Pattern.fromCells(crossPair(p.ph, p.u, p.d)); tile.prev = null;
-      // reduced motion: hold the frame just after the meeting, the survivor in view
-      if (reducedMotion.matches && !tile.clock?.playing) for (let g = 0; g < o.at + 2; g++) { tile.prev = tile.cur; tile.cur = tile.cur.next(); }
-    };
-    tile.draw = () => {
-      const { W, H } = tile.stage;
-      // about 60 cells across, fewer on small tiles so cells stay at least 5 CSS px
-      const across = Math.max(30, Math.min(60, W / tile.stage.dpr / 5));
-      const cs = Math.max(2, Math.floor(Math.min(W / across, H / (across * 0.75))));
-      const [cx, cy] = centre(p);
-      const ox = Math.round(W / 2 - cx * cs), oy = Math.round(H / 2 - cy * cs);
-      tile.end = Math.max(gone(p, o.who, W / cs / 2, H / cs / 2), o.at + 12);
-      tile.stage.draw(tile.cur, tile.prev, cs, ox, oy, { under: paths(p, cs, ox, oy, W, H) });
-      tile.gen.textContent = tile.cur.gen;
-    };
-    tile.clock = new Clock(el, 10, () => {
-      if (tile.cur.gen >= tile.end) { tile.reset(); tile.clock.hold = 900; }
-      else { tile.prev = tile.cur; tile.cur = tile.cur.next(); }
-      tile.draw();
-    });
-    tile.stage.onresize = () => tile.draw();
-    tile.reset(); tile.draw();
-  }
-  const note = document.createElement('p');
-  note.className = 'ho-note';
-  note.textContent = 'One, or neither. No crossing lets both ships through.';
-  tilesEl.append(note);
-
-  // ----- the stage
-  const canvas = fig.querySelector('canvas'), stage = new Stage(canvas);
-  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#cstage-name');
-  const resEl = $('#cstage-result'), statusEl = $('#cstage-status'), openEl = $('#cstage-open');
-  let sel = shown[0] ?? { ph: 0, u: 0, d: 0 }, o = null, cur = null, prev = null, cs = 8, ox = 0, oy = 0, end = 0, done = false;
-  const still = () => reducedMotion.matches && !clock.playing;
-  const inView = (q) => q.x0 * cs + ox >= 0 && (q.x0 + q.w) * cs + ox <= stage.W && q.y0 * cs + oy >= 0 && (q.y0 + q.h) * cs + oy <= stage.H;
-
-  function start() {
-    o = read(outcomeAt(sel.ph, sel.u, sel.d));
-    cur = Pattern.fromCells(crossPair(sel.ph, sel.u, sel.d)); prev = null; done = false;
-    statusEl.textContent = '';
-    nameEl.textContent = where(sel);
-    resEl.textContent = words(o);
-    canvas.setAttribute('aria-label', `Two free ships crossing at right angles, ${where(sel)}, simulated exactly: ${words(o)}.`);
-    openEl.href = encodeHash(Pattern.fromCells(crossPair(sel.ph, sel.u, sel.d)));
-    layout();
-    if (still()) { while (!finished()) { prev = cur; cur = cur.next(); } draw(); }
-  }
-  function layout() {
-    const { W, H } = stage;
-    const want = Math.min(100, Math.max(56, Math.round(W / stage.dpr / 6)));
-    cs = Math.max(2, Math.floor(Math.min(W / want, H / 44)));
-    const [cx, cy] = centre(sel);
-    ox = Math.round(W / 2 - cx * cs); oy = Math.round(H / 2 - cy * cs);
-    // clean runs last until every ship has left the frame, and debris has been seen
-    // for a while
-    const out = gone(sel, o.who ?? 'AB', W / cs / 2, H / cs / 2);
-    end = o.kind === 'apart' || o.who ? Math.max(out, (o.at ?? 0) + 12) : (o.at ?? 0) + 30;
-    draw();
-  }
-  function draw() {
-    stage.draw(cur, prev, cs, ox, oy, { under: paths(sel, cs, ox, oy, stage.W, stage.H) });
-    genEl.textContent = cur.gen;
-    fig.classList.toggle('done', o.at !== null && cur.gen >= o.at);
-  }
-  function finished() {
-    if (o.kind === 'explodes') {
-      if (cur.population > 300 && !inView(cur)) { statusEl.textContent = 'still growing; stopped at the edge of the frame'; return true; }
-      return cur.gen > 1500;
-    }
-    return cur.gen >= end;
-  }
-  const clock = new Clock(fig, 10, () => {
-    if (done) { start(); clock.hold = 400; return; }
-    prev = cur; cur = cur.next(); draw();
-    if (finished()) { done = true; clock.hold = o.kind === 'explodes' ? 2600 : 2000; }
-  });
-  canvas.addEventListener('click', () => {
-    const wasStill = still();
-    clock.setPlaying(!clock.playing);
-    if (wasStill) start();
-  });
-  stage.onresize = () => { if (cur) layout(); };
-
-  // ----- the map: one block of six timings (rows) for each phase; across, the lag d
-  const mctx = map.getContext('2d', { alpha: false });
-  const ncols = 2 * D + 1;
-  let q = 8, gut = 40, top = 22, gap = 6, hover = null, dpr = 1, mox = 0;
-  const hoverEl = $('#cmap-hover');
-  const rowY = (ph, u) => top + ph * (6 * q + gap) + u * q;
-  const colX = (d) => mox + gut + (d + D) * q;
-  function mlayout() {
-    dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const W = Math.round(map.parentElement.clientWidth * dpr);
-    gut = Math.round(46 * dpr);
-    q = Math.max(4, Math.min(Math.round(14 * dpr), Math.floor((W - gut) / ncols)));
-    if (W < 520 * dpr) { gut = Math.round(30 * dpr); q = Math.max(4, Math.min(Math.round(14 * dpr), Math.floor((W - gut) / ncols))); }
-    gap = Math.max(3, Math.round(q * 0.6));
-    top = Math.round(22 * dpr);
-    mox = Math.floor((W - gut - ncols * q) / 2);
-    const H = top + 6 * (6 * q + gap) - gap + 2;
-    if (map.width !== W || map.height !== H) {
-      map.width = W; map.height = H;
-      map.style.height = `${H / dpr}px`;
-    }
-    mdraw();
-  }
-  function mdraw() {
-    const g = Math.max(1, Math.round(q * 0.14)), h = g >> 1, s = q - g;
-    const box = (X0, Y0, w, ht, color) => { mctx.fillStyle = color; mctx.fillRect(X0, Y0, w, ht); };
-    const ring = (X0, Y0, S, w, color) => { box(X0, Y0, S, w, color); box(X0, Y0 + S - w, S, w, color); box(X0, Y0, w, S, color); box(X0 + S - w, Y0, w, S, color); };
-    box(0, 0, map.width, map.height, COLORS.paper);
-    const small = Math.round(11 * dpr);
-    mctx.font = `${small}px ${getComputedStyle(document.body).getPropertyValue('--mono') || 'monospace'}`;
-    mctx.textBaseline = 'alphabetic';
-    // the line where both arrive together, and which side is which
-    const mid = colX(0) + (q >> 1);
-    box(mid, top - Math.round(6 * dpr), Math.max(1, Math.round(dpr)), map.height - top + Math.round(6 * dpr), '#c9c4b9');
-    mctx.fillStyle = '#77736a';
-    mctx.textAlign = 'right';
-    mctx.fillText('← down first', mid - Math.round(6 * dpr), top - Math.round(8 * dpr));
-    mctx.textAlign = 'left';
-    mctx.fillText('right first →', mid + Math.round(6 * dpr), top - Math.round(8 * dpr));
-    for (let ph = 0; ph < 6; ph++) {
-      mctx.fillStyle = sel.ph === ph ? COLORS.ink : '#77736a';
-      mctx.textAlign = 'right';
-      mctx.fillText(gut > 40 * dpr ? `phase ${ph}` : `${ph}`, mox + gut - Math.round(8 * dpr), rowY(ph, 0) + Math.min(small, 6 * q) );
-      for (let u = 0; u < 6; u++) for (let d = -D; d <= D; d++) {
-        const X0 = colX(d), Y0 = rowY(ph, u), k = kindOf(outcomeAt(ph, u, d));
-        if (k === 'explodes') box(X0 + h, Y0 + h, s, s, '#d7d2c7');
-        else if (k === 'apart') { const dd = Math.max(1, Math.round(q / 7)), c = (q - dd) >> 1; box(X0 + c, Y0 + c, dd, dd, '#c9c4b9'); }
-        else if (k === 'clean') box(X0 + h, Y0 + h, s, s, COLORS.free);
-        else if (k === 'one') { box(X0 + h, Y0 + h, s, s, COLORS.free); const w = Math.max(1, Math.round(q * 0.2)); box(X0 + h + w, Y0 + h + w, s - 2 * w, s - 2 * w, COLORS.paper); }
-        else if (k === 'nothing') { const i = Math.max(2, Math.round(q * 0.2)); ring(X0 + i, Y0 + i, q - 2 * i, Math.max(1, Math.round(q / 12)), COLORS.ink); }
-        else { const i = Math.max(2, Math.round(q * 0.24)); box(X0 + i, Y0 + i, q - 2 * i, q - 2 * i, COLORS.ink); }
-      }
-    }
-    mctx.textAlign = 'left';
-    const mark = (p, color, w) => ring(colX(p.d) + h - w, rowY(p.ph, p.u) + h - w, s + 2 * w, w, color);
-    const same = (a, b) => a && b && a.ph === b.ph && a.u === b.u && a.d === b.d;
-    if (hover && !same(hover, sel)) mark(hover, COLORS.ink, Math.max(1, Math.round(q / 10)));
-    mark(sel, /one|clean/.test(kindOf(outcomeAt(sel.ph, sel.u, sel.d))) ? COLORS.ink : COLORS.free, Math.max(2, Math.round(q / 6)));
-  }
-  const at = (ev) => {
-    const r = map.getBoundingClientRect();
-    const Xp = (ev.clientX - r.left) * (map.width / r.width), Yp = (ev.clientY - r.top) * (map.height / r.height);
-    const d = Math.floor((Xp - colX(-D)) / q) - D;
-    if (d < -D || d > D) return null;
-    for (let ph = 0; ph < 6; ph++) {
-      const u = Math.floor((Yp - rowY(ph, 0)) / q);
-      if (u >= 0 && u < 6) return { ph, u, d };
-    }
-    return null;
-  };
-  const describe = (p) => `${where(p)}. ${words(read(outcomeAt(p.ph, p.u, p.d))).replace(/^./, (c) => c.toUpperCase())}.`;
-  function choose(p, user) {
-    sel = p; hover = null;
-    hoverEl.textContent = describe(p);
-    mdraw(); start();
-    if (user) {
-      clock.hold = 0; clock.setPlaying(true);
-      const r = fig.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > innerHeight) fig.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'nearest' });
-    }
-  }
-  map.addEventListener('click', (ev) => { const p = at(ev); if (p) choose(p, true); });
-  map.addEventListener('pointermove', (ev) => {
-    if (ev.pointerType !== 'mouse') return;
-    const p = at(ev);
-    if (p?.ph === hover?.ph && p?.u === hover?.u && p?.d === hover?.d) return;
-    hover = p;
-    hoverEl.textContent = describe(p || sel);
-    mdraw();
-  });
-  map.addEventListener('pointerleave', () => { hover = null; hoverEl.textContent = describe(sel); mdraw(); });
-  map.addEventListener('keydown', (ev) => {
-    const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[ev.key];
-    if (!k) return;
-    ev.preventDefault();
-    // up and down run on through the phases, as if the blocks were one long column
-    const d = sel.d + k[0], i = sel.ph * 6 + sel.u + k[1];
-    if (d < -D || d > D || i < 0 || i >= 36) return;
-    choose({ ph: Math.floor(i / 6), u: i % 6, d }, false);
-    clock.hold = 0; clock.setPlaying(true);
-  });
-  map.setAttribute('role', 'img');
-  map.setAttribute('aria-label', `A map of all ${squares.toLocaleString('en')} ways two free ships can cross at right angles, in six blocks, one for each phase of the ship flying down, coloured by what happens. Use the arrow keys to choose one.`);
-  openEl.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    const hh = openEl.getAttribute('href');
-    if (location.hash === hh) history.replaceState(null, '', location.pathname + location.search);
-    location.hash = hh;
-    scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
-  });
-  new ResizeObserver(mlayout).observe(map.parentElement);
-  choose(sel, false);
-}
-
-// Every section heading gets a link to itself, so a study can be shared directly.
-// ---------------------------------------------------------------------------
 // Slower than light: the glossary's slow ships (slow.js; every number checked by
 // tests/slow.test.mjs). A race of the smallest ship at each orthogonal speed, the moon
 // for light, noses on one column at generation 0, the region beyond the light front
@@ -2511,7 +1260,7 @@ function slow() {
     const el = document.createElement('figure');
     el.className = 'stage-flot';
     el.setAttribute('role', 'listitem');
-    el.innerHTML = '<div class="stage"><canvas role="img"></canvas><span class="stage-gen">gen <b>0</b></span></div><figcaption><span></span><br><i></i></figcaption>';
+    el.innerHTML = '<div class="stage"><canvas role="img"></canvas><span class="stage-gen">GEN <b>0</b></span></div><figcaption><span></span><br><i></i></figcaption>';
     el.querySelector('figcaption span').append(link(e));
     el.querySelector('figcaption i').textContent = `${facts(e)} · ${e.credit}`;
     el.querySelector('canvas').setAttribute('aria-label', `The ${e.name}, ${facts(e)}, behind the diagonal speed limit, simulated exactly.`);
@@ -2635,15 +1384,10 @@ for (const e of CATALOG) card(e);
 wakes();
 rakes();
 guns();
-collisions();
 wall(diamonds());
 four();
 fivePuffers();
 fiveCensus();
-dominoes();
-abreast();
-headon();
-crossing();
 slow();
 anchors();
 reducedMotion.addEventListener?.('change', wake);

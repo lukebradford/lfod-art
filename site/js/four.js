@@ -1,5 +1,5 @@
 // Four cells: every way to place four cells close enough to meet (each within two of
-// another, so they share a neighbour), counted once up to rotation and reflection,
+// another, so they share a neighbor), counted once up to rotation and reflection,
 // and what becomes of each. Every claim here is checked by tests/four.test.mjs, which
 // enumerates the placements independently and runs every one.
 //

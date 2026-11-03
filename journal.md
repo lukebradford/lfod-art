@@ -11,13 +11,29 @@ quiet sheet of warm paper on which this strange physics plays out exactly, with
 nothing faked, and should slowly become an atlas of the universe: its objects, its
 speeds, its collisions, its explosions, and the fragile structures that hold.
 
-Design language (established in session 1):
-- Warm paper `#fbfaf6`, ink `#141414`, faint graph-paper dots at cell corners.
-- **Red marks freedom**: a cell drawn red survived the previous generation, which in
-  B2/S0 means it had no neighbours at all. Newborn cells are ink. Cells that just
-  died leave a pale ghost for one generation. This colour coding is the site's
-  signature and should stay consistent everywhere.
-- Serif text (system Palatino/Iowan/Georgia), monospace for data. No web fonts.
+Design language (revised in session 15, at the owner's request; first set in session 1):
+- Pure white `#ffffff`, near-black ink `#0c0c0e`, neutral cool grays, faint
+  graph-paper dots at cell corners. Cells are drawn edge to edge, with no gap between
+  neighbors, so shapes read as shapes.
+- **Blue marks freedom** (`#1f4bff`): a cell drawn blue survived the previous
+  generation, which in B2/S0 means it had no neighbors at all. Newborn cells are ink.
+  Cells that just died leave a pale ghost for one generation. This color coding is the
+  site's signature and should stay consistent everywhere. Blue is also the only accent
+  in the interface (focus rings, selection, status).
+- One sans family: the platform's own (San Francisco, Segoe UI, Roboto). No web fonts.
+  Hierarchy comes from size and weight (600 headings with tight tracking), not from
+  ornament. Tabular figures wherever a number changes. Monospace only for the
+  rulestring and RLE.
+- Counters read `GEN 12`, `CELLS 6`, `CELL 4 PX`: a small uppercase label, then the
+  number in ink.
+- Buttons are quiet filled chips (8px radius, no border); the hero's play/pause is
+  solid ink. Pressed toggles turn ink.
+- Avoid the look agents fall into by default: warm cream "paper", serif body with
+  mono uppercase eyebrows, gradients, glass, shadows, pill badges.
+- American spelling and usage (neighbor, center, color, backward, around).
+- Don't make blanket claims about everything that exists ("the glossary knows four",
+  "a puffer flies at c", "the only one that..."). Say what is shown, and say which
+  source a claim comes from.
 - Every animation shows a generation counter; restarts are visible (counter → 0).
 - Everything is simulated on an unbounded plane (`Pattern`), never a torus, unless a
   piece says otherwise. If something grows too big to follow, we stop and say so.
@@ -129,6 +145,13 @@ Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
 tiny patterns; a shareable-URL sandbox; perhaps the page itself slowly becoming a
 LFoD field over the site's lifetime.
+
+Session 15 (owner's edits) pruned the site back to its core: the rule, two cells
+parting, the bestiary, wakes, rakes, guns, diamonds, four and five cells, and slower than
+light. The owner removed Collisions, Two dominoes, Side by side, Head-on, Crossing and
+the guns' Face to face. Don't bring them back unless asked; the history above, and
+backlog items that build on them, are kept only for the record. Where earlier entries
+say "red", read "blue".
 
 ## Backlog
 
@@ -795,3 +818,34 @@ LFoD field over the site's lifetime.
   period), or a half-born moon straddles the box; and a moon straddles any box edge it was
   born on, so the engine box must end where the moon's first two cells begin, not include them.
 - Mobile check through a 390 px iframe again (the window stops at 500).
+
+### 2026-11-03: Session 15, a cleaner page
+
+Changes asked for by the site's owner, one by one:
+
+- **Blue for the free.** Survivor cells (and wakes) are blue `#1f4bff` instead of red,
+  in `stage.js`, the CSS, the rule diagrams, the footer swatch and the favicon.
+- **Restyle.** White page, neutral grays, the system sans, 600-weight headings with
+  tight tracking, quiet filled buttons, tabular counters, numbered contents. The cream
+  paper, serif body and mono uppercase labels are gone (see the design language above).
+- **No gaps between cells**, on every canvas (`Stage.draw` and `paintField` now fill
+  whole cells), in the rule diagrams and in every glyph.
+- **`GEN` and `CELLS`** in caps wherever a counter sits on or beside a running pattern.
+- **Two cells, parting**: the ships now fly on out of the frame, the counter still
+  running, and the piece starts over only once both are 24 cells past the edge.
+- **Removed**: the Bestiary's opening paragraph; the Collisions, Two dominoes, Side by
+  side, Head-on and Crossing sections; and Face to face under Guns. Their modules
+  (`dominoes.js`, `abreast.js`, `headon.js`, `crossing.js`), tests and CSS went with
+  them, and so did the parts of `tests/objects.mjs` that only they used.
+  `collisions.js` stays, since Four and Five cells use its outcome parser; its test
+  stays too.
+- **Claims corrected.** "A puffer flies at the speed of light" now says these seven do;
+  "the glossary knows four" rakes is now "here are four" (the glossary has many more,
+  at c/2 and c/5 too); "a rake flies at the speed of light" now says these four do; the
+  free rake is no longer "the only one that fires free ships" (the glossary's freedom
+  collider fires short free ships, and anchor-track flotillas make them too); the
+  flip-flop rake's "no other rake of period 4" is gone (the glossary itself says it is
+  out of date); "only two guns are known" is now "here are two"; and the plus is no
+  longer called "the smallest object that dies in one generation".
+- **American usage** throughout: neighbor, center, backward, sweeping around, travelers.
+

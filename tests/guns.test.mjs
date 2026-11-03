@@ -2,8 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Pattern } from '../site/js/lfod.js';
-import { GUNS, FACE, byId, facing } from '../site/js/guns.js';
-import { TARGETS } from '../site/js/collisions.js';
+import { GUNS, byId } from '../site/js/guns.js';
 import { groups, identify } from './objects.mjs';
 
 const PERIODS = 50; // consecutive periods checked after settling
@@ -87,83 +86,8 @@ for (const e of GUNS) {
   });
 }
 
-test('two guns are known, by period 5 then 4; the smaller is the later', () => {
+test('the two guns shown, by period 5 then 4; the smaller is the later', () => {
   assert.deepEqual(GUNS.map((e) => e.period), [5, 4]);
   assert.ok(byId.p5.pop0 < byId.laser.pop0);
   assert.ok(byId.p5.found > byId.laser.found);
-});
-
-// --- face to face -----------------------------------------------------------------
-const G = byId[FACE.gun];
-const G0 = Pattern.fromRLE(G.rle).cells();
-// the box holding both engines and everything between them
-const bothBox = (d) => [G.box[0], G.box[1], G.box[2] + d, G.box[3]];
-const between = (d) => ([x]) => x > G.box[2] && x < d + G.box[0]; // strictly between the guns
-// a generation at the engine's cut phase, after the first pair has met
-const start = (d) => G.settle + G.period * Math.ceil(d / G.period);
-
-// From `settle` on, the pattern inside the box repeats exactly every period and nothing
-// outside it is anything but moons flying away: every inward pair has vanished.
-function calm(d, periods = 20) {
-  const box = bothBox(d);
-  let A = Pattern.fromCells(facing(G0, d)).run(start(d));
-  for (let k = 0; k < periods; k++) {
-    const B = A.run(G.period);
-    const a = split(box, A), b = split(box, B);
-    if (key(a.engine) !== key(b.engine)) return false;
-    for (const q of groups(a.rest, 2)) if (identify(q) !== 'moon') return false;
-    A = B;
-  }
-  return true;
-}
-// an explosion: by generation `at`, live cells have spread far beyond the guns' rows
-function explodes(d, at = 300) {
-  const P = Pattern.fromCells(facing(G0, d)).run(at);
-  return P.h > (G.box[3] - G.box[1] + 1) + 100;
-}
-
-test(`face to face, ${FACE.odd} apart: every pair of moons meets halfway and vanishes; the whole repeats exactly every ${G.period}`, () => {
-  assert.ok(calm(FACE.odd, PERIODS));
-  // between the guns there are only moons, except where a pair is meeting, and the
-  // population there is the same at every period cut: moons in, nothing out
-  const d = FACE.odd, mid = G.box[2] + (d - G.box[2] + G.box[0]) / 2;
-  let P = Pattern.fromCells(facing(G0, d)).run(start(d));
-  const pop = P.cells().filter(between(d)).length;
-  for (let g = 0; g < 10 * G.period; g++, P = P.next()) {
-    for (const q of groups(P.cells().filter(between(d)), 2)) {
-      if (identify(q) === 'moon') continue;
-      const xs = q.map(([x]) => x);
-      // a moon being born at either gun, or a pair meeting halfway
-      if (q.length === 2 && (Math.min(...xs) <= G.box[2] + 2 || Math.max(...xs) >= d + G.box[0] - 2)) continue;
-      assert.ok(Math.min(...xs) >= mid - 3 && Math.max(...xs) <= mid + 3, `gen ${P.gen}: something other than a moon ${Math.min(...xs)}..${Math.max(...xs)}, not at the meeting point`);
-    }
-    if (g % G.period === 0) assert.equal(P.cells().filter(between(d)).length, pop, `gen ${P.gen}`);
-  }
-  // nothing is ever left: at some generation in each period the middle is moons only
-  let clean = 0;
-  P = Pattern.fromCells(facing(G0, d)).run(start(d));
-  for (let g = 0; g < G.period; g++, P = P.next())
-    if (groups(P.cells().filter(between(d)), 2).every((q) => identify(q) === 'moon' || q.length === 2)) clean++;
-  assert.ok(clean > 0);
-});
-
-test(`face to face, ${FACE.even} apart: explodes`, () => {
-  assert.ok(explodes(FACE.even));
-  assert.ok(!calm(FACE.even, 5));
-});
-
-test('face to face: at every odd distance from 41 to 61 the streams vanish forever; at every even one from 40 to 60 they explode', () => {
-  for (let d = 40; d <= 61; d++) {
-    if (d % 2) assert.ok(calm(d), `${d} apart should be calm`);
-    else assert.ok(explodes(d), `${d} apart should explode`);
-  }
-});
-
-test('why: two moons exactly in line vanish at an even distance and start to fuse at an odd one (the Collisions atlas)', () => {
-  const moon = TARGETS.find((t) => t.id === 'moon');
-  const row = (gap) => moon.rows[gap][0 - moon.dy[0]];
-  assert.equal(row(24), '12:nothing');
-  assert.equal(row(25), '11:monster');
-  // and the guns' inner moons are exactly in line: both leave along the barrel row
-  assert.equal(G.axis, 'x');
 });

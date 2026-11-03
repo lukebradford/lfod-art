@@ -1,6 +1,6 @@
 // Diamonds: the smallest explosions. Every claim here is checked by
 // tests/diamonds.test.mjs, which enumerates every way to place two or three cells near
-// enough to interact (each cell within two of another, so they share a neighbour),
+// enough to interact (each cell within two of another, so they share a neighbor),
 // counted once up to rotation and reflection, and runs each one.
 //
 // Two cells: 5 placements. Side by side they part into two free ships; touching at a
@@ -15,7 +15,7 @@
 // with its top-left at (0, 0).
 //
 // Every explosion is a diamond: no cell can be born two diagonal steps beyond the
-// edge (it could have only one live neighbour, and birth needs two), so along the
+// edge (it could have only one live neighbor, and birth needs two), so along the
 // diagonals the edge advances at most one step of x + y per generation, while the tips
 // can advance at the speed of light, one cell per generation. Every seed here reaches
 // both limits early and holds them (tested through generation 600).

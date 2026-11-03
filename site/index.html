@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Live Free or Die · B2/S0</title>
 <meta name="description" content="A living, exactly simulated study of Live Free or Die, the cellular automaton where a cell survives only if it is alone and is born only between exactly two.">
-<meta name="theme-color" content="#fbfaf6">
+<meta name="theme-color" content="#ffffff">
 <meta property="og:title" content="Live Free or Die · B2/S0">
 <meta property="og:description" content="A cell survives only if it is alone. A cell is born only between exactly two. An exactly simulated, slowly growing artwork.">
 <meta property="og:type" content="website">
@@ -29,11 +29,7 @@
   "./js/four.js": "./js/four.js?v=dev",
   "./js/share.js": "./js/share.js?v=dev",
   "./js/five.js": "./js/five.js?v=dev",
-  "./js/dominoes.js": "./js/dominoes.js?v=dev",
-  "./js/abreast.js": "./js/abreast.js?v=dev",
-  "./js/headon.js": "./js/headon.js?v=dev",
   "./js/slow.js": "./js/slow.js?v=dev",
-  "./js/crossing.js": "./js/crossing.js?v=dev",
   "./js/rakes.js": "./js/rakes.js?v=dev",
   "./js/guns.js": "./js/guns.js?v=dev"
 } }
@@ -50,23 +46,23 @@
   </div>
   <p class="hero-hint" id="hint">A cell survives only if it is alone.<br>Tap the page to place one.</p>
   <div class="hero-meta" aria-live="off">
-    <span>gen <b id="gen">0</b></span>
-    <span>cells <b id="pop">6</b></span>
-    <span id="hero-scale-wrap" hidden>cell <b id="hero-scale">1</b> px</span>
+    <span>GEN <b id="gen">0</b></span>
+    <span>CELLS <b id="pop">6</b></span>
+    <span id="hero-scale-wrap" hidden>CELL <b id="hero-scale">1</b> PX</span>
     <span id="status" aria-live="polite"></span>
   </div>
   <div class="hero-controls">
-    <button type="button" id="play" aria-label="Pause">pause</button>
-    <button type="button" id="step" aria-label="Advance one generation">step</button>
-    <button type="button" id="restore" aria-label="Restore the monster">restore</button>
-    <button type="button" id="share" aria-label="Share a link to this beginning" hidden>share</button>
+    <button type="button" id="play" aria-label="Pause">Pause</button>
+    <button type="button" id="step" aria-label="Advance one generation">Step</button>
+    <button type="button" id="restore" aria-label="Restore the monster">Restore</button>
+    <button type="button" id="share" aria-label="Share a link to this beginning" hidden>Share</button>
   </div>
 </header>
 
 <main>
   <section class="rule" id="rule" aria-labelledby="rule-h">
     <h2 id="rule-h">The rule</h2>
-    <p class="lede">Every cell on an endless square grid is alive or dead, and looks at its eight neighbours. Then all of them change at once.</p>
+    <p class="lede">Every cell on an endless square grid is alive or dead, and looks at its eight neighbors. Then all of them change at once.</p>
     <div class="laws" id="laws"></div>
     <p>That is the whole universe. It is the opposite of company: a living cell keeps living only while nothing lives beside it, and life appears only where exactly two cells meet. Most beginnings explode outward at the speed of light into a widening diamond of chaos. A few, found by searching every small pattern, hold their shape forever.</p>
   </section>
@@ -78,15 +74,10 @@
       <li><a href="#bestiary">Bestiary</a> <span>the small things that last</span></li>
       <li><a href="#wakes">Wakes</a> <span>seven puffers and the solitude they leave</span></li>
       <li><a href="#rakes">Rakes</a> <span>puffers whose trail is ships</span></li>
-      <li><a href="#guns">Guns</a> <span>two things that stand still and fire</span></li>
-      <li><a href="#collisions">Collisions</a> <span>a moon meets a dot, a checker, a moon</span></li>
+      <li><a href="#guns">Guns</a> <span>things that stand still and fire</span></li>
       <li><a href="#diamonds">Diamonds</a> <span>why every explosion has one shape</span></li>
       <li><a href="#four">Four cells</a> <span>every quiet beginning of four</span></li>
       <li><a href="#five">Five cells</a> <span>the first growth without explosion</span></li>
-      <li><a href="#dominoes">Two dominoes</a> <span>every place for a second domino</span></li>
-      <li><a href="#abreast">Side by side</a> <span>two ships flying together</span></li>
-      <li><a href="#headon">Head-on</a> <span>two ships flying at each other</span></li>
-      <li><a href="#crossing">Crossing</a> <span>two ships at right angles</span></li>
       <li><a href="#slow">Slower than light</a> <span>the few ships that fly below c</span></li>
     </ol>
   </nav>
@@ -98,59 +89,34 @@
     </div>
     <figure class="stage stage-wide">
       <canvas id="parting-canvas" role="img" aria-label="A domino of two cells splitting into two light-speed ships."></canvas>
-      <figcaption class="stage-gen">gen <b>0</b></figcaption>
+      <figcaption class="stage-gen">GEN <b>0</b></figcaption>
     </figure>
   </section>
 
   <section class="bestiary" id="bestiary" aria-labelledby="bestiary-h">
     <h2 id="bestiary-h">Bestiary</h2>
-    <p class="lede">Everything here turned up when every pattern in a four-by-four box, and every pattern of up to seven cells in a five-by-five box, was run until it settled. Every claim on each card is checked by a test against the same engine that draws it. Names are the established ones, from the glossary of the <a href="https://lukebradford.github.io/lfod/">Live Free or Die Universe</a>, the rule's original pattern collection, matched to these patterns by simulation.</p>
     <div class="cards" id="cards"></div>
   </section>
 
   <section class="wakes" id="wakes" aria-labelledby="wakes-h">
     <h2 id="wakes-h">Wakes</h2>
-    <p class="lede">Some travellers leave something behind. A puffer flies at the speed of light and lays down a trail as it goes. In this universe the trail is made of solitude: nearly everything these seven leave behind is a dot, one cell with no neighbours, which will therefore live forever. That is why their wakes are red.</p>
+    <p class="lede">Some travelers leave something behind. A puffer is a moving pattern that lays down a trail as it goes, and these seven all fly at the speed of light. In this universe the trail is made of solitude: nearly everything they leave behind is a dot, one cell with no neighbors, which will therefore live forever. That is why their wakes are blue.</p>
     <div class="strips" id="strips"></div>
     <p class="aside">Each strip follows its puffer exactly, one generation per step, and all of them step together, so every wake streams past at the same speed: the speed of light. The whole trail is simulated, including the part that has scrolled out of view. Every few minutes they start over, and the counters jump back. Tap to pause. Patterns are from the <a href="https://lukebradford.github.io/lfod/glossary.html">LFoD Universe glossary</a>. Their periods, speeds, populations and wakes are all checked by tests.</p>
   </section>
 
   <section class="rakes" id="rakes" aria-labelledby="rakes-h">
     <h2 id="rakes-h">Rakes</h2>
-    <p class="lede">A puffer leaves dots. A rake leaves ships. The glossary knows <span class="n-rakes">four</span>, and <span class="n-rakes-moon">three</span> of them fire moons backwards. A rake flies at the speed of light, and so does what it fires, so a moon and the rake that fired it part at twice the speed of light: as fast as any two things in this universe can separate. Each strip here flies with its rake, and the moons stream away behind it at two cells a generation.</p>
+    <p class="lede">A puffer leaves dots. A rake leaves ships. Here are <span class="n-rakes">four</span> rakes from the glossary, and <span class="n-rakes-moon">three</span> of them fire moons backward. These four fly at the speed of light, and so does what they fire, so a moon and the rake that fired it part at twice the speed of light: as fast as any two things in this universe can separate. Each strip here flies with its rake, and the moons stream away behind it at two cells a generation.</p>
     <div class="strips" id="rstrips"></div>
     <p class="aside">Each strip follows its rake exactly, one generation per step, and all of them step together. Everything fired or left behind is simulated, including what has left the strip; the moons go on forever, and so do the free ships, which climb at forty-five degrees only because the camera is moving. Every few minutes they start over, and the counters jump back. Tap to pause. Patterns are from the <a href="https://lukebradford.github.io/lfod/glossary.html">LFoD Universe glossary</a>. Their periods, speeds, populations, what each fires and leaves every period, and that nothing fired or left ever touches the rake or anything else again, are all checked by tests that follow each one for fifty periods.</p>
   </section>
 
   <section class="guns" id="guns" aria-labelledby="guns-h">
     <h2 id="guns-h">Guns</h2>
-    <p class="lede">Everything on this page that makes ships has to fly to do it: a rake moves at the speed of light and leaves its ships behind. A gun stands still. Only <span class="n-guns">two</span> are known in this universe. Both fire moons, and both fire two ways at once, so each stands at the centre of a line of light that lengthens at the speed of light from both ends.</p>
+    <p class="lede">Everything on this page that makes ships has to fly to do it: a rake moves at the speed of light and leaves its ships behind. A gun stands still. Here are <span class="n-guns">two</span>. Both fire moons, and both fire two ways at once, so each stands at the center of a line of light that lengthens at the speed of light from both ends.</p>
     <div class="strips" id="gstrips"></div>
     <p class="aside">Each strip holds its gun still, one generation per step, and both step together. Everything fired is simulated, including what has left the strip; a moon goes on forever. Each gun is shown exactly as its source gives it, the small one firing left and right, the laser up and down, and the line by the counter says how big its cells are drawn. Tap a strip to pause it, and <a id="gun-open-p5" href="#">open the small gun</a> or <a id="gun-open-laser" href="#">the laser</a> in the field at the top to watch it fire into the open.</p>
-    <div class="wall-head">
-      <h3>Face to face</h3>
-    </div>
-    <p>Stand two of the small guns on one line, facing each other, and their inner streams meet halfway. Collisions found what two moons exactly in line do: an even number of cells apart they vanish, an odd number apart they begin to fuse into a monster. Which happens here is decided by whether the guns are an odd or an even number of cells apart. At an odd distance every pair meets in the middle and leaves nothing, forever: two guns firing at each other with nothing to show for it. At an even distance the first pair begins to fuse, the next pair arrives five generations later, long before it has finished, and everything explodes.</p>
-    <div class="strips" id="fstrips"></div>
-    <div class="sphases" role="group" aria-label="How far apart the guns stand" id="face-choice"></div>
-    <p class="aside">Odd or even is all that matters: every odd distance from 41 to 61 is tested to go on forever, and every even one to explode. Shown are <span class="n-face-odd">101</span> and <span class="n-face-even">100</span>. The explosion is stopped where it reaches the edge of the strip, and the strip starts over.</p>
-  </section>
-  <section class="collide" id="collisions" aria-labelledby="collide-h">
-    <h2 id="collide-h">Collisions</h2>
-    <p class="lede">Nothing can catch a moon: it already moves at the speed of light. But things can stand in its way, or come the other way. Send one at a dot, a checker or another moon, and what happens depends only on how many rows off-centre it hits and, against anything that moves or blinks, whether the gap between them is even or odd. Here is every way it can go.</p>
-    <div class="collider">
-      <figure class="stage stage-collide">
-        <canvas id="collide" role="img" aria-label="A moon colliding with another object, simulated exactly."></canvas>
-        <figcaption class="stage-gen">gen <b>0</b></figcaption>
-        <span class="stage-status" id="collide-status"></span>
-      </figure>
-      <div class="collide-panel">
-        <div class="targets" role="group" aria-label="What the moon hits" id="targets"></div>
-        <table class="atlas" id="atlas"></table>
-        <p class="collide-result" id="collide-result" aria-live="polite"></p>
-      </div>
-    </div>
-    <p class="aside">The moon always enters from the left with its top row on row 0; the offset is the row where the target's top cell sits. Rows further out than those listed miss entirely, and the two carry on as if nothing were there. Of the <span id="n-touch">48</span> collisions that touch, <span id="n-explode">26</span> explode. Each run plays from generation 0 until the result has settled and anything still moving has left the frame; an explosion stops where it reaches the edge, still growing. Every outcome, the generation it settles by, and that the pieces never meet again, is checked by a test.</p>
   </section>
   <section class="diamonds" id="diamonds" aria-labelledby="diamonds-h">
     <h2 id="diamonds-h">Diamonds</h2>
@@ -158,24 +124,24 @@
     <figure class="stage stage-diamond">
       <canvas id="diamond" role="img" aria-label="Evil eyes, two cells a knight’s move apart, exploding, simulated exactly."></canvas>
       <div class="stage-name"><span id="diamond-name">evil eyes</span><button type="button" id="diamond-back" hidden>back to evil eyes</button></div>
-      <figcaption class="stage-gen">gen <b>0</b> · <span id="diamond-pop">2</span> cells · cell <span id="diamond-scale">16</span> px</figcaption>
+      <figcaption class="stage-gen">GEN <b>0</b> · CELLS <b id="diamond-pop">2</b> · CELL <b id="diamond-scale">16</b> PX</figcaption>
       <span class="stage-status" id="diamond-status"></span>
     </figure>
-    <p>Nothing moves faster than one cell per generation, and straight up, down, left and right the explosion does exactly that. Along the diagonals it cannot: a cell two diagonal steps beyond the edge could have only one living neighbour, and birth takes two. So the fastest growth this universe allows is a diamond, and every explosion here reaches that limit on all eight fronts within its first seventy generations, then holds it. Inside, about a fifth of the cells are alive at any moment, always different, never settling.</p>
+    <p>Nothing moves faster than one cell per generation, and straight up, down, left and right the explosion does exactly that. Along the diagonals it cannot: a cell two diagonal steps beyond the edge could have only one living neighbor, and birth takes two. So the fastest growth this universe allows is a diamond, and every explosion here reaches that limit on all eight fronts within its first seventy generations, then holds it. Inside, about a fifth of the cells are alive at any moment, always different, never settling.</p>
 
     <div class="wall-head">
       <h3>Three cells</h3>
-      <span class="strip-gen">gen <b id="wall-gen">0</b></span>
+      <span class="strip-gen">GEN <b id="wall-gen">0</b></span>
     </div>
     <p>Of the <span class="n-triples">31</span> ways to place three cells close enough to meet, <span class="n-triples-boom">21</span> explode. Here are all of them, growing together from generation 0 at one scale. One rule, one speed limit, and no two alike. Tap one to watch it large.</p>
     <div class="wall" id="wall"></div>
-    <p class="aside">“Close enough to meet” means every cell is within two of another, so they share a neighbour; rotations and reflections count once. The other ten three-cell placements die out or settle into a few small objects. The view above zooms out by halves as the diamond grows, so every cell stays a whole number of pixels, and it stops once the diamond fills the frame; the explosion itself never stops. Each frame is computed exactly on an unbounded plane by a bit-packed engine (32 cells per machine word), which is tested cell for cell against the one that draws everything else. The counts, the fates, the speeds and the density are all checked by tests.</p>
+    <p class="aside">“Close enough to meet” means every cell is within two of another, so they share a neighbor; rotations and reflections count once. The other ten three-cell placements die out or settle into a few small objects. The view above zooms out by halves as the diamond grows, so every cell stays a whole number of pixels, and it stops once the diamond fills the frame; the explosion itself never stops. Each frame is computed exactly on an unbounded plane by a bit-packed engine (32 cells per machine word), which is tested cell for cell against the one that draws everything else. The counts, the fates, the speeds and the density are all checked by tests.</p>
   </section>
 
   <section class="four" id="four" aria-labelledby="four-h">
     <div class="wall-head">
       <h2 id="four-h">Four cells</h2>
-      <span class="strip-gen" id="four-gen-wrap">gen <b id="four-gen">0</b></span>
+      <span class="strip-gen" id="four-gen-wrap">GEN <b id="four-gen">0</b></span>
     </div>
     <p class="lede">Add one more cell and there are <span class="n-quads">430</span> ways to place four close enough to meet. <span class="n-quads-boom">360</span> of them explode. Of the rest, <span class="n-vanish">26</span> simply vanish and <span class="n-settle">44</span> settle into something that lasts. Here are all <span class="n-settle">44</span>, from generation 0.</p>
     <div class="fwall" id="fwall"></div>
@@ -187,21 +153,21 @@
   <section class="five" id="five" aria-labelledby="five-h">
     <div class="wall-head">
       <h2 id="five-h">Five cells</h2>
-      <span class="strip-gen" id="five-gen-wrap">gen <b id="five-gen">0</b></span>
+      <span class="strip-gen" id="five-gen-wrap">GEN <b id="five-gen">0</b></span>
     </div>
     <p class="lede">One more cell, and there are <span class="n-five">6,634</span> ways to place five close enough to meet. <span class="n-five-boom">6,151</span> explode, <span class="n-five-vanish">59</span> vanish and <span class="n-five-settle">415</span> settle. The last nine do something no smaller placement does: they grow forever and never explode. Each becomes a <a href="https://lukebradford.github.io/lfod/glossary.html#double-dot-puffer">double dot puffer</a>, which flies off at the speed of light and leaves a dot behind every two generations. One of them makes two, flying apart.</p>
     <div class="pstrips" id="pstrips" role="list" aria-label="The nine five-cell placements that become double dot puffers, all from generation 0"></div>
-    <p>The double dot puffer is the smallest known puffer: six cells, in the form the glossary gives. These start with five and grow into it within <span class="n-five-puff-by">9</span> generations. In this universe a trail is a line of dots, each a cell alone, so each one lives forever. Four cells can grow forever too, but only if they start too far apart to meet: see <a href="#dominoes-h">two dominoes</a>, below.</p>
+    <p>The double dot puffer is the smallest known puffer: six cells, in the form the glossary gives. These start with five and grow into it within <span class="n-five-puff-by">9</span> generations. In this universe a trail is a line of dots, each a cell alone, so each one lives forever.</p>
 
     <div class="wall-head">
       <h3>All <span class="n-five-calm">483</span></h3>
     </div>
-    <p>Here is every five-cell placement that doesn’t explode, grouped by what it becomes. Tap one to watch it. Five cells bring the first <a href="https://lukebradford.github.io/lfod/glossary.html#ant">ant</a>, the period-6 oscillator found by Josh Ball, from a single placement. They also bring the first lone free ship: before now, free ships were only ever born in pairs flying apart. Among the ones that vanish is the <a href="https://lukebradford.github.io/lfod/glossary.html#plus">plus</a>, which the glossary calls the smallest object that dies in one generation.</p>
+    <p>Here is every five-cell placement that doesn’t explode, grouped by what it becomes. Tap one to watch it. Five cells bring the first <a href="https://lukebradford.github.io/lfod/glossary.html#ant">ant</a>, the period-6 oscillator found by Josh Ball, from a single placement. They also bring the first lone free ship: before now, free ships were only ever born in pairs flying apart. Among the ones that vanish is the <a href="https://lukebradford.github.io/lfod/glossary.html#plus">plus</a>.</p>
     <div class="census">
       <figure class="stage stage-player" id="player">
         <canvas role="img" aria-label="A five-cell placement, simulated exactly."></canvas>
         <div class="stage-name"><span id="player-name"></span></div>
-        <figcaption class="stage-gen">gen <b>0</b></figcaption>
+        <figcaption class="stage-gen">GEN <b>0</b></figcaption>
         <span class="player-result" id="player-result" aria-live="polite"></span>
       </figure>
       <div class="mosaic" id="mosaic"></div>
@@ -209,156 +175,21 @@
     <p class="aside">Peace keeps getting rarer as cells are added. Four pairs in <span class="n-pairs">5</span> don’t explode, then <span class="n-triples-calm">10</span> triples in <span class="n-triples">31</span>, <span class="n-quads-calm">70</span> placements of four in <span class="n-quads">430</span>, and now <span class="n-five-calm">483</span> in <span class="n-five">6,634</span>, about one in fourteen. One explosion takes its time: at generation 40 it is still only 25 cells, and then it goes like all the rest. The puffers’ strips are drawn on a fixed plane, and each run lasts until the last puffer reaches the right edge. The pair’s puffers leave their strip halfway through, and like everything else here they keep going. Every count, fate and generation on this page is checked by tests that enumerate all <span class="n-five">6,634</span> placements independently of it and run each one. The puffers are checked over fifty periods: every cell they leave behind is a dot, and nothing else ever changes.</p>
   </section>
 
-  <section class="dominoes" id="dominoes" aria-labelledby="dominoes-h">
-    <h2 id="dominoes-h">Two dominoes</h2>
-    <p class="lede">A domino, two cells side by side, parts into two free ships that fly apart forever. Put down two dominoes and four ships fly out. What becomes of them depends only on where the second domino sits. Here is every place it can go, out to <span class="n-dom-lat">12</span> rows across and <span class="n-dom-lon">36</span> cells along, and what happens.</p>
-    <figure class="stage stage-duel" id="duel">
-      <canvas role="img" aria-label="Two dominoes, simulated exactly."></canvas>
-      <div class="stage-name"><span id="duel-name">dueling dominoes</span></div>
-      <figcaption class="stage-gen">gen <b>0</b></figcaption>
-      <span class="player-result" id="duel-result" aria-live="polite"></span>
-      <span class="stage-status" id="duel-status"></span>
-    </figure>
-    <figure class="dmap-fig">
-      <canvas class="dmap" id="dmap" tabindex="0" aria-describedby="dmap-help"></canvas>
-      <figcaption>
-        <p class="dmap-hover" id="dmap-hover" aria-live="polite"></p>
-        <ul class="dlegend">
-          <li><i class="k-first"></i>the first domino</li>
-          <li><i class="k-boom"></i>explodes</li>
-          <li><i class="k-settle"></i>they touch, then settle</li>
-          <li><i class="k-apart"></i>they never touch</li>
-          <li><i class="k-grow"></i>grows forever</li>
-        </ul>
-        <p class="dmap-help" id="dmap-help">Each square is a place for the second domino’s top cell. Tap one to watch it, or use the arrow keys. <a id="duel-open" href="#">Open this one in the field at the top</a>.</p>
-      </figcaption>
-    </figure>
-    <p>Close together, they almost always explode. In line, or nearly (up to five rows across), the two inner ships fly straight at each other. Usually that explodes too, but at the right distances the two ships annihilate, or leave a few dots and checkers, and the outer two fly away. (Every way two ships can meet head-on is mapped in <a href="#headon">head-on</a>, below.) Six to eight rows across, every meeting explodes. From twelve rows on, they never touch: a free ship never strays more than four rows beyond its domino, so at least two empty rows always lie between them, and no cell can see across two. At ten and eleven rows the ships only just brush past each other. Often that explodes too, but when it doesn’t, all four fly on, sometimes leaving a dot or a checker behind.</p>
-    <p>And at eleven rows across and two along, the ships flying the same way never get free of each other. Neither ship changes in the slightest: at every generation each domino is exactly what it would be alone. But every six generations their sparks reach the row halfway between them at the same moment, and a cell is born there, alone, so it lives forever. The glossary calls this <a href="https://lukebradford.github.io/lfod/glossary.html#dueling-dominoes">dueling dominoes</a>, “the smallest pattern that exhibits infinite linear growth”. Of all <span class="n-dom">479</span> placements here, it is the only one that grows. Each of its puffers is just two free ships flying side by side, and there are more ways for two ships to do that: see <a href="#abreast-h">side by side</a>, below.</p>
-    <p class="aside">Mirror images are the same placement, so the map is symmetric about the first domino. Of the <span class="n-dom">479</span>, <span class="n-dom-boom">347</span> explode, <span class="n-dom-apart">65</span> never touch, and <span class="n-dom-settle">66</span> touch and settle. Beyond 24 cells along, the map repeats every 12: the inner ships meet six generations later, in the same phase, and the pairs flying the same way are too far apart to touch. Each run plays from generation 0 on an unbounded plane until the result has settled and the ships have left the frame; an explosion stops where it reaches the edge, still growing. Every square, the generation each result is reached by, the symmetry, the repeat (checked out to 72 cells along), and every dot dueling dominoes lays down (for 700 generations) are checked by tests that run each placement and compare it with the two dominoes run alone.</p>
-  </section>
-  <section class="abreast" id="abreast" aria-labelledby="abreast-h">
-    <h2 id="abreast-h">Side by side</h2>
-    <p class="lede">Dueling dominoes is four free ships flying in two pairs. A free ship moves at the speed of light, so two flying the same way can never gain on each other or fall behind: whatever passes between them happens again six generations later, and again, forever, unless it destroys them. So here is every way to set a second free ship beside a first, flying the same way, in any of its six phases, anywhere close enough to touch. Nearly every one explodes. These <span class="n-sb-keep">nine</span> fly on together forever.</p>
-    <div class="flotillas" id="flotillas" role="list" aria-label="The four flotillas"></div>
-    <p>The first <span class="n-sb-flot-k">four</span> are flotillas: two ships that hold together forever and leave nothing behind. Every six generations their sparks reach across the gap and touch. For one, two or three generations something passes between them; then it is gone without a trace. The first is exactly two free ships, each just as it would be alone, in five generations out of every six.</p>
-    <div class="fleet-head"><span class="strip-gen">gen <b id="fleet-gen">0</b></span></div>
-    <figure class="fleet" id="fleet">
-      <div class="fleet-labels" aria-hidden="true"></div>
-      <div class="stage"><canvas role="img"></canvas></div>
-    </figure>
-    <ol class="fleet-key" id="fleet-key"></ol>
-    <p>The other <span class="n-sb-puff-k">five</span> are puffers. Where their sparks touch, something is left behind that is alone, and so can never die: a dot or two, or a checker, every six generations. The second is the puffer dueling dominoes makes two of; the others do not appear among the glossary’s patterns. In all nine, neither ship is ever changed for good: in at least three generations of every six, each is exactly what it would be alone.</p>
-
-    <div class="wall-head">
-      <h3>Every placement</h3>
-    </div>
-    <p>Of the <span class="n-sb-touch">1,429</span> places where the second ship touches the first, <span class="n-sb-boom">1,369</span> explode. In <span class="n-sb-one">45</span> more, a single free ship flies on, sometimes with dots, checkers or a moon. Two ships never come through a meeting and part as strangers: they explode, only one ship comes out, or they stay together forever. Choose the second ship’s phase, then a place for it.</p>
-    <figure class="stage stage-duel stage-abreast" id="sstage">
-      <canvas role="img" aria-label="Two free ships side by side, simulated exactly."></canvas>
-      <div class="stage-name"><span id="sstage-name"></span></div>
-      <figcaption class="stage-gen">gen <b>0</b></figcaption>
-      <span class="player-result" id="sstage-result" aria-live="polite"></span>
-      <span class="stage-status" id="sstage-status"></span>
-    </figure>
-    <div class="sphases" role="group" aria-label="The second ship’s phase" id="sphases"></div>
-    <figure class="dmap-fig">
-      <canvas class="dmap" id="smap" tabindex="0" aria-describedby="smap-help"></canvas>
-      <figcaption>
-        <p class="dmap-hover" id="smap-hover" aria-live="polite"></p>
-        <ul class="dlegend">
-          <li><i class="k-origin"></i>level with the first ship</li>
-          <li><i class="k-boom"></i>explodes</li>
-          <li><i class="k-settle"></i>one ship flies on</li>
-          <li><i class="k-apart"></i>they never touch</li>
-          <li><i class="k-flot"></i>a flotilla</li>
-          <li><i class="k-grow"></i>a puffer</li>
-        </ul>
-        <p class="dmap-help" id="smap-help">Each square is a place for the second ship: to the right is further ahead, down is further across. Blank squares are where the two would overlap. Tap one to watch it, or use the arrow keys. <a id="sstage-open" href="#">Open this one in the field at the top</a>.</p>
-      </figcaption>
-    </figure>
-    <p class="aside">The first ship is in its smallest form, the glossary’s twelve cells. Phase <i>k</i> means the second is <i>k</i> generations further through its six-generation cycle; <i>along</i> is how far ahead its path runs. A lone free ship never strays outside a band ten rows tall and fifteen columns long, so beyond <span class="n-sb-e">16</span> along or <span class="n-sb-dy">11</span> across two empty rows or columns always lie between the two ships, no cell can see both, and they never touch. Mirror images count once, so there are <span class="n-sb">1,938</span> placements, and <span class="n-sb-apart">509</span> of them never touch. The fleet above is one pattern, simulated exactly, its lanes far enough apart that they can never meet; the camera moves with it at the speed of light, and the trails stream out behind. Every square, the generation each result is reached by, which flotillas and puffers are the same, how each one behaves generation by generation, and that the fleet’s lanes never meet are checked by tests that run every placement.</p>
-  </section>
-  <section class="headon" id="headon" aria-labelledby="headon-h">
-    <h2 id="headon-h">Head-on</h2>
-    <p class="lede">Side by side, two free ships never close on each other. Head-on, they close at twice the speed of light. Here is every way two free ships can fly straight at each other: either one in any phase, at every timing, as far apart as eleven rows across. Of <span class="n-ho">504</span> meetings, <span class="n-ho-boom">390</span> explode. In <span class="n-ho-through">seven</span>, the two pass straight through each other.</p>
-    <div class="flotillas passings" id="passings" role="list" aria-label="The ways two free ships pass through each other"></div>
-    <p>They only ever pass at ten or eleven rows across, where nothing but their sparks can reach each other. And they pass untouched: from the moment they meet, each ship is exactly where and what it would have been if the other had never been there. <span class="n-ho-clean-k">Two</span> of these meetings leave no trace at all. The rest leave a dot or two, each alone and so alive forever, or a checker or two, blinking forever.</p>
-
-    <div class="wall-head">
-      <h3>Every meeting</h3>
-    </div>
-    <p>Exactly in line, <span class="n-ho-gone">9</span> meetings annihilate: the ships destroy each other and nothing at all is left. Another <span class="n-ho-debris">35</span> leave only dots and checkers. No meeting leaves one ship, and none makes anything else, not a moon, not a monster, not a third ship. Two free ships that meet head-on both come through, or neither does.</p>
-    <figure class="stage stage-duel stage-headon" id="hstage">
-      <canvas role="img" aria-label="Two free ships meeting head-on, simulated exactly."></canvas>
-      <div class="stage-name"><span id="hstage-name"></span></div>
-      <figcaption class="stage-gen">gen <b>0</b></figcaption>
-      <span class="player-result" id="hstage-result" aria-live="polite"></span>
-      <span class="stage-status" id="hstage-status"></span>
-    </figure>
-    <figure class="dmap-fig">
-      <canvas class="dmap" id="hmap" tabindex="0" aria-describedby="hmap-help"></canvas>
-      <figcaption>
-        <p class="dmap-hover" id="hmap-hover" aria-live="polite"></p>
-        <ul class="dlegend">
-          <li><i class="k-boom"></i>explodes</li>
-          <li><i class="k-gone"></i>nothing is left</li>
-          <li><i class="k-settle"></i>only dots and checkers are left</li>
-          <li><i class="k-flot"></i>they pass through each other</li>
-          <li><i class="k-apart"></i>they never touch</li>
-        </ul>
-        <p class="dmap-help" id="hmap-help">Each block is one phase of the second ship. In each, a square is one timing (to the right, its path starts one column further off) and one distance (down is one row further across). Tap one to watch it, or use the arrow keys. <a id="hstage-open" href="#">Open this one in the field at the top</a>.</p>
-      </figcaption>
-    </figure>
-    <p class="aside">Both ships are free ships, the first in its smallest form. Phase <i>k</i> means the second is <i>k</i> generations further through its six-generation cycle; timing <i>t</i> means its path starts <i>t</i> columns further off. Twelve columns further is the same meeting six generations later, so six phases and twelve timings are every way two ships can approach. Beyond <span class="n-ho-dy">11</span> rows across, two empty rows always lie between them, and they never touch. Mirror images count once: flipped top to bottom a meeting is the same distance across, and turned half round, phase <i>k</i> and timing <i>t</i> become phase 6 − <i>k</i> and timing <i>t</i> + 6, so the map’s <span class="n-ho-sq">864</span> squares hold <span class="n-ho">504</span> meetings, and <span class="n-ho-apart">63</span> of them never touch. Each run plays from generation 0 on an unbounded plane until the result has settled and anything moving has left the frame; an explosion stops where it reaches the edge, still growing. Every square, the generation each result is reached by, both symmetries, and that ships passing through are exactly as if alone are checked by tests that run every meeting.</p>
-  </section>
-  <section class="crossing" id="crossing" aria-labelledby="crossing-h">
-    <h2 id="crossing-h">Crossing</h2>
-    <p class="lede">Turn one ship a quarter and their paths cross. Here is every way two free ships can meet at right angles: the second in any phase, at every timing, arriving at the crossing any number of generations before or after the first. Of <span class="n-cr-touch">759</span> crossings where they touch, <span class="n-cr-boom">746</span> explode. In the other <span class="n-cr-one">thirteen</span>, one ship flies on and the other is gone.</p>
-    <div class="flotillas crossings" id="crossings" role="list" aria-label="Two crossings in which one ship erases the other"></div>
-    <p>The one that flies on is always the one that got there first, and it flies on untouched: from the moment they meet it is exactly where and what it would have been had the other never existed. The other arrives at least <span class="n-cr-lagmin">15</span> generations late, when only the tail of the first is still crossing its path, and runs into it. Usually it leaves a few dots or a checker behind. <span class="n-cr-clean-k">Two</span> of these crossings, shown above, leave nothing at all: one ship is wiped out by another that never notices.</p>
-
-    <div class="wall-head">
-      <h3>Every crossing</h3>
-    </div>
-    <p>Head-on, two ships come through together or not at all. Crossing, they never both come through. No crossing annihilates, and none makes anything new: what is left is one of the two ships that met, dots and checkers, or an explosion.</p>
-    <figure class="stage stage-duel stage-cross" id="cstage">
-      <canvas role="img" aria-label="Two free ships crossing at right angles, simulated exactly."></canvas>
-      <div class="stage-name"><span id="cstage-name"></span></div>
-      <figcaption class="stage-gen">gen <b>0</b></figcaption>
-      <span class="player-result" id="cstage-result" aria-live="polite"></span>
-      <span class="stage-status" id="cstage-status"></span>
-    </figure>
-    <figure class="dmap-fig">
-      <canvas class="dmap" id="cmap" tabindex="0" aria-describedby="cmap-help"></canvas>
-      <figcaption>
-        <p class="dmap-hover" id="cmap-hover" aria-live="polite"></p>
-        <ul class="dlegend">
-          <li><i class="k-boom"></i>explodes</li>
-          <li><i class="k-flot"></i>one ship flies on, leaving dots or checkers</li>
-          <li><i class="k-grow"></i>one ship flies on, leaving nothing</li>
-          <li><i class="k-apart"></i>they never touch</li>
-        </ul>
-        <p class="dmap-help" id="cmap-help">Each block is one phase of the ship flying down, each row in it one timing. Across, a square is how late that ship reaches the crossing: to the right of the line it comes after the ship flying right, to the left, before. Tap one to watch it, or use the arrow keys. <a id="cstage-open" href="#">Open this one in the field at the top</a>.</p>
-      </figcaption>
-    </figure>
-    <p class="aside">Both ships are free ships; the one flying right starts in its smallest form. Phase <i>k</i> means the one flying down is <i>k</i> generations further through its six-generation cycle; timing <i>t</i> moves its path <i>t</i> columns right and its start <i>t</i> rows up, which keeps its lag the same. Six columns and six rows further on is the same crossing six generations later, so six phases and six timings are every way two ships can cross. Lag is counted from when each nose reaches the other’s path. More than <span class="n-cr-d">21</span> generations apart, the ships never touch (from 28 on they can’t even come within reach of each other). Mirror images count once: reflected in a diagonal, the two ships swap roles, so the map’s <span class="n-cr-sq">1,548</span> squares hold <span class="n-cr">777</span> crossings, <span class="n-cr-apart">18</span> of which never touch. Each run plays from generation 0 on an unbounded plane; the faint bands are the ships’ paths, drawn under the cells. Every square, the generation each result is reached by, the symmetry, and that the ship that flies on is exactly as if alone are checked by tests that run every crossing.</p>
-  </section>
   <section class="slow" id="slow" aria-labelledby="slow-h">
     <h2 id="slow-h">Slower than light</h2>
     <p class="lede">Everything that moves on this page so far moves at the speed of light, one cell every generation. Every ship this site’s searches have turned up flies at that speed. Going slower is hard. The glossary of the Live Free or Die Universe knows <span class="n-slow">21</span> ships that do, most of them hundreds of cells. Here is the smallest at each speed, racing from one starting line.</p>
     <div class="wall-head race-head">
       <h3>The race</h3>
-      <span class="strip-gen">gen <b id="race-gen">0</b></span>
+      <span class="strip-gen">GEN <b id="race-gen">0</b></span>
     </div>
     <div class="race" id="race" role="list" aria-label="Six ships racing, one at each known speed"></div>
     <p>At generation 0, every ship’s nose is on the same column. The shaded side is beyond the light front, which moves one column every generation: whatever started behind that line can never be ahead of it. The moon rides it exactly. The rest fall behind, each at its own speed, and by the time the moon reaches the end of the track, the decade ship has gone a fifth of the way.</p>
-    <p>Watch the last lane. The decade ship is one of only two ships known whose nose ever moves backwards. Every five generations it falls back two cells, then creeps forward three. The other is the quintessential ship, which goes at the same speed with the same front end. No ship at the speed of light could do it: to keep up with light, a nose has to gain a cell every single generation.</p>
+    <p>Watch the last lane. The decade ship is one of only two ships known whose nose ever moves backward. Every five generations it falls back two cells, then creeps forward three. The other is the quintessential ship, which goes at the same speed with the same front end. No ship at the speed of light could do it: to keep up with light, a nose has to gain a cell every single generation.</p>
 
     <div class="wall-head">
       <h3>Diagonal</h3>
     </div>
-    <p>Straight ahead, a ship can keep up with light. Along a diagonal it can’t: a cell two diagonal steps beyond the leading edge can only ever have one living neighbour, and birth takes two, so nothing can advance diagonally faster than one step every two generations. That limit is why every explosion is a <a href="#diamonds">diamond</a>. The three diagonal ships known go half as fast as it allows, one step every four generations. The shaded corner is beyond the diagonal limit, where no cell can be alive.</p>
+    <p>Straight ahead, a ship can keep up with light. Along a diagonal it can’t: a cell two diagonal steps beyond the leading edge can only ever have one living neighbor, and birth takes two, so nothing can advance diagonally faster than one step every two generations. That limit is why every explosion is a <a href="#diamonds">diamond</a>. The three diagonal ships known go half as fast as it allows, one step every four generations. The shaded corner is beyond the diagonal limit, where no cell can be alive.</p>
     <div class="flotillas diags" id="diags" role="list" aria-label="The three known diagonal ships"></div>
 
     <div class="wall-head">
@@ -369,7 +200,7 @@
       <figure class="stage stage-slow" id="slowstage">
         <canvas role="img" aria-label="A slower-than-light ship, simulated exactly, the camera moving with it."></canvas>
         <div class="stage-name"><span id="slowstage-name"></span></div>
-        <figcaption class="stage-gen">gen <b>0</b></figcaption>
+        <figcaption class="stage-gen">GEN <b>0</b></figcaption>
       </figure>
       <table class="slow-table" id="slowtable">
         <thead><tr><th scope="col">ship</th><th scope="col">speed</th><th scope="col">period</th><th scope="col">cells</th><th scope="col">found by</th></tr></thead>
@@ -382,7 +213,7 @@
 
 <footer>
   <p>This site began as a blank white page on 1 November 2026. An AI agent grows it, one session at a time.</p>
-  <p>Every frame is the exact B2/S0 evolution of its starting state, on an unbounded plane. Cells that have <span class="free-swatch"></span> survived a generation are drawn in red: these are the free ones.</p>
+  <p>Every frame is the exact B2/S0 evolution of its starting state, on an unbounded plane. Cells that have <span class="free-swatch"></span> survived a generation are drawn in blue: these are the free ones.</p>
   <p>Whatever you place in the field at the top becomes a new beginning: the counter starts again from 0, and the address bar holds that beginning, so a link brings back exactly what you made. As it grows the view pulls back by halves, never below one pixel per cell, and the plane grows with it.</p>
   <p><a href="https://github.com/lukebradford/lfod-art">Source and journal</a></p>
 </footer>

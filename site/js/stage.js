@@ -2,13 +2,13 @@
 // animation clock that never skips or repeats a generation.
 
 export const COLORS = {
-  paper: '#fbfaf6',
-  ink: '#141414',
-  free: '#c0391f', // a cell that survived the last generation (it had no neighbours)
-  ghost: '#e8e5dc', // a cell that was alive one generation ago and is not now
-  dot: '#dedad0', // graph-paper dots at cell corners
-  beyond: '#efece3', // where nothing can be alive yet (past a light front or speed limit)
-  path: '#f4f1e8', // a ship's path, drawn faintly under the cells
+  paper: '#ffffff',
+  ink: '#0c0c0e',
+  free: '#1f4bff', // a cell that survived the last generation (it had no neighbors)
+  ghost: '#e9e9ee', // a cell that was alive one generation ago and is not now
+  dot: '#dcdce2', // graph-paper dots at cell corners
+  beyond: '#f2f2f5', // where nothing can be alive yet (past a light front or speed limit)
+  path: '#f5f5f8', // a ship's path, drawn faintly under the cells
 };
 
 export const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -57,14 +57,14 @@ export class Stage {
         for (let x = vx0; x <= vx1; x++) ctx.fillRect(ox + x * cs - h, oy + y * cs - h, d, d);
     }
 
-    const inset = cs >= 6 ? Math.max(1, Math.round(cs * 0.07)) : 0;
-    const size = cs - 2 * inset;
+    // cells fill their squares edge to edge: neighbors touch, with no gap between them
+    const size = cs;
 
     // ghosts: alive in prev, dead in cur
     if (prev && prev.w) {
       ctx.fillStyle = COLORS.ghost;
       eachVisible(prev, vx0, vy0, vx1, vy1, (x, y) => {
-        if (!cur.get(x, y)) ctx.fillRect(ox + x * cs + inset, oy + y * cs + inset, size, size);
+        if (!cur.get(x, y)) ctx.fillRect(ox + x * cs, oy + y * cs, size, size);
       });
     }
     if (!cur.w) return;
@@ -73,12 +73,12 @@ export class Stage {
     const free = [];
     eachVisible(cur, vx0, vy0, vx1, vy1, (x, y) => {
       if (prev && prev.get(x, y)) free.push(x, y);
-      else ctx.fillRect(ox + x * cs + inset, oy + y * cs + inset, size, size);
+      else ctx.fillRect(ox + x * cs, oy + y * cs, size, size);
     });
     if (free.length) {
       ctx.fillStyle = COLORS.free;
       for (let i = 0; i < free.length; i += 2)
-        ctx.fillRect(ox + free[i] * cs + inset, oy + free[i + 1] * cs + inset, size, size);
+        ctx.fillRect(ox + free[i] * cs, oy + free[i + 1] * cs, size, size);
     }
   }
 }
@@ -171,7 +171,7 @@ export function paintField(stage, f, cs, ox, oy) {
     for (let Y = ((oy - h) % cs + cs) % cs; Y < H; Y += cs)
       for (let X = ((ox - h) % cs + cs) % cs; X < W; X += cs) fillRect(px, W, H, X, Y, d, d, PX.dot);
   }
-  const inset = cs >= 6 ? Math.max(1, Math.round(cs * 0.07)) : 0, size = cs - 2 * inset;
+  const size = cs; // edge to edge, as in Stage.draw
   const { cur, prev, stride } = f;
   // rows and words that can hold a live cell now or one generation ago
   const R0 = Math.min(f.r0, f.pr1 >= f.pr0 ? f.pr0 : f.r0), R1 = Math.max(f.r1, f.pr1);
@@ -179,7 +179,7 @@ export function paintField(stage, f, cs, ox, oy) {
   // clip to the canvas
   const r0 = Math.max(R0, Math.floor((-oy / cs) - f.y0) - 1), r1 = Math.min(R1, Math.ceil((H - oy) / cs - f.y0) + 1);
   for (let r = r0; r <= r1; r++) {
-    const Y = oy + (f.y0 + r) * cs + inset;
+    const Y = oy + (f.y0 + r) * cs;
     const base = (r + 1) * stride + 1;
     for (let k = K0; k <= K1; k++) {
       const c = cur[base + k], p = prev[base + k];
@@ -187,7 +187,7 @@ export function paintField(stage, f, cs, ox, oy) {
       while (m) {
         const low = m & -m, i = 31 - Math.clz32(low);
         m ^= low;
-        const X = ox + (f.x0 + k * 32 + i) * cs + inset;
+        const X = ox + (f.x0 + k * 32 + i) * cs;
         if (X >= W || X + size <= 0) continue;
         const col = c & low ? (p & low ? PX.free : PX.ink) : PX.ghost;
         if (size === 1) { if (X >= 0 && Y >= 0 && Y < H) px[Y * W + X] = col; }

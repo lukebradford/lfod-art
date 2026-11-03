@@ -2,8 +2,8 @@
 // Shared verbatim by the website and the test suite. No dependencies.
 //
 // The rule, exactly:
-//   a dead cell with exactly 2 live neighbours is born;
-//   a live cell with exactly 0 live neighbours survives; every other live cell dies.
+//   a dead cell with exactly 2 live neighbors is born;
+//   a live cell with exactly 0 live neighbors survives; every other live cell dies.
 
 export const RULESTRING = 'B2/S0';
 
@@ -19,7 +19,7 @@ export function isLFoDRule(s) {
   return birth === '2' && survival === '0';
 }
 
-// next state given current state (0/1) and live-neighbour count (0..8)
+// next state given current state (0/1) and live-neighbor count (0..8)
 export function nextState(alive, n) {
   return alive ? (n === 0 ? 1 : 0) : (n === 2 ? 1 : 0);
 }
@@ -128,7 +128,7 @@ export class Pattern {
   next() {
     const { w, h, data } = this;
     if (w === 0) return new Pattern(0, 0, 0, 0, new Uint8Array(0), this.gen + 1);
-    // Output box is the old box grown by 1 on every side (W x H). To read neighbours
+    // Output box is the old box grown by 1 on every side (W x H). To read neighbors
     // without bounds checks, copy the old cells into a buffer padded by 2 (PW x PH);
     // output cell (X, Y) is padded cell (X + 1, Y + 1).
     const W = w + 2, H = h + 2;
@@ -246,7 +246,7 @@ export function classify(pattern, { maxGen = 256, settle = 0 } = {}) {
 // It is exact on the infinite plane, not a torus or a clipped box: cells outside the
 // box are dead, and step() refuses to run (returns false, state unchanged) once any
 // live cell lies on the box's outermost ring. While that ring is empty, no cell
-// outside the box has a live neighbour, so none can be born there, and the whole
+// outside the box has a live neighbor, so none can be born there, and the whole
 // plane's next generation is exactly what is computed inside. Cross-tested against
 // Pattern in tests/field.test.mjs.
 //
@@ -398,7 +398,7 @@ export class Field {
       let rowAny = false;
       for (let k = K0; k <= K1; k++) {
         const aR = src[up + k + 1], bR = src[row + k + 1], cR = src[dn + k + 1];
-        // the eight neighbour planes: west is x - 1, so shift toward higher bits
+        // the eight neighbor planes: west is x - 1, so shift toward higher bits
         const n1 = (a << 1) | (aL >>> 31), n2 = a, n3 = (a >>> 1) | (aR << 31);
         const n4 = (b << 1) | (bL >>> 31), n5 = (b >>> 1) | (bR << 31);
         const n6 = (c << 1) | (cL >>> 31), n7 = c, n8 = (c >>> 1) | (cR << 31);
