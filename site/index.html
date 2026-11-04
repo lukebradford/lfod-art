@@ -31,7 +31,8 @@
   "./js/five.js": "./js/five.js?v=dev",
   "./js/slow.js": "./js/slow.js?v=dev",
   "./js/rakes.js": "./js/rakes.js?v=dev",
-  "./js/guns.js": "./js/guns.js?v=dev"
+  "./js/guns.js": "./js/guns.js?v=dev",
+  "./js/periods.js": "./js/periods.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -79,6 +80,7 @@
       <li><a href="#four">Four cells</a> <span>every quiet beginning of four</span></li>
       <li><a href="#five">Five cells</a> <span>the first growth without explosion</span></li>
       <li><a href="#slow">Slower than light</a> <span>the few ships that fly below c</span></li>
+      <li><a href="#periods">Periods</a> <span>the oscillator of every known period</span></li>
     </ol>
   </nav>
 
@@ -208,6 +210,28 @@
       </table>
     </div>
     <p class="aside">Every ship here is the glossary’s pattern, exactly as it gives it, simulated on an unbounded plane, each lane and tile on its own. Speeds, periods and the fewest and most cells over a period are measured by tests that run each one; so are the light front and the diagonal limit, that the noses of the decade and quintessential ships (and no others) fall back, and that each racer is the smallest at its speed. On narrow screens the longest ships start with their tails cut off by the left edge of the track, and come into view as they move. Names and discoverers are the glossary’s, and so is what counts as known.</p>
+  </section>
+  <section class="periods" id="periods" aria-labelledby="periods-h">
+    <h2 id="periods-h">Periods</h2>
+    <p class="lede">Every oscillator shown above repeats within twenty generations: the checker every 2, the lever, the radar and the anchor every 4, the ant every 6, the two-slot anchor track every 12, the monster every 19. The anchor track is the one that can be made longer. A pair of cells shuttles between two rows of dots, and every pair of dots added is one more slot for it. Here are tracks of two to nine slots. Their periods are <span class="n-track-periods">12, 28, 28, 124, 252, 60, 60 and 2,044</span>: more track does not mean a longer period. Under each track, one row every two generations, a mark is set down wherever a pair sits.</p>
+    <div class="tracks" id="tracks" role="list" aria-label="Anchor tracks of two to nine slots, each above a record of where its pairs have been"></div>
+    <p>What the track is doing is simple, and the same at every size. Every two generations each pair becomes two, one two cells to the left and one two cells to the right, and where two land on the same spot both vanish. At either end of the track one copy has nowhere to go and is lost. That is a famous rule: Wolfram’s <a href="https://en.wikipedia.org/wiki/Rule_90">Rule 90</a>, the one-dimensional automaton in which a cell is on when exactly one of its two neighbors was. Drawn down the page, as the looms above do, Rule 90 weaves Sierpiński triangles; here they fold back on themselves at the two ends of the track.</p>
+    <p>The period follows from Rule 90’s arithmetic. A track of <i>s</i> slots repeats after <span class="nowrap">4 × (2<sup><i>k</i></sup> − 1)</span> generations, where <i>k</i> is the smallest number for which 2<sup><i>k</i></sup> is one more or one less than a multiple of <span class="nowrap">2<i>s</i> + 1</span>. For nine slots, <span class="nowrap">2<sup>9</sup> = 512 = 27 × 19 − 1</span>, so the period is 2,044. For fourteen slots, <span class="nowrap">2<sup>14</sup> = 16,384 = 565 × 29 − 1</span>, and thirty cells take 65,532 generations to come around. The <a href="https://lukebradford.github.io/lfod/glossary.html#anchor-track">glossary’s anchor track page</a> gives both the rule and the formula. The tests confirm them, cell for cell over a full period, for every track from one to seventeen slots, and confirm the periods of the three larger tracks in the table below.</p>
+
+    <div class="wall-head"><h3>Every known period</h3></div>
+    <p>The Live Free or Die Universe collection keeps a <a href="https://lukebradford.github.io/lfod/periods.html">table of the smallest known oscillator at each period</a>. Here it is, every row run for a full period by the engine, which measures the period and the fewest cells rather than copying them. Three are new to this page, all found by Josh Ball: the sandbar, the starfish and the sparkler. Past 19, every known period belongs to an anchor track, and the last of them, 1,365 slots and 2,732 cells, comes around every 32,764 generations; the test runs it all the way. Tap one to watch it.</p>
+    <div class="periods-atlas">
+      <figure class="stage stage-periods" id="periodstage">
+        <canvas role="img" aria-label="An oscillator from the table of periods, simulated exactly, the camera still."></canvas>
+        <div class="stage-name"><span id="periodstage-name"></span></div>
+        <figcaption class="stage-gen">GEN <b>0</b></figcaption>
+      </figure>
+      <table class="slow-table periods-table" id="periodtable">
+        <thead><tr><th scope="col">period</th><th scope="col">oscillator</th><th scope="col">cells</th><th scope="col">found by</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="aside">Periods 7, 9, 10 and 11, and most others, are not known to be impossible, only not yet found: the table is the collection’s, as of November 2026, and so is what counts as known and who found what. Each track and the viewer is its own exact plane. The viewer holds its camera still with the pattern’s starting box in the middle, except for the 1,365-slot track, which is far wider than the frame and is shown from its left end. Tap the tracks to pause them.</p>
   </section>
 </main>
 

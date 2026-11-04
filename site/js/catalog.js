@@ -73,7 +73,7 @@ export const CATALOG = [
     source: src('anchor-track'),
     rle: 'x = 6, y = 5, rule = B2/S0\nbo3bo$o2$o$bo3bo!',
     kind: 'osc', period: 12, dx: 0, dy: 0, pop: [6, 14], hull: [9, 5],
-    note: 'An anchor shuttling along a track of dots. Add more pairs of dots and the track, and its period, grows without limit.',
+    note: 'An anchor shuttling along a track of dots. Add pairs of dots and the period changes by a rule of its own: see Periods, below.',
   },
   {
     id: 'monster',

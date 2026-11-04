@@ -140,6 +140,18 @@ and leaves nothing, forever, and at an even number the first pair has not finish
 when the next arrives, and everything explodes. Odd or even is all that matters. The motif
 is the fixed camera: the first strips on the site where nothing moves but what is fired.
 
+Session 16 found the sixteenth: **the computer**. The anchor track, in the bestiary since
+session 1, is an oscillator that can be made longer, and its period follows no obvious
+pattern (12, 28, 28, 124, 252, 60, 60, 2044 for two to nine slots) because the track is
+running Wolfram's Rule 90: every two generations each pair of cells on it becomes two, one
+two cells left and one two cells right, and two that land together cancel. The period is
+4(2^k - 1) with k the multiplicative suborder of 2 mod 2s+1, which is Rule 90's own
+arithmetic, and thirty cells can take 65,532 generations to come around. The piece is a row
+of tracks each weaving its own space-time diagram (Sierpinski triangles folded at the
+track's ends) on a loom below it, and the collection's table of the smallest known
+oscillator at every period, every row run for a full period. The motif is the one-
+dimensional automaton inside the two-dimensional one, made visible.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -211,11 +223,20 @@ say "red", read "blue".
   they have names before giving them any.
 - **Four-cell tiles, larger**: tapping a four-cell tile could play it large, as the
   three-cell wall does with the Diamonds stage.
-- **Anchor track periods**: the glossary lists the first iterations' periods as
-  12, 28, 124, 124, 252, 60. Extending the two-slot track by adding dot pairs 4
-  cells apart gives 12, 28, 28, 124, 252, 60, 60 in our engine, so the glossary's
-  iterations are probably built differently. Find the right construction (the
-  collection's "Anchor track periods" file) before claiming the sequence.
+- **Anchor tracks, more** (the periods are settled: session 16; the wiki's entry, in
+  `data/later.json`, has the corrected list 12, 28, 28, 124, 252, 60 and the Rule 90
+  account). Still untouched: tracks that start with more than one pair (the wiki says
+  several distinct tracks can share a slot count when a cycle doesn't visit every
+  arrangement), the anchor eater / biter / nibbler trailers that turn a track left by a
+  puffer into a ship or puffer of period 8 * 2^n (the collection's puffer and spaceship
+  period tables are full of them), the infinite anchor track (a puffer whose trail is
+  aperiodic because its track keeps growing), and the "digits" period examples in the
+  collection's `2013 Anchor tracks.rle`. A loom for the viewer's tracks too, and a
+  "jump to generation" control so the 65,532 can be seen coming around.
+- **Other periods**: the collection's puffer and spaceship period tables (`periods.json`)
+  could join the oscillator table as two more tabs; the smallest puffer or ship of each
+  period, every one run. Period 7 (rake and bake) and 9 (arrow puffer) exist as puffers
+  but no oscillator is known at either.
 - **More wakes**: nickel puffer (p5) and radar puffer did not verify with the simple
   front-zone test within 40 columns / 96 generations of settling; find out why (longer
   transient? a rake, whose debris moves?) before showing them. The fake rake puffer (p8,
@@ -855,3 +876,40 @@ the new palette (white, ink, blue). `collisions.js` is now `outcomes.js`: only t
 parser and `phrase`, which Four and Five cells use, with a small test of its own; the
 collision atlas data and its test are gone, as are the four tools (`abreast`, `crossing`,
 `dominoes`, `headon`) that generated data for the removed sections.
+
+### 2026-11-04: Session 16, periods
+
+- **New study, Periods** (tenth in the contents, after Slower than light): the anchor
+  track family and the collection's table of the smallest known oscillator at every period.
+- `site/js/periods.js`: `track(s)` builds the s-slot track in the glossary's form (the
+  two-slot RLE, plus a pair of dots four cells to the right per slot; a test checks it is
+  the bestiary's pattern), `trackPeriod(s) = 4 * 2^sord(2, 2s+1) - 4`, the Rule 90 step on
+  the track's 2s sites, `sitesOf` (which sites hold a pair at an even generation) and
+  `TABLE`, the collection's 21 rows (dot, checker, sandbar, lever, starfish, ant, sparkler,
+  2-slot track, monster, then tracks of 3, 7, 5, 6, 21, 25, 9, 12, 11, 17, 1365 and 14
+  slots). The sandbar (p3, 32 cells), starfish (p5, 64) and sparkler (p8, 12) are new to the
+  page, all Josh Ball's, RLEs from the wiki entries in the collection's `data/wiki.json`.
+- `tests/periods.test.mjs` (43 tests, ~9 s): for one to seventeen slots, at every even
+  generation of a full period the track is exactly its dots plus a pair at each site Rule
+  90 (null beyond either end, one step per two generations) says is on, so the period is
+  Rule 90's; the period, fewest cells (2s+2) and hull over a period are measured; every
+  table row is run until it returns (the 1,365-slot track, 2,732 cells, all 32,764
+  generations, in about 4 s); each table track is the fewest slots giving its period; the
+  shown tracks' periods are 12, 28, 28, 124, 252, 60, 60, 2044.
+- **The looms**: eight tiles (two to nine slots), each a live track on a fixed camera with
+  a canvas below that gains a row every two generations, a mark wherever a pair sits, the
+  columns of dots drawn faintly through it. It is the track's own Rule 90 space-time
+  diagram: Sierpinski triangles folded at the track's ends, plain to see in the 7- and
+  8-slot tiles, whose periods are both 60. One clock drives all eight; tap to pause. With
+  motion reduced the looms open already woven.
+- **The viewer**: the table's rows are buttons; the viewer holds the camera still with the
+  starting box centered (margin for sparks), except that a track too wide to fit at a
+  readable size is shown from its left end at up to 8 px per cell (the 1,365-slot one).
+- Text: the lede counts the periods seen so far on the page, the Rule 90 paragraph says
+  only what the test checks, the arithmetic paragraph works 9 and 14 slots by hand (512 =
+  27 x 19 - 1; 16,384 = 565 x 29 - 1), and the aside says the table and its credits are the
+  collection's as of November 2026. The bestiary's two-slot track note no longer says the
+  period "grows without limit" (it doesn't, monotonically); it points to Periods.
+- Journal's backlog note about anchor track periods is resolved: the engine's construction
+  was right all along; the glossary's old list (12, 28, 124, 124, 252, 60) was a typo the
+  wiki later corrected to 12, 28, 28, 124, 252, 60.

@@ -9,6 +9,7 @@ import * as F5 from './five.js';
 import * as SL from './slow.js';
 import * as RK from './rakes.js';
 import * as GN from './guns.js';
+import * as PD from './periods.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -1344,6 +1345,116 @@ function slow() {
   choose(SL.byId('decade-ship'));
 }
 
+// ---------------------------------------------------------------------------
+// Periods: anchor tracks, and the collection's table of the smallest known oscillator
+// at each period (periods.js; every number checked by tests/periods.test.mjs). Each
+// track runs live on a fixed camera with a loom under it: one row every two
+// generations, a mark wherever a pair sits, which is the track's Rule 90 space-time
+// diagram, the newest row at the bottom. A fixed-camera viewer plays any row of the table.
+const LOOM = 36; // rows the loom holds (each two generations)
+const TRACK_RATE = 12;
+
+function periods() {
+  const host = $('#tracks'), table = $('#periodtable'), fig = $('#periodstage');
+  if (!host || !table || !fig) return;
+  const fmt = (n) => n.toLocaleString('en-US');
+  const list = (a) => a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('');
+  for (const el of document.querySelectorAll('.n-track-periods')) el.textContent = list(PD.SHOWN.map(PD.trackPeriod).map(fmt));
+  host.style.setProperty('--loom', LOOM);
+
+  // ----- the tracks and their looms
+  const tiles = PD.SHOWN.map((s) => {
+    const P = PD.trackPeriod(s);
+    const el = document.createElement('figure');
+    el.className = 'track';
+    el.style.setProperty('--s', s);
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<div class="track-head"><b></b><span class="facts"></span></div><div class="stage"><canvas role="img"></canvas></div><div class="loom"><canvas aria-hidden="true"></canvas></div><span class="strip-gen">GEN <b>0</b></span>';
+    el.querySelector('.track-head b').textContent = `${s} slots`;
+    el.querySelector('.facts').textContent = `${2 * s + 2} cells · period ${fmt(P)}`;
+    el.querySelector('.stage canvas').setAttribute('aria-label', `A ${s}-slot anchor track, period ${fmt(P)}, simulated exactly; below it, one row every two generations, a mark wherever a pair sits.`);
+    host.append(el);
+    const t = { s, P, el, stage: new Stage(el.querySelector('.stage canvas')), loom: new Stage(el.querySelector('.loom canvas')), genEl: el.querySelector('.strip-gen b'), cur: PD.track(s), prev: null, rows: [] };
+    t.rows.push(PD.sitesOf(t.cur, s));
+    t.step = () => {
+      t.prev = t.cur; t.cur = t.cur.next();
+      if (t.cur.gen % 2 === 0) { t.rows.push(PD.sitesOf(t.cur, s)); if (t.rows.length > LOOM) t.rows.shift(); }
+    };
+    t.draw = () => {
+      const { W, H, dpr } = t.stage;
+      if (!W) return;
+      const css = parseFloat(getComputedStyle(host).getPropertyValue('--cs')) || 8;
+      const cs = Math.max(2, Math.floor(css * dpr));
+      // over a period the track spans x = -1 .. 4s - 1: center that, and its five rows
+      const ox = Math.round((W - (4 * s + 1) * cs) / 2) + cs, oy = Math.round((H - 5 * cs) / 2);
+      t.stage.draw(t.cur, t.prev, cs, ox, oy);
+      const L = t.loom, ctx = L.ctx;
+      ctx.fillStyle = COLORS.paper; ctx.fillRect(0, 0, L.W, L.H);
+      ctx.fillStyle = COLORS.beyond; // the columns of dots, faintly, so the loom reads as the track's record
+      for (let i = 0; i < s; i++) ctx.fillRect(ox + (1 + 4 * i) * cs, 0, cs, L.H);
+      ctx.fillStyle = COLORS.ink;
+      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) ctx.fillRect(ox + 2 * i * cs, r * cs, cs, cs); });
+      t.genEl.textContent = t.cur.gen;
+    };
+    t.stage.onresize = t.draw; t.loom.onresize = t.draw;
+    return t;
+  });
+  // with motion reduced the tracks stand still: show each loom already woven
+  if (reducedMotion.matches) for (const t of tiles) for (let i = 1; i < LOOM; i++) { t.step(); t.step(); }
+  for (const t of tiles) t.draw();
+  const clock = new Clock(host, TRACK_RATE, () => { for (const t of tiles) { t.step(); t.draw(); } });
+  host.addEventListener('click', () => clock.setPlaying(!clock.playing));
+
+  // ----- every known period: the table and the viewer
+  const stage = new Stage(fig.querySelector('canvas'));
+  const genEl = fig.querySelector('.stage-gen b'), nameEl = $('#periodstage-name');
+  const view = { e: null, cur: null, prev: null, box: null };
+  const buttons = [];
+  const link = (e) => {
+    const a = document.createElement('a');
+    a.href = e.source.url; a.rel = 'noopener'; a.textContent = e.name;
+    return a;
+  };
+  for (const e of PD.TABLE) {
+    const tr = document.createElement('tr');
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = e.name; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => { choose(e); if (matchMedia('(max-width: 860px)').matches) fig.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+    buttons.push([e, b]);
+    const th = document.createElement('th'); th.scope = 'row'; th.append(b);
+    const td = (v) => { const d = document.createElement('td'); d.textContent = v; return d; };
+    tr.append(td(fmt(e.period)), th, td(fmt(e.cells)), td(e.credit));
+    table.tBodies[0].append(tr);
+  }
+  const M = 8; // cells of margin around the starting box: room for the sparks
+  function viewDraw() {
+    const { W, H } = stage, { e, box } = view;
+    if (!W || !e) return;
+    let cs = Math.max(2, Math.min(18, Math.floor(Math.min(W / (box.w + 2 * M), H / (box.h + 2 * M)))));
+    // the camera stands still, the starting box in the middle; a track too wide to fit at a
+    // readable size is shown from its left end instead, at a size its rows allow
+    let ox = Math.round(W / 2 - (box.x0 + box.w / 2) * cs);
+    if (cs < 4 && box.w * cs > W) {
+      cs = Math.max(2, Math.min(8, Math.floor(H / (box.h + 2 * M))));
+      ox = 3 * cs - box.x0 * cs;
+    }
+    const oy = Math.round(H / 2 - (box.y0 + box.h / 2) * cs);
+    stage.draw(view.cur, view.prev, cs, ox, oy);
+    genEl.textContent = view.cur.gen;
+  }
+  function choose(e) {
+    view.e = e; view.cur = PD.patternOf(e); view.prev = null;
+    view.box = { x0: view.cur.x0, y0: view.cur.y0, w: view.cur.w, h: view.cur.h };
+    nameEl.replaceChildren(link(e), ` · period ${fmt(e.period)}`);
+    for (const [o, b] of buttons) b.setAttribute('aria-pressed', String(o === e));
+    viewDraw();
+  }
+  const viewClock = new Clock(fig, 8, () => { view.prev = view.cur; view.cur = view.cur.next(); viewDraw(); });
+  fig.addEventListener('click', (ev) => { if (!ev.target.closest('a')) viewClock.setPlaying(!viewClock.playing); });
+  stage.onresize = viewDraw;
+  choose(PD.byId('starfish'));
+}
+
 function anchors() {
   for (const sec of document.querySelectorAll('main section[id]')) {
     const h = sec.querySelector('h2');
@@ -1389,5 +1500,6 @@ four();
 fivePuffers();
 fiveCensus();
 slow();
+periods();
 anchors();
 reducedMotion.addEventListener?.('change', wake);
