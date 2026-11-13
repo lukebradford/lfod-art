@@ -329,6 +329,24 @@ section > p { max-width: 38em; }
 .stage-periods .stage-gen { background: color-mix(in srgb, var(--paper) 90%, transparent); padding: 3px 5px; border-radius: 4px; }
 .periods-table td:nth-child(1) { text-align: right; padding-right: 14px; }
 .periods-table td:nth-child(4) { text-align: left; padding-right: 0; }
+
+/* eaters */
+.eats { --cs: 4px; }
+.eats .track { width: max(calc(var(--w) * var(--cs)), 136px); }
+.eats .track .stage { height: calc(var(--rows) * var(--cs)); }
+/* sixteen columns (eight on phones), so each column is one remainder mod 4: the law reads down */
+.fates { list-style: none; margin: 24px 0 12px; padding: 0; display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); max-width: 760px; }
+.fates li:first-child { grid-column-start: 4; } /* 3 slots: the fourth column */
+.fates li { box-shadow: 0 0 0 0.5px var(--line); display: flex; flex-direction: column; align-items: center; padding: 6px 0 7px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.fates .n { font-size: 11px; color: var(--faint); }
+.fates .o { font-size: 14px; font-weight: 600; }
+.fate-ship .o { color: var(--ink); }
+.fate-puffer .o { color: var(--muted); font-weight: 400; text-decoration: underline dotted; text-underline-offset: 3px; }
+.fate-explodes .o { color: var(--faint); font-weight: 400; }
+.fates-key { font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0 0 24px; }
+.fates-key b { font-weight: 600; color: var(--ink); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.fates-key .k-puffer { color: var(--muted); font-weight: 400; text-decoration: underline dotted; text-underline-offset: 3px; }
+.fates-key .k-boom { color: var(--faint); font-weight: 400; }
 @media (max-width: 860px) {
   .periods-atlas { grid-template-columns: 1fr; }
   .stage-periods { position: relative; top: 0; height: 300px; }
@@ -406,6 +424,7 @@ footer p { max-width: 42em; margin: 0 0 10px; }
   .periods-table th:nth-child(3), .periods-table td:nth-child(3) { display: table-cell; }
   .periods-table td:nth-child(1) { padding-right: 8px; }
   .tracks { --cs: 6px; gap: 24px; }
+  .fates { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 }
 @media (max-width: 380px) {
   .cards { grid-template-columns: 1fr; }

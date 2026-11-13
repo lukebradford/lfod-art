@@ -10,6 +10,7 @@ import * as SL from './slow.js';
 import * as RK from './rakes.js';
 import * as GN from './guns.js';
 import * as PD from './periods.js';
+import * as EA from './eaters.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -1455,6 +1456,95 @@ function periods() {
   choose(PD.byId('starfish'));
 }
 
+// ---------------------------------------------------------------------------
+// Eaters: anchor eater ships (eaters.js; every claim checked by tests/eaters.test.mjs).
+// Each ship flies to the right at c with its camera, so the camera's origin moves one
+// cell a generation, exactly. Under each, a loom as in Periods: one row every two
+// generations, a mark wherever a pair sits on the track, in the ship's own frame, the
+// newest row at the bottom. All share one cell size, so the triangles' doubling shows.
+const EAT_LOOM = 48; // rows (each two generations, drawn two cells tall): one and a half of the 34-slot ship's triangles
+
+function eaters() {
+  const host = $('#eats'), fates = $('#fates');
+  if (!host || !fates) return;
+  const list = (a) => a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('');
+  for (const el of document.querySelectorAll('.n-eater-periods')) el.textContent = list(EA.SHOWN.map(EA.period));
+  for (const el of document.querySelectorAll('.n-eater-lo')) el.textContent = EA.TESTED[0];
+  for (const el of document.querySelectorAll('.n-eater-hi')) el.textContent = EA.TESTED[1];
+  host.style.setProperty('--loom', 2 * EAT_LOOM);
+
+  const ships = EA.SHOWN.map((s) => {
+    const P = EA.period(s), start = EA.eater(s);
+    // the ship's hull over a period, in its own frame (x minus the generation)
+    let hx0 = Infinity, hx1 = -Infinity, hy0 = Infinity, hy1 = -Infinity;
+    for (let g = 0, p = start; g < P; g++, p = p.next()) {
+      hx0 = Math.min(hx0, p.x0 - g); hx1 = Math.max(hx1, p.x0 + p.w - 1 - g);
+      hy0 = Math.min(hy0, p.y0); hy1 = Math.max(hy1, p.y0 + p.h - 1);
+    }
+    hx0 -= 1; hx1 += 1; hy0 -= 1; hy1 += 1; // a cell of paper all around
+    const w = hx1 - hx0 + 1, h = hy1 - hy0 + 1;
+    const el = document.createElement('figure');
+    el.className = 'track eat';
+    el.style.setProperty('--w', w); el.style.setProperty('--rows', h);
+    el.setAttribute('role', 'listitem');
+    el.innerHTML = '<div class="track-head"><b></b><span class="facts"></span></div><div class="stage"><canvas role="img"></canvas></div><div class="loom"><canvas aria-hidden="true"></canvas></div><span class="strip-gen">GEN <b>0</b></span>';
+    el.querySelector('.track-head b').textContent = `${s} slots`;
+    el.querySelector('.facts').textContent = `${EA.cells(s)} cells · period ${P}`;
+    el.querySelector('.stage canvas').setAttribute('aria-label', `A ${s}-slot anchor eater ship, period ${P}, flying right at the speed of light, simulated exactly with the camera flying with it; below it, one row every two generations, a mark wherever a pair sits on its track.`);
+    host.append(el);
+    const t = { s, w, h, hx0, hy0, el, stage: new Stage(el.querySelector('.stage canvas')), loom: new Stage(el.querySelector('.loom canvas')), genEl: el.querySelector('.strip-gen b'), cur: start, prev: null, rows: [] };
+    // the track runs from the trailer to x - gen = 4s + 3, where the front sets pairs down
+    // (the front's own machinery holds a pair four cells further on, not drawn)
+    const row = () => { const a = new Uint8Array(w), g = t.cur.gen; for (let i = 0; i < w && hx0 + i <= 4 * s + 3; i++) a[i] = EA.pairAt(t.cur, hx0 + i + g); return a; };
+    t.rows.push(row());
+    t.step = () => {
+      t.prev = t.cur; t.cur = t.cur.next();
+      if (t.cur.gen % 2 === 0) { t.rows.push(row()); if (t.rows.length > EAT_LOOM) t.rows.shift(); }
+    };
+    t.draw = () => {
+      const { W, dpr } = t.stage;
+      if (!W) return;
+      const css = parseFloat(getComputedStyle(host).getPropertyValue('--cs')) || 4;
+      const cs = Math.max(1, Math.floor(css * dpr));
+      const ox = -(hx0 + t.cur.gen) * cs, oy = -t.hy0 * cs;
+      t.stage.draw(t.cur, t.prev, cs, ox, oy);
+      const L = t.loom, ctx = L.ctx;
+      ctx.fillStyle = COLORS.paper; ctx.fillRect(0, 0, L.W, L.H);
+      ctx.fillStyle = COLORS.ink;
+      // pairs sit four cells apart in any one row, and the triangles' edges move four cells a
+      // row, so each mark is two cells wide and each row two cells tall, to keep their shape
+      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) ctx.fillRect(i * cs, 2 * r * cs, 2 * cs, 2 * cs); });
+      t.genEl.textContent = t.cur.gen;
+    };
+    t.stage.onresize = t.draw; t.loom.onresize = t.draw;
+    return t;
+  });
+  // one cell size for all, the largest whole size at which the widest fits
+  const widest = Math.max(...ships.map((t) => t.w));
+  const fit = () => {
+    const cs = Math.max(2, Math.min(6, Math.floor(host.clientWidth / widest)));
+    if (host.style.getPropertyValue('--cs') !== cs + 'px') host.style.setProperty('--cs', cs + 'px');
+    for (const t of ships) t.draw();
+  };
+  new ResizeObserver(fit).observe(host);
+  if (reducedMotion.matches) for (const t of ships) for (let i = 1; i < EAT_LOOM; i++) { t.step(); t.step(); }
+  fit();
+  const clock = new Clock(host, TRACK_RATE, () => { for (const t of ships) { t.step(); t.draw(); } });
+  host.addEventListener('click', () => clock.setPlaying(!clock.playing));
+
+  // ----- every length of track, 3 to 40 slots
+  for (let s = EA.TESTED[0]; s <= EA.TESTED[1]; s++) {
+    const f = EA.fate(s), li = document.createElement('li');
+    li.className = 'fate-' + f.kind;
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = s;
+    const o = document.createElement('span'); o.className = 'o';
+    o.textContent = f.kind === 'explodes' ? '×' : f.period;
+    li.setAttribute('aria-label', `${s} slots: ${f.kind === 'ship' ? `a ship of period ${f.period}` : f.kind === 'puffer' ? `a puffer of period ${f.period}, leaving checkers` : 'explodes'}`);
+    li.append(n, o);
+    fates.append(li);
+  }
+}
+
 function anchors() {
   for (const sec of document.querySelectorAll('main section[id]')) {
     const h = sec.querySelector('h2');
@@ -1501,5 +1591,6 @@ fivePuffers();
 fiveCensus();
 slow();
 periods();
+eaters();
 anchors();
 reducedMotion.addEventListener?.('change', wake);

@@ -152,6 +152,15 @@ track's ends) on a loom below it, and the collection's table of the smallest kno
 oscillator at every period, every row run for a full period. The motif is the one-
 dimensional automaton inside the two-dimensional one, made visible.
 
+Session 17 found the seventeenth: **the computer that flies**. The glossary's anchor eater
+is a ship by itself: a front that sets down two rows of dots at c, a pair riding them, a
+trailer that eats them again. Lengthened, every even track from 6 slots is a ship whose
+period is twice the first power of two at or above its slots (16, 32, 64, 128 ...), every
+4k + 3 is a puffer of the same period leaving checkers, and every 4k + 1 explodes. Seen
+from the ship, its pairs run Rule 90 fed from one end: Sierpinski triangles grow from the
+front until the track is full, everything cancels in one step, and the next begins. The
+motif is the doubling: periods that are powers of two because Rule 90's triangles are.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -223,13 +232,25 @@ say "red", read "blue".
   they have names before giving them any.
 - **Four-cell tiles, larger**: tapping a four-cell tile could play it large, as the
   three-cell wall does with the Diamonds stage.
+- **Eaters, more** (session 17): the half anchor eater (a puffer of dots and checkers,
+  glossary), the anchor biter and nibbler puffers of the collection's puffer table (periods
+  8 * 2^n again, presumably the same doubling: test it), the other four pieces of the
+  collection's `2013 Flotillas - Anchor eater ships.rle` (63, 84, 104 and 100 cells, all p16
+  c ships in a scratch run: what are they?), and *why* the period doubles exactly when s
+  passes a power of two (the fill-and-clear of the loom is visible but not yet tested as a
+  statement; a test that the track is full at one even generation a period and empty but
+  for the front's pair two generations later would let the page say so). A "jump to
+  generation" control would let the 66-slot ship (period 256) be shown too.
+- **Spaceship and puffer period tables**: the collection's other two tables. Rows with
+  RLEs to hand: moon 1, flicker ship 2, key ship 4, nickel ship 5, free ship 6, squid ship 8,
+  decade ship 10, eater ships 16 to 256 (all in eaters.js or the glossary). Many rows
+  (Game of Life Fun 2025, Arie Paap's p3) need RLEs from forum posts not in the collection's
+  data. Don't show a row that can't be run.
 - **Anchor tracks, more** (the periods are settled: session 16; the wiki's entry, in
   `data/later.json`, has the corrected list 12, 28, 28, 124, 252, 60 and the Rule 90
   account). Still untouched: tracks that start with more than one pair (the wiki says
   several distinct tracks can share a slot count when a cycle doesn't visit every
-  arrangement), the anchor eater / biter / nibbler trailers that turn a track left by a
-  puffer into a ship or puffer of period 8 * 2^n (the collection's puffer and spaceship
-  period tables are full of them), the infinite anchor track (a puffer whose trail is
+  arrangement), the biter / nibbler trailers (the eater is done: session 17), the infinite anchor track (a puffer whose trail is
   aperiodic because its track keeps growing), and the "digits" period examples in the
   collection's `2013 Anchor tracks.rle`. A loom for the viewer's tracks too, and a
   "jump to generation" control so the 65,532 can be seen coming around.
@@ -913,3 +934,35 @@ collision atlas data and its test are gone, as are the four tools (`abreast`, `c
 - Journal's backlog note about anchor track periods is resolved: the engine's construction
   was right all along; the glossary's old list (12, 28, 124, 124, 252, 60) was a typo the
   wiki later corrected to 12, 28, 28, 124, 252, 60.
+
+### 2026-11-13: Session 17, eaters
+
+- **New study, Eaters** (eleventh in the contents, after Periods): the anchor track, flying.
+- `site/js/eaters.js`: the glossary's anchor eater RLE (62 cells, which is a p16 c ship by
+  itself), `eater(s)` (the s-slot form: the front and the anchor moved 4(s - 6) cells
+  forward and the track's dots filled in; found by trying which parts to move: moving the
+  front alone leaves the period at 16, moving the anchor with it gives 32 at 10 slots),
+  `period(s) = 2 * 2^ceil(log2 s)`, `fate(s)`, `cells(s) = 2s + 50`, `pairAt`.
+- `tests/eaters.test.mjs` (36 tests, under a second): every even s from 6 to 40 is a ship
+  of period(s) at c that does not return sooner, fewest cells 2s + 50 at the start; every
+  s = 4k + 3 from 7 to 39 is a puffer (front repeats shifted, never sooner) whose trail is
+  nothing but checkers; 3, 4, 5 and every 4k + 1 to 37 explode (the shared `explodes`
+  standard, measured at generation 300, since 25 slots and up take 80+ generations to
+  break out); the table's family (period 8 * 2^n, 2 * 2^n + 2 slots, 4 * 2^n + 54 cells),
+  and the 66-slot ship run for its whole period 256: 182 cells, where the collection's
+  table says 180 (its own formula says 182; noted on the page); and Rule 90: at every even
+  generation over four periods, at every pair site except the back edge and the front's
+  two, a pair appears exactly where one of x - 2, x + 2 had one.
+- **The page**: four tiles (6, 10, 18, 34 slots: periods 16 to 128, the smallest even track
+  for each), each a ship on a camera flying with it at exactly one cell a generation and a
+  loom beneath in the ship's frame. All share one cell size (the largest that fits the
+  34-slot ship: 6 px desktop, 2 px at 390), so the triangles visibly double. Then
+  "Every length": 3..40 as a grid of 16 columns (8 on phones) starting at column 4, so each
+  column is one remainder mod 4 and the law reads straight down: × columns, ship columns,
+  dotted-underline puffer columns.
+- **Loom lesson**: one-cell marks read as vertical dashes, not triangles, because in the
+  ship's frame a row's sites are four cells apart and the triangle's edge moves four cells
+  per row. Marks are now two cells wide and rows two cells tall. The front's own machinery
+  holds a pair at 4s + 7, past the track; the loom stops at 4s + 3, where pairs come in.
+- Text says only what the tests check; the fill-then-clear moment is shown, described as
+  what the loom draws, and the "why powers of two" is left as an observation.
