@@ -96,3 +96,21 @@ test('the three oscillators new to the page are the glossary\'s patterns, found 
   }
   assert.deepEqual(['sandbar', 'starfish', 'sparkler'].map((id) => [byId(id).period, byId(id).cells]), [[3, 32], [5, 64], [8, 12]]);
 });
+
+// The looms record a row every generation: an X wherever a pair (a live cell on row 1 and
+// on row 3 at the same x) sits. On even generations the pairs are at Rule 90's sites,
+// beside the columns of dots (the exact-state test above); on odd generations every pair
+// sits on a column of dots (x = 1 + 4i), as the page says.
+test('on odd generations, pairs sit on the columns of dots', () => {
+  for (let s = 1; s <= 12; s++) {
+    let p = track(s), seen = 0;
+    for (let g = 0; g < trackPeriod(s); g++, p = p.next()) {
+      if (g % 2 === 0) continue;
+      for (const [x, y] of p.cells()) if (y === 1 && p.get(x, 3)) {
+        seen++;
+        assert.equal(((x - 1) % 4 + 4) % 4, 0, `${s} slots, gen ${g}, x ${x}`);
+      }
+    }
+    assert.ok(seen > 0);
+  }
+});

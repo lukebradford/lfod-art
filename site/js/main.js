@@ -1350,9 +1350,9 @@ function slow() {
 // Periods: anchor tracks, and the collection's table of the smallest known oscillator
 // at each period (periods.js; every number checked by tests/periods.test.mjs). Each
 // track runs live on a fixed camera with a loom under it: one row every two
-// generations, a mark wherever a pair sits, which is the track's Rule 90 space-time
-// diagram, the newest row at the top, against the track. A fixed-camera viewer plays any row of the table.
-const LOOM = 36; // rows the loom holds (each two generations)
+// generation, an X wherever a pair sits (its even rows are the track's Rule 90 space-time
+// diagram), the newest row at the top, against the track, so it always matches the track. A fixed-camera viewer plays any row of the table.
+const LOOM = 36; // rows the loom holds, one a generation
 const TRACK_RATE = 12;
 
 // An X on the cell whose top-left corner is (x, y), size cs device px, stopping short of
@@ -1389,10 +1389,14 @@ function periods() {
     el.querySelector('.stage canvas').setAttribute('aria-label', `A ${s}-slot anchor track, period ${fmt(P)}, simulated exactly; below it, one row every two generations, a mark wherever a pair sits.`);
     host.append(el);
     const t = { s, P, el, stage: new Stage(el.querySelector('.stage canvas')), loom: new Stage(el.querySelector('.loom canvas')), genEl: el.querySelector('.strip-gen b'), cur: PD.track(s), prev: null, rows: [] };
-    t.rows.push(PD.sitesOf(t.cur, s));
+    // a loom row: where pairs sit (a live cell on row 1 and on row 3 at the same x), for
+    // x = -1 .. 4s - 1, the track's span. Even generations put them beside the columns of
+    // dots (Rule 90's sites); odd generations on them (tested).
+    const row = () => { const a = new Uint8Array(4 * s + 1); for (let i = 0; i < a.length; i++) a[i] = t.cur.get(i - 1, 1) && t.cur.get(i - 1, 3) ? 1 : 0; return a; };
+    t.rows.push(row());
     t.step = () => {
       t.prev = t.cur; t.cur = t.cur.next();
-      if (t.cur.gen % 2 === 0) { t.rows.push(PD.sitesOf(t.cur, s)); if (t.rows.length > LOOM) t.rows.shift(); }
+      t.rows.push(row()); if (t.rows.length > LOOM) t.rows.shift();
     };
     t.draw = () => {
       const { W, H, dpr } = t.stage;
@@ -1403,24 +1407,24 @@ function periods() {
       // across, and set its bottom row on the canvas's bottom edge, so the loom below meets it
       const ox = Math.round((W - (4 * s + 1) * cs) / 2) + cs, oy = H - 5 * cs;
       t.stage.draw(t.cur, t.prev, cs, ox, oy);
-      // where a loom row has just been set down (every even generation), a white X on the
-      // lower cell of each pair it marks: the cells the newest marks stand for
+      // a white X on the lower cell of each pair the newest loom row marks: the row against
+      // the track is always this generation's
       const newest = t.rows[t.rows.length - 1];
-      if (t.cur.gen % 2 === 0) for (let i = 0; i < newest.length; i++) if (newest[i]) cross(t.stage.ctx, ox + 2 * i * cs, oy + 3 * cs, cs, COLORS.paper);
+      for (let i = 0; i < newest.length; i++) if (newest[i]) cross(t.stage.ctx, ox + (i - 1) * cs, oy + 3 * cs, cs, COLORS.paper);
       const L = t.loom, ctx = L.ctx;
       ctx.fillStyle = COLORS.paper; ctx.fillRect(0, 0, L.W, L.H);
       ctx.fillStyle = COLORS.beyond; // the columns of dots, faintly, so the loom reads as the track's record
       for (let i = 0; i < s; i++) ctx.fillRect(ox + (1 + 4 * i) * cs, 0, cs, L.H);
       // the newest row against the track, older rows below it
       const n = t.rows.length;
-      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) cross(ctx, ox + 2 * i * cs, (n - 1 - r) * cs, cs, COLORS.ink); });
+      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) cross(ctx, ox + (i - 1) * cs, (n - 1 - r) * cs, cs, COLORS.ink); });
       t.genEl.textContent = t.cur.gen;
     };
     t.stage.onresize = t.draw; t.loom.onresize = t.draw;
     return t;
   });
   // with motion reduced the tracks stand still: show each loom already woven
-  if (reducedMotion.matches) for (const t of tiles) for (let i = 1; i < LOOM; i++) { t.step(); t.step(); }
+  if (reducedMotion.matches) for (const t of tiles) for (let i = 1; i < LOOM; i++) t.step();
   for (const t of tiles) t.draw();
   const clock = new Clock(host, TRACK_RATE, () => { for (const t of tiles) { t.step(); t.draw(); } });
   host.addEventListener('click', () => clock.setPlaying(!clock.playing));
@@ -1478,10 +1482,10 @@ function periods() {
 // ---------------------------------------------------------------------------
 // Eaters: anchor eater ships (eaters.js; every claim checked by tests/eaters.test.mjs).
 // Each ship flies to the right at c with its camera, so the camera's origin moves one
-// cell a generation, exactly. Under each, a loom as in Periods: one row every two
-// generations, a mark wherever a pair sits on the track, in the ship's own frame, the
-// newest row at the bottom. All share one cell size, so the triangles' doubling shows.
-const EAT_LOOM = 48; // rows (each two generations, drawn two cells tall): one and a half of the 34-slot ship's triangles
+// cell a generation, exactly. Under each, a loom as in Periods: one row a generation,
+// an X wherever a pair sits on the track, in the ship's own frame, the newest row at the
+// top, nearest the ship. All share one cell size, so the triangles' doubling shows.
+const EAT_LOOM = 96; // rows, one a generation: one and a half of the 34-slot ship's triangles
 
 function eaters() {
   const host = $('#eats'), fates = $('#fates');
@@ -1490,7 +1494,7 @@ function eaters() {
   for (const el of document.querySelectorAll('.n-eater-periods')) el.textContent = list(EA.SHOWN.map(EA.period));
   for (const el of document.querySelectorAll('.n-eater-lo')) el.textContent = EA.TESTED[0];
   for (const el of document.querySelectorAll('.n-eater-hi')) el.textContent = EA.TESTED[1];
-  host.style.setProperty('--loom', 2 * EAT_LOOM);
+  host.style.setProperty('--loom', EAT_LOOM);
 
   const ships = EA.SHOWN.map((s) => {
     const P = EA.period(s), start = EA.eater(s);
@@ -1518,7 +1522,7 @@ function eaters() {
     t.rows.push(row());
     t.step = () => {
       t.prev = t.cur; t.cur = t.cur.next();
-      if (t.cur.gen % 2 === 0) { t.rows.push(row()); if (t.rows.length > EAT_LOOM) t.rows.shift(); }
+      t.rows.push(row()); if (t.rows.length > EAT_LOOM) t.rows.shift();
     };
     t.draw = () => {
       const { W, dpr } = t.stage;
@@ -1527,15 +1531,15 @@ function eaters() {
       const cs = Math.max(1, Math.floor(css * dpr));
       const ox = -(hx0 + t.cur.gen) * cs, oy = -t.hy0 * cs;
       t.stage.draw(t.cur, t.prev, cs, ox, oy);
-      // where a loom row has just been set down (every even generation), a white X on the
-      // lower cell of each pair it marks, as in Periods: the cells the newest marks stand for
+      // a white X on the lower cell of each pair the newest loom row marks, as in Periods: the
+      // loom's top row is always this generation's
       const newest = t.rows[t.rows.length - 1];
-      if (t.cur.gen % 2 === 0) for (let i = 0; i < newest.length; i++) if (newest[i]) cross(t.stage.ctx, i * cs, oy + EA.PAIR_ROWS[1] * cs, cs, COLORS.paper);
+      for (let i = 0; i < newest.length; i++) if (newest[i]) cross(t.stage.ctx, i * cs, oy + EA.PAIR_ROWS[1] * cs, cs, COLORS.paper);
       const L = t.loom, ctx = L.ctx;
       ctx.fillStyle = COLORS.paper; ctx.fillRect(0, 0, L.W, L.H);
-      // pairs sit four cells apart in any one row, and the triangles' edges move four cells a
-      // row, so each mark is an X two cells wide and each row two cells tall, to keep their shape
-      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) cross(ctx, i * cs, 2 * r * cs, 2 * cs, COLORS.ink); });
+      // the newest row at the top, nearest the ship, older rows below
+      const n = t.rows.length;
+      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) cross(ctx, i * cs, (n - 1 - r) * cs, cs, COLORS.ink); });
       t.genEl.textContent = t.cur.gen;
     };
     t.stage.onresize = t.draw; t.loom.onresize = t.draw;
@@ -1549,7 +1553,7 @@ function eaters() {
     for (const t of ships) t.draw();
   };
   new ResizeObserver(fit).observe(host);
-  if (reducedMotion.matches) for (const t of ships) for (let i = 1; i < EAT_LOOM; i++) { t.step(); t.step(); }
+  if (reducedMotion.matches) for (const t of ships) for (let i = 1; i < EAT_LOOM; i++) t.step();
   fit();
   const clock = new Clock(host, TRACK_RATE, () => { for (const t of ships) { t.step(); t.draw(); } });
   host.addEventListener('click', () => clock.setPlaying(!clock.playing));

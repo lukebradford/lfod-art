@@ -976,3 +976,10 @@ lower cell (row 3) of each pair the newest row records. The Eaters looms are unc
 Follow-up (owner's request): the Eaters looms mark pairs with black Xs (two cells wide, inset
 from the corners) and, at every even generation, a white X marks the lower cell (row 12) of
 each pair the newest row records. The loom stays below the ship, newest row at the bottom.
+
+Follow-up (owner's request): both looms now set down a row every generation (a mark wherever a
+live cell sits on both pair rows at one x), so the row nearest the pattern always matches the
+anchors on screen; the white Xs show every generation. On odd generations a standing track's
+pairs sit on the columns of dots (new test in periods.test.mjs, 1 to 12 slots, full period).
+Eaters looms: newest row at the top, one cell per X and per row, 96 rows. Periods looms keep 36
+rows, so they now hold 36 generations rather than 72.
