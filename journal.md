@@ -972,3 +972,7 @@ inset from the cell's corners, instead of a square; the newest row now sits dire
 against the track's bottom row (the stage lost its bottom margin row and the canvas's
 inline gap), older rows flowing down; and at every even generation a white X marks the
 lower cell (row 3) of each pair the newest row records. The Eaters looms are unchanged.
+
+Follow-up (owner's request): the Eaters looms mark pairs with black Xs (two cells wide, inset
+from the corners) and, at every even generation, a white X marks the lower cell (row 12) of
+each pair the newest row records. The loom stays below the ship, newest row at the bottom.

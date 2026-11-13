@@ -1527,12 +1527,15 @@ function eaters() {
       const cs = Math.max(1, Math.floor(css * dpr));
       const ox = -(hx0 + t.cur.gen) * cs, oy = -t.hy0 * cs;
       t.stage.draw(t.cur, t.prev, cs, ox, oy);
+      // where a loom row has just been set down (every even generation), a white X on the
+      // lower cell of each pair it marks, as in Periods: the cells the newest marks stand for
+      const newest = t.rows[t.rows.length - 1];
+      if (t.cur.gen % 2 === 0) for (let i = 0; i < newest.length; i++) if (newest[i]) cross(t.stage.ctx, i * cs, oy + EA.PAIR_ROWS[1] * cs, cs, COLORS.paper);
       const L = t.loom, ctx = L.ctx;
       ctx.fillStyle = COLORS.paper; ctx.fillRect(0, 0, L.W, L.H);
-      ctx.fillStyle = COLORS.ink;
       // pairs sit four cells apart in any one row, and the triangles' edges move four cells a
-      // row, so each mark is two cells wide and each row two cells tall, to keep their shape
-      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) ctx.fillRect(i * cs, 2 * r * cs, 2 * cs, 2 * cs); });
+      // row, so each mark is an X two cells wide and each row two cells tall, to keep their shape
+      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) cross(ctx, i * cs, 2 * r * cs, 2 * cs, COLORS.ink); });
       t.genEl.textContent = t.cur.gen;
     };
     t.stage.onresize = t.draw; t.loom.onresize = t.draw;
