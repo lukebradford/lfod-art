@@ -319,7 +319,8 @@ section > p { max-width: 38em; }
 .track-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin-bottom: 8px; font-size: 14px; line-height: 1.3; }
 .track-head b { font-weight: 500; }
 .track-head .facts { font-size: 12px; }
-.track .stage { height: calc(7 * var(--cs)); border-top: 1px solid var(--line); }
+.track .stage { height: calc(6 * var(--cs)); border-top: 1px solid var(--line); }
+.track .stage canvas { display: block; } /* no inline gap: the loom meets the track's bottom row */
 .track .loom { height: calc(var(--loom) * var(--cs)); border-bottom: 1px solid var(--line); }
 .track .loom canvas { display: block; width: 100%; height: 100%; }
 .track .strip-gen { display: block; margin: 6px 0 0; text-align: right; }

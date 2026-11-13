@@ -966,3 +966,9 @@ collision atlas data and its test are gone, as are the four tools (`abreast`, `c
   holds a pair at 4s + 7, past the track; the loom stops at 4s + 3, where pairs come in.
 - Text says only what the tests check; the fill-then-clear moment is shown, described as
   what the loom draws, and the "why powers of two" is left as an observation.
+
+Follow-up, same day (owner's request): the Periods looms mark each pair with a black X,
+inset from the cell's corners, instead of a square; the newest row now sits directly
+against the track's bottom row (the stage lost its bottom margin row and the canvas's
+inline gap), older rows flowing down; and at every even generation a white X marks the
+lower cell (row 3) of each pair the newest row records. The Eaters looms are unchanged.

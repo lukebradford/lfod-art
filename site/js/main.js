@@ -1351,9 +1351,22 @@ function slow() {
 // at each period (periods.js; every number checked by tests/periods.test.mjs). Each
 // track runs live on a fixed camera with a loom under it: one row every two
 // generations, a mark wherever a pair sits, which is the track's Rule 90 space-time
-// diagram, the newest row at the bottom. A fixed-camera viewer plays any row of the table.
+// diagram, the newest row at the top, against the track. A fixed-camera viewer plays any row of the table.
 const LOOM = 36; // rows the loom holds (each two generations)
 const TRACK_RATE = 12;
+
+// An X on the cell whose top-left corner is (x, y), size cs device px, stopping short of
+// the cell's corners (the strokes' ends, square-cut, stay inside the inset).
+function cross(ctx, x, y, cs, color) {
+  const lw = Math.max(1, Math.round(cs * 0.16)), m = Math.max(1, Math.round(cs * 0.22));
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'butt';
+  ctx.beginPath();
+  ctx.moveTo(x + m, y + m); ctx.lineTo(x + cs - m, y + cs - m);
+  ctx.moveTo(x + cs - m, y + m); ctx.lineTo(x + m, y + cs - m);
+  ctx.stroke();
+  ctx.restore();
+}
 
 function periods() {
   const host = $('#tracks'), table = $('#periodtable'), fig = $('#periodstage');
@@ -1386,15 +1399,21 @@ function periods() {
       if (!W) return;
       const css = parseFloat(getComputedStyle(host).getPropertyValue('--cs')) || 8;
       const cs = Math.max(2, Math.floor(css * dpr));
-      // over a period the track spans x = -1 .. 4s - 1: center that, and its five rows
-      const ox = Math.round((W - (4 * s + 1) * cs) / 2) + cs, oy = Math.round((H - 5 * cs) / 2);
+      // over a period the track spans x = -1 .. 4s - 1 and rows 0 .. 4 (tested): center it
+      // across, and set its bottom row on the canvas's bottom edge, so the loom below meets it
+      const ox = Math.round((W - (4 * s + 1) * cs) / 2) + cs, oy = H - 5 * cs;
       t.stage.draw(t.cur, t.prev, cs, ox, oy);
+      // where a loom row has just been set down (every even generation), a white X on the
+      // lower cell of each pair it marks: the cells the newest marks stand for
+      const newest = t.rows[t.rows.length - 1];
+      if (t.cur.gen % 2 === 0) for (let i = 0; i < newest.length; i++) if (newest[i]) cross(t.stage.ctx, ox + 2 * i * cs, oy + 3 * cs, cs, COLORS.paper);
       const L = t.loom, ctx = L.ctx;
       ctx.fillStyle = COLORS.paper; ctx.fillRect(0, 0, L.W, L.H);
       ctx.fillStyle = COLORS.beyond; // the columns of dots, faintly, so the loom reads as the track's record
       for (let i = 0; i < s; i++) ctx.fillRect(ox + (1 + 4 * i) * cs, 0, cs, L.H);
-      ctx.fillStyle = COLORS.ink;
-      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) ctx.fillRect(ox + 2 * i * cs, r * cs, cs, cs); });
+      // the newest row against the track, older rows below it
+      const n = t.rows.length;
+      t.rows.forEach((a, r) => { for (let i = 0; i < a.length; i++) if (a[i]) cross(ctx, ox + 2 * i * cs, (n - 1 - r) * cs, cs, COLORS.ink); });
       t.genEl.textContent = t.cur.gen;
     };
     t.stage.onresize = t.draw; t.loom.onresize = t.draw;
