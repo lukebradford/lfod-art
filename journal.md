@@ -161,6 +161,15 @@ from the ship, its pairs run Rule 90 fed from one end: Sierpinski triangles grow
 front until the track is full, everything cancels in one step, and the next begins. The
 motif is the doubling: periods that are powers of two because Rule 90's triangles are.
 
+Session 18 found the eighteenth: **the clock**. A period is a time, but for a ship at c it
+is also a distance: the ship comes back to its shape one period later and one period of
+cells further on. Fleet flies the smallest known ship of every period the collection has a
+pattern for (1, 2, 4, 5, 6, 8, 10, 12, 16, 32, 64, 128) in lanes that start level, and
+each lane sets down a line in the plane each time its ship is itself again. The lines
+stream out behind as rulers, and since every lane starts on one column, a period's lines
+fall on the lines of every period dividing it. The motif is the score: twelve
+rhythms read against one another.
+
 Where it could go: an explorer/atlas of LFoD objects (searching larger boxes in a
 Web Worker, live, in the visitor's browser); collision studies (moons hitting
 dots, free ships hitting oscillators); a gallery of explosion "diamonds" seeded by
@@ -241,7 +250,17 @@ say "red", read "blue".
   statement; a test that the track is full at one even generation a period and empty but
   for the front's pair two generations later would let the page say so). A "jump to
   generation" control would let the 66-slot ship (period 256) be shown too.
-- **Spaceship and puffer period tables**: the collection's other two tables. Rows with
+- **Fleet, more** (session 18): the table's missing rows need patterns from the forum
+  posts it links (p3 Arie Paap 70 cells; p20, p48, p96, p192, p240 Game of Life Fun 2025;
+  p30, p40, p120 from the collection's own files). Scratch findings, not on the page: the
+  only p24, p40, p48 and p120 ships a search of every collection RLE found (split into
+  pieces within 9 cells) are groups of independent smaller ships whose periods have that
+  LCM (the table's p120 "Live Free or Die summarized" row, 380 cells, looks like exactly
+  that: ships of periods 1 to 8 side by side; ask the owner). Every placement of a free ship
+  4 to 12 rows above the octopus ship, at any x within 16 and any phases, that comes out
+  p24 is also non-interacting, so the table's 44-cell [free ship + octopus ship] is not
+  among them. A puffer fleet (the puffer table) is the natural sequel, its wakes as rulers.
+- **Spaceship and puffer period tables** (spaceships: done as Fleet, session 18): the collection's other two tables. Rows with
   RLEs to hand: moon 1, flicker ship 2, key ship 4, nickel ship 5, free ship 6, squid ship 8,
   decade ship 10, eater ships 16 to 256 (all in eaters.js or the glossary). Many rows
   (Game of Life Fun 2025, Arie Paap's p3) need RLEs from forum posts not in the collection's
@@ -983,3 +1002,31 @@ anchors on screen; the white Xs show every generation. On odd generations a stan
 pairs sit on the columns of dots (new test in periods.test.mjs, 1 to 12 slots, full period).
 Eaters looms: newest row at the top, one cell per X and per row, 96 rows. Periods looms keep 36
 rows, so they now hold 36 generations rather than 72.
+
+### 2026-11-18: Session 18, fleet
+
+- **New study, Fleet** (twelfth in the contents, after Eaters): the collection's table of the
+  smallest known spaceship at each period, every row whose pattern is to hand: moon (p1, 4
+  cells), flicker ship (p2, 54), key ship (p4, 8), nickel ship (p5, 98), free ship (p6, 12),
+  squid ship (p8, 20), decade ship (p10, 114, c/5, Paul Tooke), the unnamed p12 ship (22,
+  from the collection's 2008 period examples, found by splitting that file into objects and
+  classifying each), and the 6-, 10-, 18- and 34-slot anchor eaters (p16 to p128).
+- `site/js/fleet.js`: `FLEET` (period, dx per period, cells, credit, link), `ABSENT` (the
+  table rows not flown: no pattern in the collection's data, or the 272-cell p256 eater),
+  `patternOf`. Every RLE already flies right at its fewest cells.
+- `tests/fleet.test.mjs` (14 tests): each ship's shape returns at exactly its period and no
+  sooner, moved dx right and not at all vertically, its fewest cells over the period equal
+  the table's and its start; the marks the page draws (right edge of the box at every
+  multiple of the period) are exactly dx apart over four periods.
+- **The page**: one lane per ship, label column (period, name linking to the glossary,
+  cells, speed if not c) and a canvas whose camera flies with the ship (floor(g dx / P)
+  cells, so exactly g at c). Each time g is a multiple of the period a 1-device-pixel line
+  (`COLORS.mark`) is set down in the plane at the nose; lines off the left edge are dropped.
+  All noses start on one column, so lines of dividing periods coincide (the 128's lie on the
+  64's, 32's, ... 1's). One shared cell size (5 px desktop, 2 px at 390), one clock, a
+  shared GEN counter; tap to pause; with motion reduced it opens 256 generations along.
+- **Bug fixed**: the contents grid had 5 rows of 2 columns, so the eleventh study (Eaters)
+  spilled into an implicit third column; it is now 6 rows for 12.
+- Local preview again served stale modules (python's server sends no cache headers): a
+  hard reload, or the no-store server in the session's scratchpad, fixed it.
+

@@ -9,6 +9,7 @@ export const COLORS = {
   dot: '#dcdce2', // graph-paper dots at cell corners
   beyond: '#f2f2f5', // where nothing can be alive yet (past a light front or speed limit)
   path: '#f5f5f8', // a ship's path, drawn faintly under the cells
+  mark: '#cdcdd5', // a line set down in the plane (Fleet: where a ship came back to its shape)
 };
 
 export const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');

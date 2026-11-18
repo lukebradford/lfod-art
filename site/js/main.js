@@ -11,6 +11,7 @@ import * as RK from './rakes.js';
 import * as GN from './guns.js';
 import * as PD from './periods.js';
 import * as EA from './eaters.js';
+import * as FL from './fleet.js';
 
 const $ = (s) => document.querySelector(s);
 
@@ -1571,6 +1572,87 @@ function eaters() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Fleet: the smallest known ship of each period (fleet.js; every row checked by
+// tests/fleet.test.mjs). One lane per ship, each its own exact plane, its camera flying
+// with the ship: cam(g) = floor(g * dx / period) cells, which is exactly g for a ship at
+// c. Each time g is a multiple of the period a line is set down in the plane at the
+// right edge of the ship's box (its nose). All noses start on one column, so lines of
+// periods that divide one another fall on one another. One clock steps every lane.
+const FLEET_PRERUN = 256; // with motion reduced, open already this far along
+
+function fleet() {
+  const host = $('#flanes'), genEl = $('#fleet-gen');
+  if (!host) return;
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+  for (const el of document.querySelectorAll('.n-fleet-count')) el.textContent = words[FL.FLEET.length] ?? FL.FLEET.length;
+  const list = (a) => a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join('');
+  for (const el of document.querySelectorAll('.n-fleet-absent')) el.textContent = list(FL.ABSENT.unavailable);
+
+  const lanes = FL.FLEET.map((e) => {
+    const P = e.period, start = FL.patternOf(e), R0 = start.x0 + start.w;
+    const cam = (g) => Math.floor(g * e.dx / P);
+    // the hull over a period in the camera's frame, relative to the starting nose R0
+    let hx0 = Infinity, hx1 = -Infinity, hy0 = Infinity, hy1 = -Infinity;
+    for (let g = 0, p = start; g < P; g++, p = p.next()) {
+      hx0 = Math.min(hx0, p.x0 - cam(g) - R0); hx1 = Math.max(hx1, p.x0 + p.w - cam(g) - R0);
+      hy0 = Math.min(hy0, p.y0); hy1 = Math.max(hy1, p.y0 + p.h - 1);
+    }
+    const rows = hy1 - hy0 + 3;
+    const el = document.createElement('figure');
+    el.className = 'flane';
+    el.setAttribute('role', 'listitem');
+    el.style.setProperty('--rows', rows);
+    el.innerHTML = '<figcaption class="flane-head"><span class="p"></span><span class="n"><a rel="noopener"></a><span class="c"></span></span></figcaption><canvas role="img"></canvas>';
+    el.querySelector('.p').textContent = P;
+    const a = el.querySelector('a');
+    a.href = e.link; a.textContent = e.short || e.name;
+    if (e.short) a.title = e.name;
+    el.querySelector('.c').textContent = `${e.cells} cells${e.dx === P ? '' : ` · ${SL.speed({ period: P, dx: e.dx, dy: 0 })}`}`;
+    el.querySelector('canvas').setAttribute('aria-label', `The ${e.name}, period ${P}, ${e.cells} cells at fewest, flying right with its camera, simulated exactly; a line in the plane at its nose each time it is its own shape again.`);
+    host.append(el);
+    const t = { e, P, R0, cam, hx0, hx1, hy0, el, stage: new Stage(el.querySelector('canvas')), cur: start, prev: null, marks: [R0] };
+    t.step = () => {
+      t.prev = t.cur; t.cur = t.cur.next();
+      if (t.cur.gen % P === 0) t.marks.push(t.cur.x0 + t.cur.w);
+    };
+    return t;
+  });
+  // all noses on one column, with room ahead of it for the furthest any hull reaches
+  const ahead = Math.max(...lanes.map((t) => t.hx1)) + 1;
+  const widest = Math.max(...lanes.map((t) => t.hx1 - t.hx0)) + ahead;
+  let gen = 0;
+  const draw = (t) => {
+    const { W, dpr, ctx } = t.stage;
+    if (!W) return;
+    const css = parseFloat(getComputedStyle(host).getPropertyValue('--cs')) || 4;
+    const cs = Math.max(1, Math.floor(css * dpr));
+    const nose = W - ahead * cs;
+    const ox = nose - (t.R0 + t.cam(t.cur.gen)) * cs, oy = -(t.hy0 - 1) * cs;
+    const lw = Math.max(1, Math.round(dpr));
+    // marks off the left edge are gone for good: the camera only moves right
+    while (t.marks.length > 1 && ox + t.marks[0] * cs < 0) t.marks.shift();
+    t.stage.draw(t.cur, t.prev, cs, ox, oy, {
+      dots: false,
+      under: (c) => { c.fillStyle = COLORS.mark; for (const m of t.marks) c.fillRect(ox + m * cs - (lw >> 1), 0, lw, t.stage.H); },
+    });
+  };
+  const fit = () => {
+    const cw = lanes[0].el.querySelector('canvas').clientWidth || host.clientWidth;
+    const cs = Math.max(2, Math.min(5, Math.floor(cw / (widest + 24))));
+    if (host.style.getPropertyValue('--cs') !== cs + 'px') host.style.setProperty('--cs', cs + 'px');
+    for (const t of lanes) draw(t);
+  };
+  for (const t of lanes) t.stage.onresize = () => draw(t);
+  const advance = () => { for (const t of lanes) t.step(); gen++; };
+  if (reducedMotion.matches) for (let i = 0; i < FLEET_PRERUN; i++) advance();
+  new ResizeObserver(fit).observe(host);
+  fit();
+  genEl.textContent = gen;
+  const clock = new Clock(host, TRACK_RATE, () => { advance(); for (const t of lanes) draw(t); genEl.textContent = gen; });
+  host.addEventListener('click', (ev) => { if (!ev.target.closest('a')) clock.setPlaying(!clock.playing); });
+}
+
 function anchors() {
   for (const sec of document.querySelectorAll('main section[id]')) {
     const h = sec.querySelector('h2');
@@ -1618,5 +1700,6 @@ fiveCensus();
 slow();
 periods();
 eaters();
+fleet();
 anchors();
 reducedMotion.addEventListener?.('change', wake);

@@ -33,7 +33,8 @@
   "./js/rakes.js": "./js/rakes.js?v=dev",
   "./js/guns.js": "./js/guns.js?v=dev",
   "./js/periods.js": "./js/periods.js?v=dev",
-  "./js/eaters.js": "./js/eaters.js?v=dev"
+  "./js/eaters.js": "./js/eaters.js?v=dev",
+  "./js/fleet.js": "./js/fleet.js?v=dev"
 } }
 </script>
 <script type="module" src="js/main.js?v=dev"></script>
@@ -83,6 +84,7 @@
       <li><a href="#slow">Slower than light</a> <span>the few ships that fly below c</span></li>
       <li><a href="#periods">Periods</a> <span>the oscillator of every known period</span></li>
       <li><a href="#eaters">Eaters</a> <span>an anchor track that flies</span></li>
+      <li><a href="#fleet">Fleet</a> <span>the smallest ship of every period</span></li>
     </ol>
   </nav>
 
@@ -247,6 +249,17 @@
     <ol class="fates" id="fates" aria-label="What the eater becomes at each length of track"></ol>
     <p class="fates-key"><span><b class="k-ship">16</b> a ship, and its period</span> <span><b class="k-puffer">16</b> a puffer leaving checkers, and its period</span> <span><b class="k-boom">×</b> explodes</span></p>
     <p class="aside">The collection’s <a href="https://lukebradford.github.io/lfod/periods.html">table of periods</a> lists anchor eater ships as the smallest known spaceships of periods 16, 32, 64, 128 and 256, from 6, 10, 18, 34 and 66 slots: the shortest even track for each. For 66 slots the table says 180 cells; its own formula, 4 × 2<sup><i>n</i></sup> + 54, and the engine both say 182. Each ship here is its own exact plane, and its camera flies with it at one cell a generation. Tap them to pause. The eater is from the <a href="https://lukebradford.github.io/lfod/glossary.html#anchor-eater">LFoD Universe glossary</a>. Periods, speeds, populations, the checkers, the explosions and Rule 90 are all checked by tests.</p>
+  </section>
+
+  <section class="fleet" id="fleet" aria-labelledby="fleet-h">
+    <div class="wall-head">
+      <h2 id="fleet-h">Fleet</h2>
+      <span class="strip-gen">GEN <b id="fleet-gen">0</b></span>
+    </div>
+    <p class="lede">A spaceship is a shape that comes back to itself somewhere else, and how often it comes back is its period. The collection keeps a table of the smallest known ship of each period. Here are the <span class="n-fleet-count">twelve</span> whose patterns it holds, from the moon, itself again every generation, to an anchor eater that takes 128.</p>
+    <div class="flanes" id="flanes" role="list" aria-label="The smallest known spaceship of each period, each flying with its camera, with a line in the plane each time it comes back to its shape"></div>
+    <p>Each lane’s camera flies with its ship. Each time the ship is its own shape again, a thin line is drawn across the lane at its nose, fixed in the plane, so the lines stream out behind. Eleven of the twelve fly at the speed of light, one cell a generation, so their lines fall a whole period apart: one every cell behind the moon, one every 128 cells behind the last eater. The decade ship moves two cells every ten generations, so its lines are two cells apart and crawl. All twelve start level at generation 0, so the lanes keep a ruler: under every line the period-128 eater leaves lies a line in each lane whose period divides 128 (the moon, the flicker ship, the key ship, the squid ship and the smaller eaters), and every 128 generations all of them meet at the noses.</p>
+    <p class="aside">The table is the <a href="https://lukebradford.github.io/lfod/periods.html">collection’s</a> as of November 2026, and so are the names and who found what. The decade ship is Paul Tooke’s (2012). The period-12 ship is from the collection’s period examples of 2008 and has no name. The rest are Luke Bradford’s. The table’s rows for periods <span class="n-fleet-absent">3, 20, 24, 30, 40, 48, 96, 120, 192 and 240</span> are not flown, because their patterns are not in the collection’s files. The period-256 eater is, but at 272 cells long it is checked only in the tests. Each lane is its own exact plane. Periods, speeds and fewest cells (the number by each name) are all checked by tests. Tap the fleet to pause it.</p>
   </section>
 </main>
 
