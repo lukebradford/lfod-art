@@ -150,3 +150,21 @@ for (const s of SHOWN) {
     assert.deepEqual(PAIR_ROWS, [10, 12]);
   });
 }
+
+// The loom draws the track only: x - gen from the trailer to 4s - 3, the anchor. Past it,
+// every generation over two periods, pairs appear only at 4s + 3 and 4s + 5 (the front's
+// machinery, gone within two generations), never in the gap between them and the anchor,
+// so nothing past the anchor ever joins the track, and the loom leaves it out.
+for (const s of SHOWN) {
+  test(`${s} slots: past the anchor, pairs are only the front's`, () => {
+    const P = period(s), A = 4 * s - 3;
+    let p = eater(s);
+    for (let t = 0; t < 2 * P; t++) {
+      for (let x = p.x0 - 4; x < p.x0 + p.w + 4; x++) {
+        if (!pairAt(p, x) || x - t <= A) continue;
+        assert.ok(x - t === 4 * s + 3 || x - t === 4 * s + 5, `gen ${t} offset ${x - t}`);
+      }
+      p = p.next();
+    }
+  });
+}

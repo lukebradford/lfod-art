@@ -1517,9 +1517,9 @@ function eaters() {
     el.querySelector('.stage canvas').setAttribute('aria-label', `A ${s}-slot anchor eater ship, period ${P}, flying right at the speed of light, simulated exactly with the camera flying with it; below it, one row every two generations, a mark wherever a pair sits on its track.`);
     host.append(el);
     const t = { s, w, h, hx0, hy0, el, stage: new Stage(el.querySelector('.stage canvas')), loom: new Stage(el.querySelector('.loom canvas')), genEl: el.querySelector('.strip-gen b'), cur: start, prev: null, rows: [] };
-    // the track runs from the trailer to x - gen = 4s + 3, where the front sets pairs down
-    // (the front's own machinery holds a pair four cells further on, not drawn)
-    const row = () => { const a = new Uint8Array(w), g = t.cur.gen; for (let i = 0; i < w && hx0 + i <= 4 * s + 3; i++) a[i] = EA.pairAt(t.cur, hx0 + i + g); return a; };
+    // the track runs from the trailer to the anchor at x - gen = 4s - 3; the pairs past it
+    // (at 4s + 3 and 4s + 5, each for one generation) are the front's machinery, not drawn (tested)
+    const row = () => { const a = new Uint8Array(w), g = t.cur.gen; for (let i = 0; i < w && hx0 + i <= 4 * s - 3; i++) a[i] = EA.pairAt(t.cur, hx0 + i + g); return a; };
     t.rows.push(row());
     t.step = () => {
       t.prev = t.cur; t.cur = t.cur.next();

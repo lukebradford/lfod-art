@@ -982,7 +982,8 @@ collision atlas data and its test are gone, as are the four tools (`abreast`, `c
 - **Loom lesson**: one-cell marks read as vertical dashes, not triangles, because in the
   ship's frame a row's sites are four cells apart and the triangle's edge moves four cells
   per row. Marks are now two cells wide and rows two cells tall. The front's own machinery
-  holds a pair at 4s + 7, past the track; the loom stops at 4s + 3, where pairs come in.
+  holds a pair at 4s + 7, past the track; the loom stops at 4s + 3, where pairs come in
+  (later corrected: the loom stops at the anchor, 4s - 3; see the follow-up below).
 - Text says only what the tests check; the fill-then-clear moment is shown, described as
   what the loom draws, and the "why powers of two" is left as an observation.
 
@@ -1002,6 +1003,11 @@ anchors on screen; the white Xs show every generation. On odd generations a stan
 pairs sit on the columns of dots (new test in periods.test.mjs, 1 to 12 slots, full period).
 Eaters looms: newest row at the top, one cell per X and per row, 96 rows. Periods looms keep 36
 rows, so they now hold 36 generations rather than 72.
+
+Follow-up, 2026-11-18 (owner's request): the Eaters looms' rightmost column of Xs (and its white
+Xs on the ship) is gone. It sat at x - gen = 4s + 3, and those pairs are the front's machinery:
+past the anchor (4s - 3), pairs appear only at 4s + 3 and 4s + 5 and never in between, so they
+never join the track. The loom now stops at the anchor (new test in eaters.test.mjs).
 
 ### 2026-11-18: Session 18, fleet
 
